@@ -1,6 +1,7 @@
 "use client"
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from "react"
 import { createBrowserClient } from "@supabase/ssr"
+import { format } from "date-fns"
 import { users as initialUsers, doctors as initialDoctors, receptionists as initialReceptionists, type User, type Doctor, type Receptionist, type Patient } from "./data"
 
 export interface Logos { logo_hto: string | null; logo_maranhao: string | null; logo_instituto: string | null; logo_sus: string | null }
@@ -969,12 +970,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const addConsultation = useCallback(
     async (c: Omit<Consultation, "id" | "status">): Promise<{ success: boolean; message: string }> => {
       try {
+        console.log("Iniciando agendamento:", c)
+
         // Encontrar o slot do médico para o dia
         const slot = doctorSlots.find(s => s.doctor_id === c.doctor_id && s.date === c.date)
         const scheduledCount = consultations.filter(con => con.doctor_id === c.doctor_id && con.date === c.date).length
 
         if (slot && scheduledCount >= slot.max_slots) {
-          return { success: false, message: "As vagas para este médico/dia já estão lotadas!" }
+          return { success: false, message: `As vagas para este médico/dia já estão lotadas! (${scheduledCount}/${slot.max_slots})` }
         }
 
         // Tentar vincular ou criar paciente na tabela mestre
@@ -983,39 +986,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const existing = patients.find(p => p.cpf === c.cpf)
           if (existing) {
             patient_id = existing.id
+            console.log("Paciente vinculado via CPF existente:", patient_id)
           } else {
-            const { data: newPat } = await supabase.from("patients").insert([{
-              paciente: c.patient_name,
-              cpf: c.cpf,
-              sus: c.sus_card,
-              telefone: c.phone,
-              data: format(new Date(), "dd.MM"),
-            }]).select().single()
-            if (newPat) {
-              patient_id = newPat.id
-              // No need to update local patients state here as loadData will handle it, 
-              // or we could push it manually if needed for immediate sync.
+            console.log("Criando novo paciente na tabela mestre...")
+            try {
+              // Tentativa de criação silenciosa do paciente
+              const { data: newPat, error: patError } = await supabase.from("patients").insert([{
+                paciente: c.patient_name,
+                cpf: c.cpf,
+                sus: c.sus_card,
+                telefone: c.phone || "",
+                data: format(new Date(), "dd.MM"),
+                // Campos obrigatórios se o ALTER TABLE não tiver sido aplicado
+                ordem: 0,
+                prontuario: `CONS-${c.cpf.slice(-4)}-${format(new Date(), "yy")}`
+              }]).select().single()
+
+              if (patError) {
+                console.warn("Erro ao vincular paciente (tabela mestre):", patError)
+                // Não interrompemos o agendamento se falhar a criação do paciente mestre
+              } else if (newPat) {
+                patient_id = newPat.id
+                console.log("Paciente criado com sucesso:", patient_id)
+              }
+            } catch (patCatch) {
+              console.warn("Exceção ao criar paciente mestre:", patCatch)
             }
           }
         }
 
+        console.log("Inserindo na tabela consultations com patient_id:", patient_id)
         const { data, error } = await supabase
           .from("consultations")
-          .insert([{ ...c, patient_id, status: "Agendado" }])
+          .insert([{
+            ...c,
+            patient_id: patient_id || null,
+            status: "Agendado"
+          }])
           .select()
           .single()
 
-        if (error) throw error
+        if (error) {
+          console.error("Erro Supabase (Consultations):", error)
+          throw error
+        }
+
+        if (!data) throw new Error("Nenhum dado retornado após inserção")
 
         setConsultations((prev) => {
           const next = [data, ...prev]
           localStorage.setItem("hto_consultations", JSON.stringify(next))
           return next
         })
+
         return { success: true, message: "Consulta agendada com sucesso!" }
-      } catch (e) {
-        console.error("Erro ao agendar consulta:", e)
-        return { success: false, message: "Erro ao agendar consulta." }
+      } catch (e: any) {
+        console.error("Erro completo ao agendar consulta:", e)
+        return {
+          success: false,
+          message: `Erro ao agendar consulta: ${e.message || "Erro desconhecido"}`
+        }
       }
     },
     [supabase, doctorSlots, consultations, patients]
