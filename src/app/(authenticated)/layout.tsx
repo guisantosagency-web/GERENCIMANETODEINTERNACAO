@@ -10,8 +10,8 @@ import { Footer } from "@/components/footer"
 import { SidebarProvider, useSidebar } from "@/lib/sidebar-context"
 import { cn } from "@/lib/utils"
 
-const adminRoutes = ["/dashboard", "/internacoes", "/admin", "/triagem", "/recepcao"]
-const userRoutes = ["/internacoes", "/triagem", "/recepcao"]
+const adminRoutes = ["/dashboard", "/internacoes", "/admin", "/triagem", "/recepcao", "/portal"]
+const userRoutes = ["/internacoes", "/triagem", "/recepcao", "/portal"]
 
 function AuthenticatedLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -29,12 +29,14 @@ function AuthenticatedLayoutContent({ children }: { children: React.ReactNode })
       const allowedRoutes = user.role === "admin" ? adminRoutes : userRoutes
       const hasAccess = allowedRoutes.some((route) => pathname.startsWith(route))
 
+      // No redirect if at root/login
+      if (pathname === "/") return
+
       if (!hasAccess) {
         if (user.role === "admin") {
-          router.push("/dashboard")
+          router.push("/portal")
         } else if (user.allowedModules && user.allowedModules.length > 0) {
-          const firstModule = user.allowedModules[0].toLowerCase()
-          router.push(`/${firstModule}`)
+          router.push("/portal")
         } else {
           router.push("/internacoes")
         }

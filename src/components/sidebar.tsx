@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils"
 import { useSidebar } from "@/lib/sidebar-context"
 
 const adminMenuItems = [
-  { id: "dashboard", href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, color: "text-blue-500", bg: "bg-blue-500/10" },
+  { id: "portal", href: "/portal", label: "Módulos", icon: LayoutDashboard, color: "text-amber-500", bg: "bg-amber-500/10" },
+  { id: "dashboard", href: "/dashboard", label: "Dashboard", icon: Activity, color: "text-blue-500", bg: "bg-blue-500/10" },
   { id: "internacoes", href: "/internacoes", label: "Internações", icon: Users, color: "text-primary", bg: "bg-primary/10" },
   { id: "triagem", href: "/triagem", label: "Triagem", icon: ClipboardCheck, color: "text-emerald-500", bg: "bg-emerald-500/10" },
   { id: "recepcao", href: "/recepcao", label: "Recepção", icon: PhoneCall, color: "text-purple-500", bg: "bg-purple-500/10" },
@@ -35,6 +36,7 @@ export function Sidebar() {
   const menuItems = useMemo(() => {
     if (user?.role === "admin") return adminMenuItems
     return adminMenuItems.filter(item =>
+      item.id === "portal" ||
       item.id === "dashboard" ||
       user?.allowedModules?.includes(item.id.toUpperCase()) ||
       user?.allowedModules?.includes(item.label.toUpperCase())
