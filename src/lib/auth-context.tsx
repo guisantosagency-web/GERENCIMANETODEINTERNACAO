@@ -1008,6 +1008,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               } else if (newPat) {
                 patient_id = newPat.id
                 console.log("Paciente criado com sucesso:", patient_id)
+
+                // Atualizar o estado local de pacientes para aparecer imediatamente na aba de cadastros
+                const newLocalPat: Patient = {
+                  id: newPat.id,
+                  ordem: newPat.ordem || 0,
+                  data: newPat.data || format(new Date(), "dd.MM"),
+                  paciente: newPat.paciente,
+                  cidadeOrigem: newPat.cidade_origem || "",
+                  estado: newPat.estado || "MA",
+                  horario: newPat.horario || "",
+                  leito: newPat.leito || "",
+                  sus: newPat.sus || "",
+                  cpf: newPat.cpf || "",
+                  dataNascimento: newPat.data_nascimento || "",
+                  idade: newPat.idade || "",
+                  procedencia: newPat.procedencia || "",
+                  isResidencia: newPat.is_residencia || false,
+                  destino: newPat.destino || "",
+                  prontuario: newPat.prontuario || "",
+                  medico: newPat.medico || "",
+                  procedimento: newPat.procedimento || "",
+                  recepcionista: newPat.recepcionista || "",
+                  telefone: newPat.telefone || ""
+                }
+
+                setPatientsState(prev => {
+                  const next = [...prev, newLocalPat]
+                  localStorage.setItem("hto_patients", JSON.stringify(next))
+                  return next
+                })
               }
             } catch (patCatch) {
               console.warn("Exceção ao criar paciente mestre:", patCatch)

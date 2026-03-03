@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { useAuth, type Patient } from "@/lib/auth-context"
+import { useAuth } from "@/lib/auth-context"
+import type { Patient } from "@/lib/data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +21,13 @@ import {
 import { Label } from "@/components/ui/label"
 
 export function PatientRegistry() {
+    const { patients, consultations, updatePatient, deletePatient } = useAuth()
+    const [searchTerm, setSearchTerm] = useState("")
+    const [editingPatient, setEditingPatient] = useState<Patient | null>(null)
+    const [isEditOpen, setIsEditOpen] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null)
+
     const { patients, updatePatient, deletePatient } = useAuth()
     const [searchTerm, setSearchTerm] = useState("")
     const [editingPatient, setEditingPatient] = useState<Patient | null>(null)
@@ -32,7 +40,12 @@ export function PatientRegistry() {
             p.paciente.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (p.cpf && p.cpf.includes(searchTerm)) ||
             (p.sus && p.sus.includes(searchTerm))
-        ).sort((a, b) => a.paciente.localeCompare(b.paciente))
+        ).sort((a, b) => {
+            // Sort by newly added first, then name
+            if (a.id > b.id) return -1
+            if (a.id < b.id) return 1
+            return a.paciente.localeCompare(b.paciente)
+        })
     }, [patients, searchTerm])
 
     const handleEdit = (patient: Patient) => {
