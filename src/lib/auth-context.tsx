@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo, t
 import { createBrowserClient } from "@supabase/ssr"
 import { format } from "date-fns"
 import { users as initialUsers, doctors as initialDoctors, receptionists as initialReceptionists, type User, type Doctor, type Receptionist, type Patient } from "./data"
+export { type User, type Doctor, type Receptionist, type Patient } from "./data"
 
 export interface Logos { logo_hto: string | null; logo_maranhao: string | null; logo_instituto: string | null; logo_sus: string | null }
 export interface Procedencia { id: string; name: string }
@@ -71,7 +72,7 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const retry = async (fn: () => Promise<any>, r = 3, d = 500): Promise<any> => {
+const retry = async <T,>(fn: () => PromiseLike<T>, r = 3, d = 500): Promise<T> => {
   let e
   for (let i = 0; i < r; i++) {
     try {

@@ -48,10 +48,10 @@ export function PatientTable({ patients, onEdit, showActions = true, search }: P
       const s = search.toLowerCase()
       filtered = patients.filter(
         (p) =>
-          p.paciente.toLowerCase().includes(s) ||
-          p.prontuario.toLowerCase().includes(s) ||
-          p.procedimento.toLowerCase().includes(s) ||
-          p.cidadeOrigem.toLowerCase().includes(s) ||
+          (p.paciente || "").toLowerCase().includes(s) ||
+          (p.prontuario || "").toLowerCase().includes(s) ||
+          (p.procedimento || "").toLowerCase().includes(s) ||
+          (p.cidadeOrigem || "").toLowerCase().includes(s) ||
           (p.telefone && p.telefone.includes(s)) ||
           (p.cpf && p.cpf.includes(s)),
       )
@@ -65,8 +65,8 @@ export function PatientTable({ patients, onEdit, showActions = true, search }: P
 
     // Ordenar por número de prontuário e ordem
     return [...filtered].sort((a, b) => {
-      const numA = getProntuarioNum(a.prontuario)
-      const numB = getProntuarioNum(b.prontuario)
+      const numA = getProntuarioNum(a.prontuario || "")
+      const numB = getProntuarioNum(b.prontuario || "")
       if (numA !== numB) return numA - numB
       return (Number(a.ordem) || 0) - (Number(b.ordem) || 0)
     })
@@ -116,119 +116,119 @@ export function PatientTable({ patients, onEdit, showActions = true, search }: P
     <div className="space-y-6">
       <div className="rounded-[2.5rem] glass-card border-none shadow-premium overflow-hidden bg-card/40">
         <div className="overflow-x-auto no-scrollbar">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent border-b border-border/10">
-                  <TableHead className="w-16 px-8 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">#</TableHead>
-                  <TableHead className="px-6 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Prontuário</TableHead>
-                  <TableHead className="px-6 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Data</TableHead>
-                  <TableHead className="px-6 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Paciente</TableHead>
-                  <TableHead className="px-6 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">CPF</TableHead>
-                  <TableHead className="px-6 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Cidade</TableHead>
-                  <TableHead className="px-6 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Leito</TableHead>
-                  <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedPatients.length > 0 ? (
-                  paginatedPatients.map((patient, index) => (
-                    <TableRow key={patient.id} className="group hover:bg-primary/[0.04] transition-all duration-500 border-b border-border/5 last:border-0 relative">
-                      <TableCell className="px-8 py-6">
-                        <span className="font-black font-space text-primary/30 group-hover:text-primary group-hover:scale-110 inline-block transition-all">
-                          {(currentPage - 1) * itemsPerPage + index + 1}
-                        </span>
-                      </TableCell>
-                      <TableCell className="px-6 py-6">
-                        <div className="relative inline-block">
-                          <Badge variant="outline" className="font-mono text-[10px] font-black py-1.5 px-3 bg-background/50 border-border/20 rounded-xl group-hover:border-primary/40 group-hover:bg-background transition-all shadow-sm">
-                            {patient.prontuario}
-                          </Badge>
-                          <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-6 py-6">
-                        <div className="flex flex-col">
-                          <span className="font-black text-sm text-foreground/80 group-hover:text-foreground transition-colors">{patient.data}</span>
-                          <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">Registrado</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-6 py-6">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-black text-base text-foreground group-hover:text-primary transition-all uppercase tracking-tight leading-none">
-                            {patient.paciente}
-                          </span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest bg-muted/20 px-2 py-0.5 rounded-md">
-                              {patient.idade} ANOS
-                            </span>
-                            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest bg-muted/20 px-2 py-0.5 rounded-md">
-                              {patient.sexo}
-                            </span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-6 py-6">
-                        <span className="text-xs font-bold text-muted-foreground/60 font-mono tracking-tighter group-hover:text-muted-foreground transition-colors">{patient.cpf || "-"}</span>
-                      </TableCell>
-                      <TableCell className="px-6 py-6">
-                        <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-secondary/40 group-hover:bg-secondary group-hover:scale-125 transition-all" />
-                          <span className="text-xs font-black text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">{patient.cidadeOrigem || "-"}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-6 py-6">
-                        <Badge 
-                          variant={getLeiteType(patient.leito)} 
-                          className={cn(
-                            "text-[10px] px-4 py-1.5 font-black rounded-xl shadow-lg transition-all duration-500 uppercase tracking-widest border-none",
-                            getLeiteType(patient.leito) === "destructive" && "bg-red-500 text-white shadow-red-500/20 group-hover:shadow-red-500/40 group-hover:scale-105",
-                            getLeiteType(patient.leito) === "default" && "bg-primary text-primary-foreground shadow-primary/20 group-hover:shadow-primary/40 group-hover:scale-105",
-                            getLeiteType(patient.leito) === "secondary" && "bg-blue-500 text-white shadow-blue-500/20 group-hover:shadow-blue-500/40 group-hover:scale-105"
-                          )}
-                        >
-                          {patient.leito}
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent border-b border-border/10">
+                <TableHead className="w-16 px-8 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">#</TableHead>
+                <TableHead className="px-6 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Prontuário</TableHead>
+                <TableHead className="px-6 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Data</TableHead>
+                <TableHead className="px-6 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Paciente</TableHead>
+                <TableHead className="px-6 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">CPF</TableHead>
+                <TableHead className="px-6 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Cidade</TableHead>
+                <TableHead className="px-6 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Leito</TableHead>
+                <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedPatients.length > 0 ? (
+                paginatedPatients.map((patient, index) => (
+                  <TableRow key={patient.id} className="group hover:bg-primary/[0.04] transition-all duration-500 border-b border-border/5 last:border-0 relative">
+                    <TableCell className="px-8 py-6">
+                      <span className="font-black font-space text-primary/30 group-hover:text-primary group-hover:scale-110 inline-block transition-all">
+                        {(currentPage - 1) * itemsPerPage + index + 1}
+                      </span>
+                    </TableCell>
+                    <TableCell className="px-6 py-6">
+                      <div className="relative inline-block">
+                        <Badge variant="outline" className="font-mono text-[10px] font-black py-1.5 px-3 bg-background/50 border-border/20 rounded-xl group-hover:border-primary/40 group-hover:bg-background transition-all shadow-sm">
+                          {patient.prontuario}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="px-8 py-6 text-right">
-                        <div className="flex justify-end items-center gap-2 opacity-40 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
-                          <FichaInternacaoModal patient={patient} />
-                          
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-10 w-10 rounded-2xl hover:bg-primary/10 hover:text-primary transition-all duration-300"
-                            onClick={() => handleOpenDetails(patient)}
-                          >
-                            <Eye className="h-5 w-5" />
-                          </Button>
-
-                          {onEdit && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-10 w-10 rounded-2xl hover:bg-amber-500/10 hover:text-amber-500 transition-all duration-300"
-                              onClick={() => onEdit(patient)}
-                            >
-                              <Edit className="h-5 w-5" />
-                            </Button>
-                          )}
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-10 w-10 rounded-2xl hover:bg-red-500/10 hover:text-red-500 transition-all duration-300"
-                            onClick={() => {
-                              setPatientToDelete(patient)
-                              setDeleteDialogOpen(true)
-                            }}
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </Button>
+                        <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-6 py-6">
+                      <div className="flex flex-col">
+                        <span className="font-black text-sm text-foreground/80 group-hover:text-foreground transition-colors">{patient.data}</span>
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">Registrado</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-6 py-6">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-black text-base text-foreground group-hover:text-primary transition-all uppercase tracking-tight leading-none">
+                          {patient.paciente}
+                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest bg-muted/20 px-2 py-0.5 rounded-md">
+                            {patient.idade} ANOS
+                          </span>
+                          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest bg-muted/20 px-2 py-0.5 rounded-md">
+                            {patient.sexo}
+                          </span>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-6 py-6">
+                      <span className="text-xs font-bold text-muted-foreground/60 font-mono tracking-tighter group-hover:text-muted-foreground transition-colors">{patient.cpf || "-"}</span>
+                    </TableCell>
+                    <TableCell className="px-6 py-6">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-secondary/40 group-hover:bg-secondary group-hover:scale-125 transition-all" />
+                        <span className="text-xs font-black text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">{patient.cidadeOrigem || "-"}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-6 py-6">
+                      <Badge
+                        variant={getLeiteType(patient.leito)}
+                        className={cn(
+                          "text-[10px] px-4 py-1.5 font-black rounded-xl shadow-lg transition-all duration-500 uppercase tracking-widest border-none",
+                          getLeiteType(patient.leito) === "destructive" && "bg-red-500 text-white shadow-red-500/20 group-hover:shadow-red-500/40 group-hover:scale-105",
+                          getLeiteType(patient.leito) === "default" && "bg-primary text-primary-foreground shadow-primary/20 group-hover:shadow-primary/40 group-hover:scale-105",
+                          getLeiteType(patient.leito) === "secondary" && "bg-blue-500 text-white shadow-blue-500/20 group-hover:shadow-blue-500/40 group-hover:scale-105"
+                        )}
+                      >
+                        {patient.leito}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="px-8 py-6 text-right">
+                      <div className="flex justify-end items-center gap-2 opacity-40 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                        <FichaInternacaoModal patient={patient} />
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-10 w-10 rounded-2xl hover:bg-primary/10 hover:text-primary transition-all duration-300"
+                          onClick={() => handleOpenDetails(patient)}
+                        >
+                          <Eye className="h-5 w-5" />
+                        </Button>
+
+                        {onEdit && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 rounded-2xl hover:bg-amber-500/10 hover:text-amber-500 transition-all duration-300"
+                            onClick={() => onEdit(patient)}
+                          >
+                            <Edit className="h-5 w-5" />
+                          </Button>
+                        )}
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-10 w-10 rounded-2xl hover:bg-red-500/10 hover:text-red-500 transition-all duration-300"
+                          onClick={() => {
+                            setPatientToDelete(patient)
+                            setDeleteDialogOpen(true)
+                          }}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
                 <TableRow>
                   <TableCell colSpan={8} className="h-64 text-center">
                     <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground">
@@ -275,16 +275,16 @@ export function PatientTable({ patients, onEdit, showActions = true, search }: P
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            
+
             <div className="flex items-center gap-1 mx-2">
               {[...Array(Math.min(5, totalPages))].map((_, i) => {
                 let pageNum = currentPage
                 if (currentPage <= 3) pageNum = i + 1
                 else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i
                 else pageNum = currentPage - 2 + i
-                
+
                 if (pageNum < 1 || pageNum > totalPages) return null
-                
+
                 return (
                   <Button
                     key={pageNum}
@@ -292,8 +292,8 @@ export function PatientTable({ patients, onEdit, showActions = true, search }: P
                     size="icon"
                     className={cn(
                       "h-10 w-10 rounded-xl font-black font-space transition-all duration-500",
-                      currentPage === pageNum 
-                        ? "bg-primary text-primary-foreground shadow-indicator" 
+                      currentPage === pageNum
+                        ? "bg-primary text-primary-foreground shadow-indicator"
                         : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
                     )}
                     onClick={() => goToPage(pageNum)}
@@ -333,7 +333,7 @@ export function PatientTable({ patients, onEdit, showActions = true, search }: P
             <div className="absolute top-0 right-0 p-20 opacity-5 -rotate-12">
               <FileText className="h-64 w-64" />
             </div>
-            
+
             <DialogHeader className="relative">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-widest border border-primary/20 mb-4">
                 <FileText className="h-3 w-3" />
@@ -347,7 +347,7 @@ export function PatientTable({ patients, onEdit, showActions = true, search }: P
               </DialogDescription>
             </DialogHeader>
           </div>
-          
+
           {selectedPatient && (
             <div className="p-10 pt-0 overflow-y-auto max-h-[60vh] no-scrollbar">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -358,9 +358,9 @@ export function PatientTable({ patients, onEdit, showActions = true, search }: P
                   { label: "Data Nasc.", value: selectedPatient.dataNascimento },
                   { label: "Idade", value: `${selectedPatient.idade} anos` },
                   { label: "Sexo", value: selectedPatient.sexo },
-                    { label: "Cartão SUS", value: selectedPatient.sus || "-" },
-                    { label: "Telefone", value: selectedPatient.telefone || "-", bold: true },
-                    { label: "Cidade Origem", value: selectedPatient.cidadeOrigem, bold: true },
+                  { label: "Cartão SUS", value: selectedPatient.sus || "-" },
+                  { label: "Telefone", value: selectedPatient.telefone || "-", bold: true },
+                  { label: "Cidade Origem", value: selectedPatient.cidadeOrigem, bold: true },
 
                   { label: "Estado", value: selectedPatient.estado },
                   { label: "Internação", value: `${selectedPatient.data} às ${selectedPatient.horario}`, bold: true },
@@ -396,7 +396,7 @@ export function PatientTable({ patients, onEdit, showActions = true, search }: P
               </div>
             </div>
           )}
-          
+
           <div className="p-8 bg-card/50 backdrop-blur-xl border-t border-border/10 flex justify-end gap-3">
             <Button variant="outline" onClick={() => setIsDetailsOpen(false)} className="rounded-2xl px-8 h-12 border-border/20 font-black uppercase text-xs tracking-widest hover:bg-muted/10">
               Fechar
@@ -415,22 +415,22 @@ export function PatientTable({ patients, onEdit, showActions = true, search }: P
             <div className="p-5 rounded-[2rem] bg-red-500/10 text-red-500 shadow-indicator animate-bounce-slow">
               <Trash2 className="h-10 w-10" />
             </div>
-            
+
             <div className="space-y-2">
-                <DialogHeader>
-                  <DialogTitle className="text-3xl font-black font-space tracking-tight text-red-500 uppercase">Atenção!</DialogTitle>
-                  <DialogDescription asChild className="text-base font-medium text-muted-foreground">
-                    <div>
-                      Você está prestes a excluir permanentemente o registro de:
-                      <div className="mt-4 p-4 rounded-2xl bg-muted/10 border border-border/10">
-                        <span className="block font-black text-foreground text-lg uppercase">{patientToDelete?.paciente}</span>
-                        <span className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Prontuário: {patientToDelete?.prontuario}</span>
-                      </div>
+              <DialogHeader>
+                <DialogTitle className="text-3xl font-black font-space tracking-tight text-red-500 uppercase">Atenção!</DialogTitle>
+                <DialogDescription asChild className="text-base font-medium text-muted-foreground">
+                  <div>
+                    Você está prestes a excluir permanentemente o registro de:
+                    <div className="mt-4 p-4 rounded-2xl bg-muted/10 border border-border/10">
+                      <span className="block font-black text-foreground text-lg uppercase">{patientToDelete?.paciente}</span>
+                      <span className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Prontuário: {patientToDelete?.prontuario}</span>
                     </div>
-                  </DialogDescription>
-                </DialogHeader>
+                  </div>
+                </DialogDescription>
+              </DialogHeader>
             </div>
-            
+
             <div className="flex w-full gap-3 mt-4">
               <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} className="flex-1 rounded-2xl h-14 font-black uppercase text-[10px] tracking-widest border-border/20">
                 Cancelar

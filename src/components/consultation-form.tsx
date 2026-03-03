@@ -335,7 +335,7 @@ export function ConsultationForm() {
 
                     <Button
                         type="submit"
-                        disabled={isSaving || (availability && availability.available === 0)}
+                        disabled={isSaving || availability?.available === 0}
                         className="w-full h-16 rounded-[1.5rem] bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-sm shadow-premium transition-all duration-300 disabled:opacity-50"
                     >
                         <Save className="h-5 w-5 mr-3" />

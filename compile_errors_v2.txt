@@ -1,0 +1,10 @@
+src/app/(authenticated)/internacoes/page.tsx(249,9): error TS2322: Type '{ patient: Patient | null; isOpen: boolean; onClose: () => void; onSave: (updatedPatient: Patient) => Promise<{ success: boolean; message: string; }>; saveResult: { ...; } | null; }' is not assignable to type 'IntrinsicAttributes & EditPatientModalProps'.
+  Property 'saveResult' does not exist on type 'IntrinsicAttributes & EditPatientModalProps'.
+src/components/edit-procedencia-modal.tsx(51,25): error TS2322: Type '{ children: Element[]; open: boolean; onSetChange: Dispatch<SetStateAction<boolean>>; }' is not assignable to type 'IntrinsicAttributes & DialogProps'.
+  Property 'onSetChange' does not exist on type 'IntrinsicAttributes & DialogProps'.
+src/components/ErrorReporter.tsx(14,19): error TS2554: Expected 1 arguments, but got 0.
+src/components/patient-table.tsx(52,11): error TS18048: 'p.prontuario' is possibly 'undefined'.
+src/components/patient-table.tsx(68,37): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/patient-table.tsx(69,37): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.

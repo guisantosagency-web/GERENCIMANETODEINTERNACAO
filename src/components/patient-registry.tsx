@@ -21,13 +21,6 @@ import {
 import { Label } from "@/components/ui/label"
 
 export function PatientRegistry() {
-    const { patients, consultations, updatePatient, deletePatient } = useAuth()
-    const [searchTerm, setSearchTerm] = useState("")
-    const [editingPatient, setEditingPatient] = useState<Patient | null>(null)
-    const [isEditOpen, setIsEditOpen] = useState(false)
-    const [isDeleting, setIsDeleting] = useState(false)
-    const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null)
-
     const { patients, updatePatient, deletePatient } = useAuth()
     const [searchTerm, setSearchTerm] = useState("")
     const [editingPatient, setEditingPatient] = useState<Patient | null>(null)

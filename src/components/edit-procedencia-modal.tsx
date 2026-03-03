@@ -48,7 +48,7 @@ export function EditProcedenciaModal({ procedencia }: EditProcedenciaModalProps)
   }
 
   return (
-    <Dialog open={open} onSetChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           variant="ghost"
