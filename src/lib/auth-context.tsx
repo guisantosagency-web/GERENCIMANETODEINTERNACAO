@@ -1054,7 +1054,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateConsultation = useCallback(
     async (c: Consultation) => {
       try {
-        await supabase
+        // Atualizar consulta
+        const { error: conError } = await supabase
           .from("consultations")
           .update({
             patient_name: c.patient_name,
@@ -1070,6 +1071,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             updated_at: new Date().toISOString()
           })
           .eq("id", c.id)
+
+        if (conError) throw conError
+
+        // Se houver um patient_id vinculado, atualizar dados mestres do paciente
+        if (c.patient_id) {
+          try {
+            await supabase.from("patients").update({
+              paciente: c.patient_name,
+              cpf: c.cpf,
+              sus: c.sus_card,
+              telefone: c.phone,
+              data_nascimento: c.birth_date,
+              // municipio_nascimento ou cidade_origem? No script 1 é cidade_origem.
+              cidade_origem: c.municipio
+            }).eq("id", c.patient_id)
+
+            // Atualizar no local state de pacientes também
+            setPatientsState(prev => prev.map(p => p.id === c.patient_id ? {
+              ...p,
+              paciente: c.patient_name,
+              cpf: c.cpf || "",
+              sus: c.sus_card || "",
+              telefone: c.phone || "",
+              dataNascimento: c.birth_date || "",
+              cidadeOrigem: c.municipio || ""
+            } : p))
+          } catch (patErr) {
+            console.warn("Erro ao sincronizar dados no cadastro de paciente:", patErr)
+          }
+        }
 
         setConsultations((prev) => {
           const next = prev.map(con => con.id === c.id ? c : con)

@@ -194,21 +194,57 @@ export function ConsultationControlBoard() {
                                                                 </div>
 
                                                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm font-medium">
-                                                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                                                        <Fingerprint className="h-4 w-4 shrink-0" />
-                                                                        <span>CPF: {consultation.cpf || "N/A"}</span>
+                                                                    <div className="flex flex-col gap-1.5">
+                                                                        <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">CPF</Label>
+                                                                        {editingId === consultation.id ? (
+                                                                            <Input
+                                                                                className="h-9 rounded-xl bg-white/50 py-1"
+                                                                                value={editForm?.cpf || ""}
+                                                                                onChange={(e) => setEditForm({ ...editForm!, cpf: e.target.value })}
+                                                                            />
+                                                                        ) : (
+                                                                            <div className="flex items-center gap-2 text-muted-foreground px-1">
+                                                                                <Fingerprint className="h-4 w-4 shrink-0" />
+                                                                                <span>{consultation.cpf || "N/A"}</span>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
-                                                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                                                        <FileText className="h-4 w-4 shrink-0" />
-                                                                        <span>SUS: {consultation.sus_card || "N/A"}</span>
+                                                                    <div className="flex flex-col gap-1.5">
+                                                                        <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">SUS</Label>
+                                                                        {editingId === consultation.id ? (
+                                                                            <Input
+                                                                                className="h-9 rounded-xl bg-white/50 py-1"
+                                                                                value={editForm?.sus_card || ""}
+                                                                                onChange={(e) => setEditForm({ ...editForm!, sus_card: e.target.value })}
+                                                                            />
+                                                                        ) : (
+                                                                            <div className="flex items-center gap-2 text-muted-foreground px-1">
+                                                                                <FileText className="h-4 w-4 shrink-0" />
+                                                                                <span>{consultation.sus_card || "N/A"}</span>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
-                                                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                                                        <Phone className="h-4 w-4 shrink-0" />
-                                                                        <span>{consultation.phone || "Sem Telefone"}</span>
+                                                                    <div className="flex flex-col gap-1.5">
+                                                                        <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Telefone</Label>
+                                                                        {editingId === consultation.id ? (
+                                                                            <Input
+                                                                                className="h-9 rounded-xl bg-white/50 py-1"
+                                                                                value={editForm?.phone || ""}
+                                                                                onChange={(e) => setEditForm({ ...editForm!, phone: e.target.value })}
+                                                                            />
+                                                                        ) : (
+                                                                            <div className="flex items-center gap-2 text-muted-foreground px-1">
+                                                                                <Phone className="h-4 w-4 shrink-0" />
+                                                                                <span>{consultation.phone || "Sem Telefone"}</span>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
-                                                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                                                        <Clock className="h-4 w-4 shrink-0" />
-                                                                        <span>Resp: {consultation.receptionist_name || "Desconhecido"}</span>
+                                                                    <div className="flex flex-col gap-1.5">
+                                                                        <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Responsável</Label>
+                                                                        <div className="flex items-center gap-2 text-muted-foreground px-1 py-1.5">
+                                                                            <Clock className="h-4 w-4 shrink-0" />
+                                                                            <span>{consultation.receptionist_name || "Desconhecido"}</span>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
 
