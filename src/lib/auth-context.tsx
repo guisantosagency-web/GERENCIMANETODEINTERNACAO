@@ -983,8 +983,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Tentar vincular ou criar paciente na tabela mestre
         let patient_id = c.patient_id
-        if (!patient_id && c.cpf) {
-          const existing = patients.find(p => p.cpf === c.cpf)
+        if (!patient_id) {
+          const existing = c.cpf ? patients.find(p => p.cpf === c.cpf) : undefined
           if (existing) {
             patient_id = existing.id
             console.log("Paciente vinculado via CPF existente:", patient_id)
@@ -994,13 +994,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // Tentativa de criação silenciosa do paciente
               const { data: newPat, error: patError } = await supabase.from("patients").insert([{
                 paciente: c.patient_name,
-                cpf: c.cpf,
-                sus: c.sus_card,
+                cpf: c.cpf || "",
+                sus: c.sus_card || "",
                 telefone: c.phone || "",
                 data: format(new Date(), "dd.MM"),
                 // Campos obrigatórios se o ALTER TABLE não tiver sido aplicado
                 ordem: 0,
-                prontuario: `CONS-${c.cpf.slice(-4)}-${format(new Date(), "yy")}`
+                prontuario: `CONS-${(c.cpf || "0000").slice(-4)}-${format(new Date(), "yy")}`
               }]).select().single()
 
               if (patError) {
