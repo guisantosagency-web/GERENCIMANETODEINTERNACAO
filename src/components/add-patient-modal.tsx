@@ -58,21 +58,12 @@ export function AddPatientModal({ onAdd, nextOrdem }: AddPatientModalProps) {
     procedencia: "",
     destino: "CENTRO CIRÚRGICO",
     medico: "PLANTONISTA",
-      procedimento: "",
-      recepcionista: "",
-      telefone: "",
-    })
+    procedimento: "",
+    recepcionista: "",
+    telefone: "",
+  })
 
 
-  useEffect(() => {
-    if (isOpen) {
-      const fetchNext = async () => {
-        const nextProntuario = await generateNextProntuario()
-        setFormData(prev => ({ ...prev, prontuario: nextProntuario }))
-      }
-      fetchNext()
-    }
-  }, [isOpen, generateNextProntuario])
 
   useEffect(() => {
     async function loadMunicipios() {
@@ -157,7 +148,10 @@ export function AddPatientModal({ onAdd, nextOrdem }: AddPatientModalProps) {
     setIsSubmitting(true)
 
     try {
-      if (!formData.paciente || !formData.prontuario || !formData.data) {
+      // Gerar o prontuário no momento do clique para evitar duplicidade
+      const nextProntuario = await generateNextProntuario()
+
+      if (!formData.paciente || !formData.data) {
         setError("Por favor, preencha todos os campos obrigatórios (*).")
         setIsSubmitting(false)
         return
@@ -166,6 +160,7 @@ export function AddPatientModal({ onAdd, nextOrdem }: AddPatientModalProps) {
       const result = await onAdd({
         ordem: nextOrdem,
         ...formData,
+        prontuario: nextProntuario,
         procedencia: isResidencia ? "RESIDÊNCIA" : formData.procedencia,
         isResidencia,
       })
@@ -259,33 +254,32 @@ export function AddPatientModal({ onAdd, nextOrdem }: AddPatientModalProps) {
                   </div>
                 </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="prontuario" className="font-bold text-xs">PRONTUÁRIO (ID) *</Label>
-                      <div className="relative">
-                        <Input
-                          id="prontuario"
-                          value={formData.prontuario}
-                          onChange={(e) => handleChange("prontuario", e.target.value.toUpperCase())}
-                          required
-                          className="h-12 rounded-xl border-border/40 font-mono font-bold bg-accent/10"
-                        />
-                        <Badge className="absolute right-3 top-1/2 -translate-y-1/2 bg-primary/20 text-primary border-none text-[10px] font-bold">AUTOMÁTICO</Badge>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="cpf" className="font-bold text-xs">CPF</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="prontuario" className="font-bold text-xs">PRONTUÁRIO (ID) *</Label>
+                    <div className="relative">
                       <Input
-                        id="cpf"
-                        value={formData.cpf}
-                        onChange={(e) => handleChange("cpf", formatCPF(e.target.value))}
-                        placeholder="000.000.000-00"
-                        maxLength={14}
-                        className="h-12 rounded-xl border-border/40 font-medium"
+                        id="prontuario"
+                        value={formData.prontuario || "GERADO AO SALVAR"}
+                        readOnly
+                        className="h-12 rounded-xl border-border/40 font-mono font-bold bg-muted/30 text-muted-foreground"
                       />
+                      <Badge className="absolute right-3 top-1/2 -translate-y-1/2 bg-primary/20 text-primary border-none text-[10px] font-bold">AUTOMÁTICO</Badge>
                     </div>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cpf" className="font-bold text-xs">CPF</Label>
+                    <Input
+                      id="cpf"
+                      value={formData.cpf}
+                      onChange={(e) => handleChange("cpf", formatCPF(e.target.value))}
+                      placeholder="000.000.000-00"
+                      maxLength={14}
+                      className="h-12 rounded-xl border-border/40 font-medium"
+                    />
+                  </div>
+                </div>
 
 
                 <div className="grid grid-cols-2 gap-4">
@@ -320,7 +314,7 @@ export function AddPatientModal({ onAdd, nextOrdem }: AddPatientModalProps) {
                   <Calendar className="h-4 w-4" />
                   Detalhes da Internação
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="data" className="font-bold text-xs">DATA DE INTERNAÇÃO *</Label>
@@ -381,82 +375,82 @@ export function AddPatientModal({ onAdd, nextOrdem }: AddPatientModalProps) {
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                        <PopoverContent className="w-[300px] p-0 rounded-2xl border-border/30 shadow-premium" align="start">
-                          <Command className="rounded-2xl">
-                            <CommandInput placeholder="Digite o nome..." className="h-12" />
-                            <CommandList>
-                              {isLoadingMunicipios ? (
-                                <div className="p-4 text-center text-sm text-muted-foreground">
-                                  Carregando municípios...
-                                </div>
-                              ) : (
-                                <>
-                                  <CommandEmpty>Nenhum município encontrado.</CommandEmpty>
-                                  <CommandGroup className="max-h-[300px] overflow-y-auto">
-                                    {municipiosIBGE.map((city) => (
-                                      <CommandItem
-                                        key={city}
-                                        value={city}
-                                        onSelect={() => {
-                                          handleChange("cidadeOrigem", city)
-                                          setOpenCity(false)
-                                        }}
-                                        className="rounded-lg"
-                                      >
-                                        <Check
-                                          className={cn(
-                                            "mr-2 h-4 w-4",
-                                            formData.cidadeOrigem === city ? "opacity-100" : "opacity-0",
-                                          )}
-                                        />
-                                        {city}
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </>
-                              )}
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
+                      <PopoverContent className="w-[300px] p-0 rounded-2xl border-border/30 shadow-premium" align="start">
+                        <Command className="rounded-2xl">
+                          <CommandInput placeholder="Digite o nome..." className="h-12" />
+                          <CommandList>
+                            {isLoadingMunicipios ? (
+                              <div className="p-4 text-center text-sm text-muted-foreground">
+                                Carregando municípios...
+                              </div>
+                            ) : (
+                              <>
+                                <CommandEmpty>Nenhum município encontrado.</CommandEmpty>
+                                <CommandGroup className="max-h-[300px] overflow-y-auto">
+                                  {municipiosIBGE.map((city) => (
+                                    <CommandItem
+                                      key={city}
+                                      value={city}
+                                      onSelect={() => {
+                                        handleChange("cidadeOrigem", city)
+                                        setOpenCity(false)
+                                      }}
+                                      className="rounded-lg"
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          formData.cidadeOrigem === city ? "opacity-100" : "opacity-0",
+                                        )}
+                                      />
+                                      {city}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </>
+                            )}
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
 
                     </Popover>
                   </div>
                 </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="leito" className="font-bold text-xs">LEITO *</Label>
-                      <Input
-                        id="leito"
-                        value={formData.leito}
-                        onChange={(e) => handleChange("leito", e.target.value.toUpperCase())}
-                        required
-                        placeholder="Ex: ALA B ENF 01 LT 01"
-                        className="h-12 rounded-xl border-border/40 font-bold"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="sus" className="font-bold text-xs">CARTÃO SUS</Label>
-                      <Input
-                        id="sus"
-                        value={formData.sus}
-                        onChange={(e) => handleChange("sus", e.target.value)}
-                        placeholder="000 0000 0000 0000"
-                        className="h-12 rounded-xl border-border/40 font-medium"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="telefone" className="font-bold text-xs">TELEFONE</Label>
-                      <Input
-                        id="telefone"
-                        value={formData.telefone}
-                        onChange={(e) => handleChange("telefone", formatPhone(e.target.value))}
-                        placeholder="(99) 99999-9999"
-                        maxLength={15}
-                        className="h-12 rounded-xl border-border/40 font-medium"
-                      />
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="leito" className="font-bold text-xs">LEITO *</Label>
+                    <Input
+                      id="leito"
+                      value={formData.leito}
+                      onChange={(e) => handleChange("leito", e.target.value.toUpperCase())}
+                      required
+                      placeholder="Ex: ALA B ENF 01 LT 01"
+                      className="h-12 rounded-xl border-border/40 font-bold"
+                    />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sus" className="font-bold text-xs">CARTÃO SUS</Label>
+                    <Input
+                      id="sus"
+                      value={formData.sus}
+                      onChange={(e) => handleChange("sus", e.target.value)}
+                      placeholder="000 0000 0000 0000"
+                      className="h-12 rounded-xl border-border/40 font-medium"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="telefone" className="font-bold text-xs">TELEFONE</Label>
+                    <Input
+                      id="telefone"
+                      value={formData.telefone}
+                      onChange={(e) => handleChange("telefone", formatPhone(e.target.value))}
+                      placeholder="(99) 99999-9999"
+                      maxLength={15}
+                      className="h-12 rounded-xl border-border/40 font-medium"
+                    />
+                  </div>
+                </div>
 
               </div>
 
@@ -641,10 +635,10 @@ export function AddPatientModal({ onAdd, nextOrdem }: AddPatientModalProps) {
                       <PopoverContent className="w-[300px] p-0 rounded-2xl border-border/30 shadow-premium" align="start">
                         <Command className="rounded-2xl">
                           <CommandInput placeholder="Buscar médico..." className="h-12" />
-                            <CommandList>
-                              <CommandEmpty>Nenhum médico cadastrado.</CommandEmpty>
-                              <CommandGroup className="p-2">
-                                {doctorsList.map((doc) => (
+                          <CommandList>
+                            <CommandEmpty>Nenhum médico cadastrado.</CommandEmpty>
+                            <CommandGroup className="p-2">
+                              {doctorsList.map((doc) => (
                                 <CommandItem
                                   key={doc.id}
                                   value={doc.name}
@@ -678,16 +672,16 @@ export function AddPatientModal({ onAdd, nextOrdem }: AddPatientModalProps) {
                       <SelectTrigger className="h-12 rounded-xl border-border/40 font-medium">
                         <SelectValue placeholder="Selecione..." />
                       </SelectTrigger>
-<SelectContent className="rounded-2xl border-border/30">
-                          {receptionistsList.filter((r) => r.name).map((r) => (
-                            <SelectItem key={r.id} value={r.name} className="rounded-lg">
-                              {r.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
+                      <SelectContent className="rounded-2xl border-border/30">
+                        {receptionistsList.filter((r) => r.name).map((r) => (
+                          <SelectItem key={r.id} value={r.name} className="rounded-lg">
+                            {r.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="procedimento" className="font-bold text-xs">PROCEDIMENTO *</Label>
                     <Input
@@ -706,19 +700,19 @@ export function AddPatientModal({ onAdd, nextOrdem }: AddPatientModalProps) {
         </div>
 
         <div className="p-8 bg-accent/5 border-t border-border/20 flex flex-col sm:flex-row gap-3">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => setIsOpen(false)} 
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsOpen(false)}
             disabled={isSubmitting}
             className="h-12 rounded-2xl flex-1 font-bold border-border/40 hover:bg-background"
           >
             Cancelar
           </Button>
-          <Button 
+          <Button
             form="add-patient-form"
-            type="submit" 
-            className="h-12 rounded-2xl flex-[2] bg-primary text-white font-bold shadow-premium transition-all duration-300 hover:scale-102" 
+            type="submit"
+            className="h-12 rounded-2xl flex-[2] bg-primary text-white font-bold shadow-premium transition-all duration-300 hover:scale-102"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -731,7 +725,7 @@ export function AddPatientModal({ onAdd, nextOrdem }: AddPatientModalProps) {
             )}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </DialogContent >
+    </Dialog >
   )
 }
