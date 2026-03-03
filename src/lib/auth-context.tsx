@@ -6,6 +6,26 @@ import { users as initialUsers, doctors as initialDoctors, receptionists as init
 export interface Logos { logo_hto: string | null; logo_maranhao: string | null; logo_instituto: string | null; logo_sus: string | null }
 export interface Procedencia { id: string; name: string }
 export interface VisitingHours { id: string; enfermaria: string; uti: string; trocas_acompanhantes: string }
+export interface DoctorSlot { id: string; doctor_id: string; date: string; max_slots: number }
+export interface Consultation {
+  id: string
+  patient_id?: number
+  patient_name: string
+  cpf?: string
+  sus_card?: string
+  phone?: string
+  birth_date?: string
+  municipio?: string
+  doctor_id: string
+  receptionist_name?: string
+  date: string
+  time?: string
+  sisreg?: string
+  procedencia?: string
+  destination?: string
+  status: string
+  created_at?: string
+}
 
 export interface AuthContextType {
   user: User | null
@@ -40,6 +60,12 @@ export interface AuthContextType {
   editProcedencia: (id: string, n: string) => Promise<void>
   visitingHours: VisitingHours | null
   updateVisitingHours: (h: Partial<Omit<VisitingHours, "id">>) => Promise<void>
+  doctorSlots: DoctorSlot[]
+  updateDoctorSlot: (s: Omit<DoctorSlot, "id">) => Promise<void>
+  consultations: Consultation[]
+  addConsultation: (c: Omit<Consultation, "id" | "status">) => Promise<{ success: boolean; message: string }>
+  updateConsultation: (c: Consultation) => Promise<void>
+  deleteConsultation: (id: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -71,6 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   })
   const [procedencias, setProcedenciasState] = useState<Procedencia[]>([])
   const [visitingHours, setVisitingHours] = useState<VisitingHours | null>(null)
+  const [doctorSlots, setDoctorSlots] = useState<DoctorSlot[]>([])
+  const [consultations, setConsultations] = useState<Consultation[]>([])
 
   const supabase = useMemo(
     () => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!),
@@ -78,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const checkProntuarioExists = useCallback(
-    (p: string, ex?: number) => patients.some((pat) => pat.prontuario.toUpperCase() === p.toUpperCase() && pat.id !== ex),
+    (p: string, ex?: number) => patients.some((pat) => pat.prontuario && pat.prontuario.toUpperCase() === p.toUpperCase() && pat.id !== ex),
     [patients],
   )
 
@@ -106,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.error("Erro ao gerar prontuário no banco, usando local:", e)
       const allNumbers = patients.map(p => {
-        const match = p.prontuario.match(/P(\d+)/)
+        const match = p.prontuario ? p.prontuario.match(/P(\d+)/) : null
         return match ? parseInt(match[1]) : 0
       })
       const maxNumber = Math.max(0, ...allNumbers)
@@ -134,13 +162,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (ch) setVisitingHours(JSON.parse(ch))
 
       // Busca paralela otimizada
-      const [pD, dD, rD, sD, proD, hD] = await Promise.all([
+      const [pD, dD, rD, sD, proD, hD, dsD, cD] = await Promise.all([
         retry(() => supabase.from("patients").select("*").order("ordem", { ascending: false }).limit(2000)),
         retry(() => supabase.from("doctors").select("*").order("name", { ascending: true })),
         retry(() => supabase.from("receptionists").select("*").order("name", { ascending: true })),
         retry(() => supabase.from("settings").select("*")),
         retry(() => supabase.from("procedencias").select("*").order("name", { ascending: true })),
         retry(() => supabase.from("visiting_hours").select("*").limit(1).maybeSingle()),
+        retry(() => supabase.from("doctor_slots").select("*")),
+        retry(() => supabase.from("consultations").select("*").order("created_at", { ascending: false })),
       ])
 
       if (pD.data) {
@@ -221,6 +251,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setVisitingHours(h)
         localStorage.setItem("hto_visiting_hours", JSON.stringify(h))
+      }
+
+      if (dsD.data) {
+        setDoctorSlots(dsD.data)
+        localStorage.setItem("hto_doctor_slots", JSON.stringify(dsD.data))
+      }
+
+      if (cD.data) {
+        const mc: Consultation[] = cD.data.map((c: any) => ({
+          id: c.id,
+          patient_id: c.patient_id,
+          patient_name: c.patient_name,
+          cpf: c.cpf,
+          sus_card: c.sus_card,
+          phone: c.phone,
+          birth_date: c.birth_date,
+          municipio: c.municipio,
+          doctor_id: c.doctor_id,
+          receptionist_name: c.receptionist_name,
+          date: c.date,
+          time: c.time,
+          sisreg: c.sisreg,
+          procedencia: c.procedencia,
+          destination: c.destination,
+          status: c.status,
+          created_at: c.created_at
+        }))
+        setConsultations(mc)
+        localStorage.setItem("hto_consultations", JSON.stringify(mc))
       }
     } catch (e) {
       console.error("Erro ao carregar dados:", e)
@@ -588,7 +647,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updatePatient = useCallback(
     async (p: Patient): Promise<{ success: boolean; message: string }> => {
-      if (checkProntuarioExists(p.prontuario, p.id)) return { success: false, message: "Prontuário já existe!" }
+      if (p.prontuario && checkProntuarioExists(p.prontuario, p.id)) return { success: false, message: "Prontuário já existe!" }
 
       // Sincronizar procedência automaticamente
       if (p.procedencia && !p.isResidencia) {
@@ -869,7 +928,145 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (e) { }
     },
-    [visitingHours, supabase],
+    [visitingHours, supabase]
+  )
+
+  const updateDoctorSlot = useCallback(
+    async (s: Omit<DoctorSlot, "id">) => {
+      try {
+        const { data, error } = await supabase
+          .from("doctor_slots")
+          .upsert({
+            doctor_id: s.doctor_id,
+            date: s.date,
+            max_slots: s.max_slots,
+            updated_at: new Date().toISOString()
+          }, { onConflict: "doctor_id,date" })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        setDoctorSlots((prev) => {
+          const exists = prev.findIndex(item => item.doctor_id === s.doctor_id && item.date === s.date)
+          let next
+          if (exists >= 0) {
+            next = [...prev]
+            next[exists] = data
+          } else {
+            next = [...prev, data]
+          }
+          localStorage.setItem("hto_doctor_slots", JSON.stringify(next))
+          return next
+        })
+      } catch (e) {
+        console.error("Erro ao atualizar vagas:", e)
+      }
+    },
+    [supabase]
+  )
+
+  const addConsultation = useCallback(
+    async (c: Omit<Consultation, "id" | "status">): Promise<{ success: boolean; message: string }> => {
+      try {
+        // Encontrar o slot do médico para o dia
+        const slot = doctorSlots.find(s => s.doctor_id === c.doctor_id && s.date === c.date)
+        const scheduledCount = consultations.filter(con => con.doctor_id === c.doctor_id && con.date === c.date).length
+
+        if (slot && scheduledCount >= slot.max_slots) {
+          return { success: false, message: "As vagas para este médico/dia já estão lotadas!" }
+        }
+
+        // Tentar vincular ou criar paciente na tabela mestre
+        let patient_id = c.patient_id
+        if (!patient_id && c.cpf) {
+          const existing = patients.find(p => p.cpf === c.cpf)
+          if (existing) {
+            patient_id = existing.id
+          } else {
+            const { data: newPat } = await supabase.from("patients").insert([{
+              paciente: c.patient_name,
+              cpf: c.cpf,
+              sus: c.sus_card,
+              telefone: c.phone,
+              data: format(new Date(), "dd.MM"),
+            }]).select().single()
+            if (newPat) {
+              patient_id = newPat.id
+              // No need to update local patients state here as loadData will handle it, 
+              // or we could push it manually if needed for immediate sync.
+            }
+          }
+        }
+
+        const { data, error } = await supabase
+          .from("consultations")
+          .insert([{ ...c, patient_id, status: "Agendado" }])
+          .select()
+          .single()
+
+        if (error) throw error
+
+        setConsultations((prev) => {
+          const next = [data, ...prev]
+          localStorage.setItem("hto_consultations", JSON.stringify(next))
+          return next
+        })
+        return { success: true, message: "Consulta agendada com sucesso!" }
+      } catch (e) {
+        console.error("Erro ao agendar consulta:", e)
+        return { success: false, message: "Erro ao agendar consulta." }
+      }
+    },
+    [supabase, doctorSlots, consultations, patients]
+  )
+
+  const updateConsultation = useCallback(
+    async (c: Consultation) => {
+      try {
+        await supabase
+          .from("consultations")
+          .update({
+            patient_name: c.patient_name,
+            cpf: c.cpf,
+            sus_card: c.sus_card,
+            phone: c.phone,
+            birth_date: c.birth_date,
+            municipio: c.municipio,
+            sisreg: c.sisreg,
+            procedencia: c.procedencia,
+            destination: c.destination,
+            status: c.status,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", c.id)
+
+        setConsultations((prev) => {
+          const next = prev.map(con => con.id === c.id ? c : con)
+          localStorage.setItem("hto_consultations", JSON.stringify(next))
+          return next
+        })
+      } catch (e) {
+        console.error("Erro ao atualizar consulta:", e)
+      }
+    },
+    [supabase]
+  )
+
+  const deleteConsultation = useCallback(
+    async (id: string) => {
+      try {
+        await supabase.from("consultations").delete().eq("id", id)
+        setConsultations((prev) => {
+          const next = prev.filter(con => con.id !== id)
+          localStorage.setItem("hto_consultations", JSON.stringify(next))
+          return next
+        })
+      } catch (e) {
+        console.error("Erro ao excluir consulta:", e)
+      }
+    },
+    [supabase]
   )
 
   const contextValue = useMemo(
@@ -906,6 +1103,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       removeProcedencia,
       editProcedencia,
       updateVisitingHours,
+      doctorSlots,
+      updateDoctorSlot,
+      consultations,
+      addConsultation,
+      updateConsultation,
+      deleteConsultation,
     }),
     [
       user,
@@ -940,6 +1143,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       removeProcedencia,
       editProcedencia,
       updateVisitingHours,
+      doctorSlots,
+      updateDoctorSlot,
+      consultations,
+      addConsultation,
+      updateConsultation,
+      deleteConsultation,
     ],
   )
 

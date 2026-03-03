@@ -14,7 +14,7 @@ export interface Receptionist {
 
 export interface Patient {
   id: number
-  ordem: number
+  ordem?: number
   data: string
   paciente: string
   cidadeOrigem: string
@@ -28,7 +28,7 @@ export interface Patient {
   procedencia: string
   isResidencia: boolean
   destino: string
-  prontuario: string
+  prontuario?: string
   medico: string
   procedimento: string
   recepcionista: string

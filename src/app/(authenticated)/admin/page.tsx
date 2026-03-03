@@ -33,8 +33,10 @@ import {
   Building2,
   Clock,
   Plus,
+  CalendarDays,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { DoctorSlotsManager } from "@/components/doctor-slots-manager"
 
 export default function AdminPage() {
   const {
@@ -49,6 +51,7 @@ export default function AdminPage() {
     visitingHours,
     updateVisitingHours,
     addProcedencia,
+    consultations,
   } = useAuth()
   const router = useRouter()
 
@@ -255,6 +258,17 @@ export default function AdminPage() {
             </div>
             <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500/20 to-violet-500/10">
               <Home className="h-5 w-5 text-violet-500" />
+            </div>
+          </div>
+        </div>
+        <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-orange-500/15 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Consultas</p>
+              <p className="text-3xl font-bold text-foreground mt-1">{consultations.length}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/10">
+              <CalendarDays className="h-5 w-5 text-orange-500" />
             </div>
           </div>
         </div>
@@ -508,6 +522,9 @@ export default function AdminPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Consultation Vacancy Management Section */}
+      <DoctorSlotsManager />
 
       {/* Logo Upload Section */}
       <LogoUploadSection />
