@@ -3,16 +3,18 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { LayoutDashboard, Users, Settings, LogOut, Menu, X, Hospital, ChevronLeft, ChevronRight, Activity, ShieldCheck } from "lucide-react"
-import { useState, useEffect } from "react"
+import { LayoutDashboard, Users, Settings, LogOut, Menu, X, Hospital, ChevronLeft, ChevronRight, Activity, ShieldCheck, ClipboardCheck, PhoneCall, Stethoscope, Search, UserRoundPlus } from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/lib/sidebar-context"
 
 const adminMenuItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, color: "text-blue-500", bg: "bg-blue-500/10" },
-  { href: "/internacoes", label: "Internações", icon: Users, color: "text-primary", bg: "bg-primary/10" },
-  { href: "/admin", label: "Admin", icon: Settings, color: "text-amber-500", bg: "bg-amber-500/10" },
+  { id: "dashboard", href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, color: "text-blue-500", bg: "bg-blue-500/10" },
+  { id: "internacoes", href: "/internacoes", label: "Internações", icon: Users, color: "text-primary", bg: "bg-primary/10" },
+  { id: "triagem", href: "/triagem", label: "Triagem", icon: ClipboardCheck, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+  { id: "recepcao", href: "/recepcao", label: "Recepção", icon: PhoneCall, color: "text-purple-500", bg: "bg-purple-500/10" },
+  { id: "admin", href: "/admin", label: "Admin", icon: Settings, color: "text-amber-500", bg: "bg-amber-500/10" },
 ]
 
 const userMenuItems = [{ href: "/internacoes", label: "Internações", icon: Users, color: "text-primary", bg: "bg-primary/10" }]
@@ -30,7 +32,14 @@ export function Sidebar() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const menuItems = user?.role === "admin" ? adminMenuItems : userMenuItems
+  const menuItems = useMemo(() => {
+    if (user?.role === "admin") return adminMenuItems
+    return adminMenuItems.filter(item =>
+      item.id === "dashboard" ||
+      user?.allowedModules?.includes(item.id.toUpperCase()) ||
+      user?.allowedModules?.includes(item.label.toUpperCase())
+    )
+  }, [user])
 
   return (
     <>
@@ -85,7 +94,7 @@ export function Sidebar() {
               </div>
               {!isCollapsed && (
                 <div className="min-w-0 animate-in fade-in slide-in-from-left-4 duration-500">
-                  <h1 className="font-black text-foreground text-lg tracking-tight leading-tight">HTO CAXIAS</h1>
+                  <h1 className="font-black text-foreground text-lg tracking-tight leading-tight">AMBULATORIO<br />DIGITAL</h1>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <Activity className="h-3 w-3 text-primary animate-pulse" />
                     <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Protocolo Live</span>
@@ -119,13 +128,13 @@ export function Sidebar() {
                 >
                   <Icon
                     className={cn(
-                      "h-5 w-5 transition-all duration-500 shrink-0", 
+                      "h-5 w-5 transition-all duration-500 shrink-0",
                       !isActive && "group-hover:scale-110 group-hover:text-primary",
                       isActive && "rotate-0 scale-110"
                     )}
                   />
                   {!isCollapsed && <span className="font-black font-space text-sm tracking-tight">{item.label}</span>}
-                  
+
                   {isActive && !isCollapsed && (
                     <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-primary-foreground shadow-indicator" />
                   )}
@@ -134,46 +143,46 @@ export function Sidebar() {
             })}
           </nav>
 
-              {/* Premium Footer Area */}
-              <div className={cn("px-3 pb-8 mt-auto flex flex-col gap-4", isCollapsed && "pb-12")}>
-                {/* Standalone Logout Button Above User Profile */}
-                <button
-                  onClick={logout}
-                  className={cn(
-                    "flex items-center gap-4 px-3 py-2.5 rounded-2xl transition-all duration-500 group relative bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white shadow-premium",
-                    isCollapsed && "justify-center px-0 h-10 w-10 mx-auto"
-                  )}
-                  title={isCollapsed ? "Encerrar Sessão" : undefined}
-                >
-                  <LogOut className={cn("h-5 w-5 shrink-0 transition-transform duration-500 group-hover:scale-110")} />
-                  {!isCollapsed && <span className="font-black font-space text-sm tracking-tight">Sair do Sistema</span>}
-                </button>
+          {/* Premium Footer Area */}
+          <div className={cn("px-3 pb-8 mt-auto flex flex-col gap-4", isCollapsed && "pb-12")}>
+            {/* Standalone Logout Button Above User Profile */}
+            <button
+              onClick={logout}
+              className={cn(
+                "flex items-center gap-4 px-3 py-2.5 rounded-2xl transition-all duration-500 group relative bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white shadow-premium",
+                isCollapsed && "justify-center px-0 h-10 w-10 mx-auto"
+              )}
+              title={isCollapsed ? "Encerrar Sessão" : undefined}
+            >
+              <LogOut className={cn("h-5 w-5 shrink-0 transition-transform duration-500 group-hover:scale-110")} />
+              {!isCollapsed && <span className="font-black font-space text-sm tracking-tight">Sair do Sistema</span>}
+            </button>
 
-                <div className={cn(
-                  "flex items-center gap-4 p-2 rounded-3xl bg-white/5 border border-white/5 group transition-all duration-500 hover:bg-white/10",
-                  isCollapsed && "px-0 justify-center h-12 w-12 mx-auto",
-                )}>
-                  <div className="relative shrink-0">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center ring-2 ring-primary/10 transition-all group-hover:scale-105 duration-500">
-                      <span className="text-primary font-black text-lg">{user?.name.charAt(0).toUpperCase()}</span>
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 p-1 rounded-lg bg-emerald-500 shadow-indicator ring-2 ring-card">
-                      <ShieldCheck className="h-2.5 w-2.5 text-white" />
-                    </div>
-                  </div>
-                  {!isCollapsed && (
-                    <div className="flex-1 min-w-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                      <p className="font-black text-foreground text-sm truncate uppercase tracking-tight">{user?.name}</p>
-                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-60">
-                        {user?.role === "admin" ? "Administrador" : "Operacional"}
-                      </p>
-                    </div>
-                  )}
+            <div className={cn(
+              "flex items-center gap-4 p-2 rounded-3xl bg-white/5 border border-white/5 group transition-all duration-500 hover:bg-white/10",
+              isCollapsed && "px-0 justify-center h-12 w-12 mx-auto",
+            )}>
+              <div className="relative shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center ring-2 ring-primary/10 transition-all group-hover:scale-105 duration-500">
+                  <span className="text-primary font-black text-lg">{user?.name.charAt(0).toUpperCase()}</span>
+                </div>
+                <div className="absolute -bottom-1 -right-1 p-1 rounded-lg bg-emerald-500 shadow-indicator ring-2 ring-card">
+                  <ShieldCheck className="h-2.5 w-2.5 text-white" />
                 </div>
               </div>
+              {!isCollapsed && (
+                <div className="flex-1 min-w-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                  <p className="font-black text-foreground text-sm truncate uppercase tracking-tight">{user?.name}</p>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-60">
+                    {user?.role === "admin" ? "Administrador" : "Operacional"}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
-        </aside>
-      </>
-    )
-  }
+        </div>
+      </aside>
+    </>
+  )
+}
 

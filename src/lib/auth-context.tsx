@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo, t
 import { createBrowserClient } from "@supabase/ssr"
 import { users as initialUsers, doctors as initialDoctors, receptionists as initialReceptionists, type User, type Doctor, type Receptionist, type Patient } from "./data"
 
-export interface Logos { logo_hto: string|null; logo_maranhao: string|null; logo_instituto: string|null; logo_sus: string|null }
+export interface Logos { logo_hto: string | null; logo_maranhao: string | null; logo_instituto: string | null; logo_sus: string | null }
 export interface Procedencia { id: string; name: string }
 export interface VisitingHours { id: string; enfermaria: string; uti: string; trocas_acompanhantes: string }
 
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const generateNextProntuario = useCallback(async () => {
     const currentYear = new Date().getFullYear().toString().slice(-2)
     const yearSuffix = `/${currentYear}`
-    
+
     try {
       // Busca os prontuários recentes para encontrar o maior número sequencial
       const { data, error } = await supabase
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const match = p.prontuario?.match(/P(\d+)/)
         return match ? parseInt(match[1]) : 0
       })
-      
+
       const maxNumber = Math.max(0, ...allNumbers)
       return `P${maxNumber + 1}${yearSuffix}`
     } catch (e) {
@@ -186,7 +186,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (rD.data) {
-        const mr: Receptionist[] = rD.data.map((r: any) => ({ id: r.id, name: r.name, username: r.username }))
+        const mr: Receptionist[] = rD.data.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          username: r.username,
+          allowedModules: r.allowed_modules || [],
+          allowedSubmodules: r.allowed_submodules || []
+        }))
         setReceptionistsState(mr)
         localStorage.setItem("hto_receptionists", JSON.stringify(mr))
       }
@@ -244,26 +250,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select("procedencia")
         .not("procedencia", "is", null)
         .neq("procedencia", "")
-      
+
       if (pError) throw pError
-      
+
       const uniqueNames = Array.from(new Set(
         pData
           .map(p => p.procedencia.toUpperCase().trim())
           .filter(n => n && n !== "RESIDÊNCIA" && n !== "RESIDENCIA")
       ))
-      
+
       if (uniqueNames.length === 0) return
 
       const { data: existingData } = await supabase.from("procedencias").select("name")
       const existingNames = new Set(existingData?.map(p => p.name.toUpperCase()) || [])
-      
+
       const newNames = uniqueNames.filter(n => !existingNames.has(n))
-      
+
       if (newNames.length > 0) {
         await supabase.from("procedencias").insert(newNames.map(name => ({ name })))
       }
-      
+
       const { data: updatedPro } = await supabase.from("procedencias").select("*").order("name", { ascending: true })
       if (updatedPro) {
         const mpro: Procedencia[] = updatedPro.map((p: any) => ({ id: p.id, name: p.name }))
@@ -307,7 +313,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (d: Doctor) => {
       try {
         await supabase.from("doctors").update({ name: d.name, specialty: d.specialty }).eq("id", d.id)
-      } catch (e) {}
+      } catch (e) { }
       setDoctorsState((prev) => {
         const ud = prev.map((doc) => (doc.id === d.id ? d : doc))
         localStorage.setItem("hto_doctors", JSON.stringify(ud))
@@ -321,7 +327,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (id: string) => {
       try {
         await supabase.from("doctors").delete().eq("id", id)
-      } catch (e) {}
+      } catch (e) { }
       setDoctorsState((prev) => {
         const ud = prev.filter((d) => d.id !== id)
         localStorage.setItem("hto_doctors", JSON.stringify(ud))
@@ -341,17 +347,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { data, error } = await supabase
           .from("receptionists")
-          .insert([{ name: r.name, username: r.username }])
+          .insert([{
+            name: r.name,
+            username: r.username,
+            allowed_modules: r.allowedModules || [],
+            allowed_submodules: r.allowedSubmodules || []
+          }])
           .select()
           .single()
         if (error) throw error
-        const nr: Receptionist = { id: data.id, name: data.name, username: data.username }
+        const nr: Receptionist = {
+          id: data.id,
+          name: data.name,
+          username: data.username,
+          allowedModules: data.allowed_modules || [],
+          allowedSubmodules: data.allowed_submodules || []
+        }
         setReceptionistsState((prev) => {
           const ur = [...prev, nr]
           localStorage.setItem("hto_receptionists", JSON.stringify(ur))
           return ur
         })
-        await supabase.from("system_users").insert([{ username: r.username, password: "@htocaxias", name: r.name, role: "user" }])
+        await supabase.from("system_users").insert([{
+          username: r.username,
+          password: "@htocaxias",
+          name: r.name,
+          role: "user",
+          allowed_modules: r.allowedModules || [],
+          allowed_submodules: r.allowedSubmodules || []
+        }])
       } catch (e) {
         const nr: Receptionist = { id: Date.now().toString(), ...r }
         setReceptionistsState((prev) => {
@@ -367,8 +391,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateReceptionist = useCallback(
     async (r: Receptionist) => {
       try {
-        await supabase.from("receptionists").update({ name: r.name, username: r.username }).eq("id", r.id)
-      } catch (e) {}
+        await supabase.from("receptionists")
+          .update({
+            name: r.name,
+            username: r.username,
+            allowed_modules: r.allowedModules || [],
+            allowed_submodules: r.allowedSubmodules || []
+          })
+          .eq("id", r.id)
+
+        await supabase.from("system_users")
+          .update({
+            name: r.name,
+            allowed_modules: r.allowedModules || [],
+            allowed_submodules: r.allowedSubmodules || []
+          })
+          .eq("username", r.username)
+      } catch (e) { }
       setReceptionistsState((prev) => {
         const ur = prev.map((rec) => (rec.id === r.id ? r : rec))
         localStorage.setItem("hto_receptionists", JSON.stringify(ur))
@@ -384,7 +423,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await supabase.from("receptionists").delete().eq("id", id)
         if (rec) await supabase.from("system_users").delete().eq("username", rec.username)
-      } catch (e) {}
+      } catch (e) { }
       setReceptionistsState((prev) => {
         const ur = prev.filter((r) => r.id !== id)
         localStorage.setItem("hto_receptionists", JSON.stringify(ur))
@@ -413,7 +452,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem("hto_procedencias", JSON.stringify(up))
           return up
         })
-      } catch (e) {}
+      } catch (e) { }
     },
     [procedencias, supabase],
   )
@@ -592,7 +631,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           })
           .eq("id", p.id)
         if (error) throw error
-      } catch (e) {}
+      } catch (e) { }
       setPatientsState((prev) => {
         const up = prev.map((pat) => (pat.id === p.id ? p : pat))
         localStorage.setItem("hto_patients", JSON.stringify(up))
@@ -607,7 +646,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (id: number) => {
       try {
         await supabase.from("patients").delete().eq("id", id)
-      } catch (e) {}
+      } catch (e) { }
       setPatientsState((prev) => {
         const up = prev.filter((pat) => pat.id !== id)
         localStorage.setItem("hto_patients", JSON.stringify(up))
@@ -654,7 +693,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const { data, error } = await supabase.from("patients").insert(ti).select()
         if (error) throw error
-        
+
         // Sincronizar procedências após a importação
         await syncProcedencias()
 
@@ -722,7 +761,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
           return false
         }
-        const f: User = { id: data.id, username: data.username, password: data.password, name: data.name, role: data.role as "admin" | "user" }
+        const f: User = {
+          id: data.id,
+          username: data.username,
+          password: data.password,
+          name: data.name,
+          role: data.role as "admin" | "user",
+          allowedModules: data.allowed_modules || [],
+          allowedSubmodules: data.allowed_submodules || []
+        }
         setUser(f)
         localStorage.setItem("hto_user", JSON.stringify(f))
         document.cookie = "hto_session=true; path=/; max-age=604800; SameSite=Lax"
@@ -749,7 +796,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem("hto_logos", JSON.stringify(nl))
           return nl
         })
-      } catch (e) {}
+      } catch (e) { }
     },
     [supabase],
   )
@@ -758,7 +805,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (id: string) => {
       try {
         await supabase.from("procedencias").delete().eq("id", id)
-      } catch (e) {}
+      } catch (e) { }
       setProcedenciasState((prev) => {
         const up = prev.filter((p) => p.id !== id)
         localStorage.setItem("hto_procedencias", JSON.stringify(up))
@@ -820,7 +867,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setVisitingHours(nh)
           localStorage.setItem("hto_visiting_hours", JSON.stringify(nh))
         }
-      } catch (e) {}
+      } catch (e) { }
     },
     [visitingHours, supabase],
   )

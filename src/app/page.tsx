@@ -69,8 +69,8 @@ function LoginForm() {
                 <Hospital className="h-12 w-12 text-primary-foreground" />
               </div>
               <div className="space-y-1">
-                <CardTitle className="text-4xl font-bold font-space tracking-tight gradient-text">HTO Caxias</CardTitle>
-                <CardDescription className="text-lg font-medium text-muted-foreground/80">Protocolo de Internação</CardDescription>
+                <CardTitle className="text-4xl font-bold font-space tracking-tight gradient-text">Ambulatorio Digital</CardTitle>
+                <CardDescription className="text-lg font-medium text-muted-foreground/80">Gestão Hospitalar Inteligente</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="pt-6 px-8 pb-10">
@@ -142,7 +142,7 @@ function LoginForm() {
             </CardContent>
           </Card>
           <p className="text-center mt-8 text-muted-foreground/60 text-sm font-medium">
-            © {new Date().getFullYear()} HTO Caxias. Todos os direitos reservados.
+            © {new Date().getFullYear()} Ambulatorio Digital. Todos os direitos reservados.
           </p>
         </div>
       </div>

@@ -8,6 +8,8 @@ export interface Receptionist {
   id: string
   name: string
   username: string
+  allowedModules?: string[]
+  allowedSubmodules?: string[]
 }
 
 export interface Patient {
@@ -48,6 +50,8 @@ export interface User {
   username: string
   password: string
   role: "admin" | "user"
+  allowedModules?: string[]
+  allowedSubmodules?: string[]
 }
 
 export const doctors: Doctor[] = [
@@ -107,9 +111,9 @@ export const patients: Patient[] = [
     destino: "CENTRO CIRÚRGICO",
     prontuario: "P9428/25",
     medico: "PLANTONISTA",
-      procedimento: "FRATURA DE TIBIA",
-      recepcionista: "FRANCINALVA",
-      telefone: "(99) 99999-9999",
-    },
-  ]
+    procedimento: "FRATURA DE TIBIA",
+    recepcionista: "FRANCINALVA",
+    telefone: "(99) 99999-9999",
+  },
+]
 
