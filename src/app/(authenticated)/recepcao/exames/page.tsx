@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { createBrowserClient } from "@supabase/ssr"
 import { StatCard } from "@/components/stat-card"
-import { Activity, CalendarDays, BarChart3, Plus, Search, Calendar, Check } from "lucide-react"
+import { Activity, CalendarDays, BarChart3, Plus, Search, Calendar, Edit2, Trash2, CalendarX2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format, parseISO } from "date-fns"
 import { formatInTimeZone } from "date-fns-tz"
@@ -78,11 +78,13 @@ export type DailyExamRecord = {
   ecocardiograma: number
   tomografia: number
   tomografia_contraste: number
+  faltas: number
 }
 
 export default function ExamesPage() {
   const [mounted, setMounted] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [recordToEdit, setRecordToEdit] = useState<DailyExamRecord | null>(null)
   const [records, setRecords] = useState<DailyExamRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -139,12 +141,14 @@ export default function ExamesPage() {
     let ecocardiograma = 0
     let tomografia = 0
     let tomografiaContraste = 0
+    let faltas = 0
 
     filteredRecords.forEach(r => {
       ultrassom += (r.ultrassom || 0)
       ecocardiograma += (r.ecocardiograma || 0)
       tomografia += (r.tomografia || 0)
       tomografiaContraste += (r.tomografia_contraste || 0)
+      faltas += (r.faltas || 0)
     })
 
     return {
@@ -152,6 +156,7 @@ export default function ExamesPage() {
       ecocardiograma,
       tomografia,
       tomografiaContraste,
+      faltas,
       total: ultrassom + ecocardiograma + tomografia + tomografiaContraste,
       diasRegistrados: filteredRecords.length
     }
@@ -177,7 +182,10 @@ export default function ExamesPage() {
         
         <div className="flex items-center gap-4">
           <Button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setRecordToEdit(null)
+              setIsModalOpen(true)
+            }}
             className="rounded-full shadow-premium gap-2 pl-4 pr-6 bg-gradient-to-r from-purple-600 to-primary hover:from-purple-500 hover:to-primary/80 transition-all font-bold group"
           >
             <div className="p-1 rounded-full bg-white/20 group-hover:rotate-90 transition-transform">
@@ -208,12 +216,13 @@ export default function ExamesPage() {
              />
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            <StatCard title="Total Realizado" value={stats.total} subtitle="Exames" icon={BarChart3} variant="primary" className="!rounded-[1.5rem]" />
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+            <StatCard title="Realizados" value={stats.total} subtitle="Exames" icon={BarChart3} variant="primary" className="!rounded-[1.5rem]" />
             <StatCard title="Ultrassom" value={stats.ultrassom} subtitle="Registros" icon={Activity} variant="secondary" className="!rounded-[1.5rem]" />
-            <StatCard title="Ecocardiograma" value={stats.ecocardiograma} subtitle="Registros" icon={Activity} variant="accent" className="!rounded-[1.5rem]" />
+            <StatCard title="Eco" value={stats.ecocardiograma} subtitle="Registros" icon={Activity} variant="accent" className="!rounded-[1.5rem]" />
             <StatCard title="Tomografia" value={stats.tomografia} subtitle="S/ Contraste" icon={Activity} variant="warning" className="!rounded-[1.5rem]" />
-            <StatCard title="Tomo c/ Contraste" value={stats.tomografiaContraste} subtitle="e Angiotomografia" icon={Activity} variant="primary" className="!rounded-[1.5rem]" />
+            <StatCard title="Tomo c/ Angio" value={stats.tomografiaContraste} subtitle="e Contraste" icon={Activity} variant="primary" className="!rounded-[1.5rem]" />
+            <StatCard title="Total Faltas" value={stats.faltas} subtitle="Pacientes" icon={CalendarX2} variant="destructive" className="!rounded-[1.5rem]" />
           </div>
         </div>
       </div>
@@ -228,7 +237,74 @@ export default function ExamesPage() {
            <p className="font-space font-bold tracking-widest uppercase">Nenhum registro encontrado.</p>
         </div>
       ) : (
-        <ExamsCharts records={filteredRecords} />
+        <div className="space-y-8">
+          <ExamsCharts records={filteredRecords} />
+          
+          <div className="glass-card !bg-card/40 border-none rounded-[2.5rem] overflow-hidden p-6 hover:bg-card/50 transition-all duration-500">
+             <div className="flex items-center gap-3 mb-6">
+                <div className="p-2.5 rounded-2xl bg-purple-500/10 text-purple-500">
+                  <CalendarDays className="h-5 w-5" />
+                </div>
+                <h2 className="text-xl font-black font-space uppercase tracking-tight">Registros Listados</h2>
+             </div>
+             
+             <div className="overflow-x-auto rounded-3xl border border-white/5 bg-background/30 backdrop-blur-md">
+                <table className="w-full text-left text-sm">
+                   <thead className="bg-muted/50 font-bold uppercase tracking-wider text-xs border-b border-border/10">
+                     <tr>
+                       <th className="p-4 rounded-tl-3xl">Data</th>
+                       <th className="p-4 text-center">Ultrassom</th>
+                       <th className="p-4 text-center">Ecocardiograma</th>
+                       <th className="p-4 text-center">Tomo s/ Contraste</th>
+                       <th className="p-4 text-center">Tomo c/ Angio</th>
+                       <th className="p-4 text-center">Faltas</th>
+                       <th className="p-4 text-right rounded-tr-3xl">Ações</th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y divide-border/5">
+                     {filteredRecords.map((r) => (
+                       <tr key={r.id} className="hover:bg-muted/30 transition-colors">
+                         <td className="p-4 font-bold whitespace-nowrap">
+                           {format(parseISO(r.date), 'dd/MM/yyyy')}
+                         </td>
+                         <td className="p-4 text-center text-blue-500 font-bold">{r.ultrassom}</td>
+                         <td className="p-4 text-center text-emerald-500 font-bold">{r.ecocardiograma}</td>
+                         <td className="p-4 text-center text-amber-500 font-bold">{r.tomografia}</td>
+                         <td className="p-4 text-center text-purple-500 font-bold">{r.tomografia_contraste}</td>
+                         <td className="p-4 text-center text-red-500 font-bold">{r.faltas}</td>
+                         <td className="p-4 text-right space-x-2">
+                           <Button 
+                             variant="ghost" 
+                             size="icon" 
+                             className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+                             onClick={() => {
+                               setRecordToEdit(r)
+                               setIsModalOpen(true)
+                             }}
+                           >
+                             <Edit2 className="h-4 w-4" />
+                           </Button>
+                           <Button 
+                             variant="ghost" 
+                             size="icon" 
+                             className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                             onClick={async () => {
+                               if (confirm("Deseja realmente excluir este registro?")) {
+                                 await supabase.from("daily_exams").delete().eq("id", r.id)
+                                 loadData()
+                               }
+                             }}
+                           >
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                </table>
+             </div>
+          </div>
+        </div>
       )}
 
       {isModalOpen && (
@@ -236,7 +312,7 @@ export default function ExamesPage() {
           isOpen={isModalOpen} 
           setIsOpen={setIsModalOpen} 
           onSuccess={loadData}
-          existingRecord={records.find(r => r.date === format(new Date(), 'yyyy-MM-dd'))}
+          existingRecord={recordToEdit || records.find(r => r.date === format(new Date(), 'yyyy-MM-dd'))}
         />
       )}
     </div>

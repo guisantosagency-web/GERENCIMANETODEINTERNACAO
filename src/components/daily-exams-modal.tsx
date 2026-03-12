@@ -17,7 +17,8 @@ export function DailyExamsModal({ isOpen, setIsOpen, onSuccess, existingRecord }
     ultrassom: "",
     ecocardiograma: "",
     tomografia: "",
-    tomografiaContraste: ""
+    tomografiaContraste: "",
+    faltas: ""
   })
 
   const supabase = useMemo(
@@ -32,7 +33,8 @@ export function DailyExamsModal({ isOpen, setIsOpen, onSuccess, existingRecord }
         ultrassom: existingRecord.ultrassom?.toString() || "",
         ecocardiograma: existingRecord.ecocardiograma?.toString() || "",
         tomografia: existingRecord.tomografia?.toString() || "",
-        tomografiaContraste: existingRecord.tomografia_contraste?.toString() || ""
+        tomografiaContraste: existingRecord.tomografia_contraste?.toString() || "",
+        faltas: existingRecord.faltas?.toString() || ""
       })
     }
   }, [existingRecord])
@@ -47,6 +49,7 @@ export function DailyExamsModal({ isOpen, setIsOpen, onSuccess, existingRecord }
         ecocardiograma: parseInt(formData.ecocardiograma) || 0,
         tomografia: parseInt(formData.tomografia) || 0,
         tomografia_contraste: parseInt(formData.tomografiaContraste) || 0,
+        faltas: parseInt(formData.faltas) || 0,
       }
 
       const { error } = await supabase
@@ -111,6 +114,7 @@ export function DailyExamsModal({ isOpen, setIsOpen, onSuccess, existingRecord }
                  { id: "ecocardiograma", label: "Ecocardiograma", color: "text-emerald-500" },
                  { id: "tomografia", label: "Tomografia s/ Constraste", color: "text-amber-500" },
                  { id: "tomografiaContraste", label: "Tomografia c/ Angio", color: "text-purple-500" },
+                 { id: "faltas", label: "Faltas", color: "text-red-500" },
                ].map((field) => (
                  <div key={field.id} className="space-y-2 p-3 rounded-2xl bg-card border border-white/5 hover:border-purple-500/30 transition-all shadow-sm group">
                    <Label htmlFor={field.id} className="text-xs font-black uppercase tracking-tight opacity-70 group-hover:opacity-100 flex flex-col gap-1">
