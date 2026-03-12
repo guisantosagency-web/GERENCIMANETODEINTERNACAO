@@ -4,12 +4,10 @@ import { useState, useMemo, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { createBrowserClient } from "@supabase/ssr"
 import { StatCard } from "@/components/stat-card"
-import { Activity, CalendarDays, BarChart3, Plus, Search, Calendar, Edit2, Trash2, CalendarX2 } from "lucide-react"
+import { Activity, CalendarDays, BarChart3, Plus, Search, Calendar, Edit2, Trash2, CalendarX2, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format, parseISO } from "date-fns"
-import { formatInTimeZone } from "date-fns-tz"
-import { ptBR } from "date-fns/locale"
-import { DailyExamsModal } from "@/components/daily-exams-modal"
+import { DailyExamsModal, EXAM_TYPES } from "@/components/daily-exams-modal"
 
 const ExamsCharts = dynamic(() => import("@/components/exams-charts").then(m => m.ExamsCharts), { 
   ssr: false,
@@ -17,10 +15,13 @@ const ExamsCharts = dynamic(() => import("@/components/exams-charts").then(m => 
 })
 
 interface TopFilterButtonsProps {
+  days: string[]
   months: string[]
   years: string[]
+  selectedDay: string | null
   selectedMonth: string | null
   selectedYear: string | null
+  onDayChange: (v: string | null) => void
   onMonthChange: (v: string | null) => void
   onYearChange: (v: string | null) => void
 }
@@ -31,15 +32,32 @@ const MONTHS_NAMES = [
 ]
 
 function ExamsFilterButtons({
+  days,
   months,
   years,
+  selectedDay,
   selectedMonth,
   selectedYear,
+  onDayChange,
   onMonthChange,
   onYearChange,
 }: TopFilterButtonsProps) {
   return (
     <div className="flex flex-wrap items-center gap-3">
+      {/* Dia Filter */}
+      <div className="relative group/filter">
+        <select
+          value={selectedDay || ""}
+          onChange={(e) => onDayChange(e.target.value || null)}
+          className="appearance-none bg-accent/30 hover:bg-accent border border-white/5 px-4 py-2 pl-10 pr-10 rounded-xl text-sm font-bold shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary backdrop-blur-md cursor-pointer"
+        >
+          <option value="">Todos os Dias</option>
+          {days.map((d) => <option key={d} value={d.padStart(2, '0')}>{d.padStart(2, '0')}</option>)}
+        </select>
+        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-hover/filter:text-primary transition-colors" />
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-50 text-[10px] hidden sm:block">▼</div>
+      </div>
+
       {/* Mês Filter */}
       <div className="relative group/filter">
         <select
@@ -74,10 +92,8 @@ function ExamsFilterButtons({
 export type DailyExamRecord = {
   id: string
   date: string
-  ultrassom: number
-  ecocardiograma: number
-  tomografia: number
-  tomografia_contraste: number
+  exame: string
+  presentes: number
   faltas: number
 }
 
@@ -88,6 +104,7 @@ export default function ExamesPage() {
   const [records, setRecords] = useState<DailyExamRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<string | null>(new Date().getMonth() + 1 + "")
   const [selectedYear, setSelectedYear] = useState<string | null>(new Date().getFullYear().toString())
 
@@ -115,6 +132,7 @@ export default function ExamesPage() {
     loadData()
   }, [])
 
+  const availableDays = useMemo(() => Array.from({ length: 31 }, (_, i) => (i + 1).toString()), [])
   const availableMonths = useMemo(() => Array.from({ length: 12 }, (_, i) => (i + 1).toString()), [])
   const availableYears = useMemo(() => {
     const years = new Set<string>()
@@ -128,37 +146,29 @@ export default function ExamesPage() {
     return records.filter(r => {
       const year = r.date.substring(0, 4)
       const month = parseInt(r.date.substring(5, 7)).toString()
+      const day = r.date.substring(8, 10)
       
       if (selectedYear && year !== selectedYear) return false
       if (selectedMonth && month !== selectedMonth) return false
+      if (selectedDay && day !== selectedDay.padStart(2, '0')) return false
       
       return true
     })
-  }, [records, selectedMonth, selectedYear])
+  }, [records, selectedDay, selectedMonth, selectedYear])
 
   const stats = useMemo(() => {
-    let ultrassom = 0
-    let ecocardiograma = 0
-    let tomografia = 0
-    let tomografiaContraste = 0
+    let presentes = 0
     let faltas = 0
 
     filteredRecords.forEach(r => {
-      ultrassom += (r.ultrassom || 0)
-      ecocardiograma += (r.ecocardiograma || 0)
-      tomografia += (r.tomografia || 0)
-      tomografiaContraste += (r.tomografia_contraste || 0)
+      presentes += (r.presentes || 0)
       faltas += (r.faltas || 0)
     })
 
     return {
-      ultrassom,
-      ecocardiograma,
-      tomografia,
-      tomografiaContraste,
+      presentes,
       faltas,
-      total: ultrassom + ecocardiograma + tomografia + tomografiaContraste,
-      diasRegistrados: filteredRecords.length
+      total: presentes + faltas,
     }
   }, [filteredRecords])
 
@@ -177,7 +187,7 @@ export default function ExamesPage() {
             Módulo Recepção
           </div>
           <h1 className="text-5xl lg:text-6xl font-black font-space tracking-tight gradient-text">Exames</h1>
-          <p className="text-muted-foreground font-medium text-lg max-w-xl">Acompanhamento e registro quantitativo de exames realizados.</p>
+          <p className="text-muted-foreground font-medium text-lg max-w-xl">Acompanhamento de exames presentes e faltas.</p>
         </div>
         
         <div className="flex items-center gap-4">
@@ -191,7 +201,7 @@ export default function ExamesPage() {
             <div className="p-1 rounded-full bg-white/20 group-hover:rotate-90 transition-transform">
               <Plus className="h-4 w-4" />
             </div>
-            Registrar Hoje
+            Registrar Exame
           </Button>
         </div>
       </div>
@@ -207,22 +217,22 @@ export default function ExamesPage() {
              </div>
              
              <ExamsFilterButtons
+                days={availableDays}
                 months={availableMonths}
                 years={availableYears}
+                selectedDay={selectedDay}
                 selectedMonth={selectedMonth}
                 selectedYear={selectedYear}
+                onDayChange={setSelectedDay}
                 onMonthChange={setSelectedMonth}
                 onYearChange={setSelectedYear}
              />
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-            <StatCard title="Realizados" value={stats.total} subtitle="Exames" icon={BarChart3} variant="primary" className="!rounded-[1.5rem]" />
-            <StatCard title="Ultrassom" value={stats.ultrassom} subtitle="Registros" icon={Activity} variant="secondary" className="!rounded-[1.5rem]" />
-            <StatCard title="Eco" value={stats.ecocardiograma} subtitle="Registros" icon={Activity} variant="accent" className="!rounded-[1.5rem]" />
-            <StatCard title="Tomografia" value={stats.tomografia} subtitle="S/ Contraste" icon={Activity} variant="warning" className="!rounded-[1.5rem]" />
-            <StatCard title="Tomo c/ Angio" value={stats.tomografiaContraste} subtitle="e Contraste" icon={Activity} variant="primary" className="!rounded-[1.5rem]" />
-            <StatCard title="Total Faltas" value={stats.faltas} subtitle="Pacientes" icon={CalendarX2} variant="destructive" className="!rounded-[1.5rem]" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <StatCard title="Total Geral Escalonado" value={stats.total} subtitle="Exames (Presentes + Faltas)" icon={BarChart3} variant="primary" className="!rounded-[1.5rem]" />
+            <StatCard title="Total Presentes" value={stats.presentes} subtitle="Pacientes Atendidos" icon={Users} variant="accent" className="!rounded-[1.5rem]" />
+            <StatCard title="Total Faltas" value={stats.faltas} subtitle="Pacientes Ausentes" icon={CalendarX2} variant="destructive" className="!rounded-[1.5rem]" />
           </div>
         </div>
       </div>
@@ -253,30 +263,28 @@ export default function ExamesPage() {
                    <thead className="bg-muted/50 font-bold uppercase tracking-wider text-xs border-b border-border/10">
                      <tr>
                        <th className="p-4 rounded-tl-3xl">Data</th>
-                       <th className="p-4 text-center">Ultrassom</th>
-                       <th className="p-4 text-center">Ecocardiograma</th>
-                       <th className="p-4 text-center">Tomo s/ Contraste</th>
-                       <th className="p-4 text-center">Tomo c/ Angio</th>
+                       <th className="p-4">Por Exame</th>
+                       <th className="p-4 text-center">Presentes</th>
                        <th className="p-4 text-center">Faltas</th>
+                       <th className="p-4 text-center">Total (P+F)</th>
                        <th className="p-4 text-right rounded-tr-3xl">Ações</th>
                      </tr>
                    </thead>
                    <tbody className="divide-y divide-border/5">
                      {filteredRecords.map((r) => (
-                       <tr key={r.id} className="hover:bg-muted/30 transition-colors">
+                       <tr key={r.id} className="hover:bg-muted/30 transition-colors group">
                          <td className="p-4 font-bold whitespace-nowrap">
                            {format(parseISO(r.date), 'dd/MM/yyyy')}
                          </td>
-                         <td className="p-4 text-center text-blue-500 font-bold">{r.ultrassom}</td>
-                         <td className="p-4 text-center text-emerald-500 font-bold">{r.ecocardiograma}</td>
-                         <td className="p-4 text-center text-amber-500 font-bold">{r.tomografia}</td>
-                         <td className="p-4 text-center text-purple-500 font-bold">{r.tomografia_contraste}</td>
-                         <td className="p-4 text-center text-red-500 font-bold">{r.faltas}</td>
+                         <td className="p-4 font-black uppercase text-xs tracking-widest text-muted-foreground">{r.exame}</td>
+                         <td className="p-4 text-center text-emerald-500 font-black text-lg">{r.presentes}</td>
+                         <td className="p-4 text-center text-red-500 font-black text-lg">{r.faltas}</td>
+                         <td className="p-4 text-center font-black text-lg text-primary">{r.presentes + r.faltas}</td>
                          <td className="p-4 text-right space-x-2">
                            <Button 
                              variant="ghost" 
                              size="icon" 
-                             className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+                             className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
                              onClick={() => {
                                setRecordToEdit(r)
                                setIsModalOpen(true)
@@ -287,7 +295,7 @@ export default function ExamesPage() {
                            <Button 
                              variant="ghost" 
                              size="icon" 
-                             className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                             className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
                              onClick={async () => {
                                if (confirm("Deseja realmente excluir este registro?")) {
                                  await supabase.from("daily_exams").delete().eq("id", r.id)
@@ -312,7 +320,7 @@ export default function ExamesPage() {
           isOpen={isModalOpen} 
           setIsOpen={setIsModalOpen} 
           onSuccess={loadData}
-          existingRecord={recordToEdit || records.find(r => r.date === format(new Date(), 'yyyy-MM-dd'))}
+          existingRecord={recordToEdit}
         />
       )}
     </div>
