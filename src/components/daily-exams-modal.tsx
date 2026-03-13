@@ -90,10 +90,10 @@ export function DailyExamsModal({ isOpen, setIsOpen, onSuccess, existingRecord }
       <DialogContent className="max-w-md bg-card/95 backdrop-blur-3xl border-white/10 shadow-premium">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-2xl font-black font-space uppercase tracking-tight">
-             <div className="p-3 bg-purple-500/10 text-purple-500 rounded-xl">
-               <Flame className="h-6 w-6" />
-             </div>
-             {existingRecord ? "Editar Registro" : "Registrar Exame"}
+            <div className="p-3 bg-purple-500/10 text-purple-500 rounded-xl">
+              <Flame className="h-6 w-6" />
+            </div>
+            {existingRecord ? "Editar Registro" : "Registrar Exame"}
           </DialogTitle>
           <DialogDescription className="font-medium">
             Registre a quantidade de pacientes presentes e faltas para um exame específico nesta data.
@@ -102,24 +102,24 @@ export function DailyExamsModal({ isOpen, setIsOpen, onSuccess, existingRecord }
 
         {success ? (
           <div className="flex flex-col items-center justify-center p-8 space-y-4 animate-in zoom-in-50 duration-500">
-             <CheckCircle className="h-16 w-16 text-emerald-500 animate-bounce" />
-             <p className="font-black text-xl uppercase tracking-widest text-emerald-500">Salvo com Sucesso!</p>
+            <CheckCircle className="h-16 w-16 text-emerald-500 animate-bounce" />
+            <p className="font-black text-xl uppercase tracking-widest text-emerald-500">Salvo com Sucesso!</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6 pt-4">
-            
+
             <div className="space-y-2 relative">
               <Label className="uppercase text-xs font-black tracking-widest text-muted-foreground">Data do Registro</Label>
               <div className="relative">
-                 <Input 
-                   type="date" 
-                   value={formData.date}
-                   onChange={e => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                   required
-                   max={format(new Date(), 'yyyy-MM-dd')}
-                   className="pl-10 font-bold bg-muted/50 focus:ring-purple-500"
-                 />
-                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-500" />
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={e => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                  required
+                  max={format(new Date(), 'yyyy-MM-dd')}
+                  className="pl-10 font-bold bg-muted/50 focus:ring-purple-500"
+                />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-500" />
               </div>
             </div>
 
@@ -145,7 +145,7 @@ export function DailyExamsModal({ isOpen, setIsOpen, onSuccess, existingRecord }
                 <Label htmlFor="presentes" className="text-xs font-black uppercase tracking-tight opacity-70 group-hover:opacity-100 flex flex-col gap-1 text-emerald-500">
                   Presentes
                 </Label>
-                <Input 
+                <Input
                   id="presentes"
                   type="number"
                   min="0"
@@ -161,7 +161,7 @@ export function DailyExamsModal({ isOpen, setIsOpen, onSuccess, existingRecord }
                 <Label htmlFor="faltas" className="text-xs font-black uppercase tracking-tight opacity-70 group-hover:opacity-100 flex flex-col gap-1 text-red-500">
                   Faltas
                 </Label>
-                <Input 
+                <Input
                   id="faltas"
                   type="number"
                   min="0"
