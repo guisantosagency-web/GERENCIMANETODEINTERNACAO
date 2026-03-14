@@ -59,29 +59,31 @@ export default function FilaTab() {
       const { error } = await supabase.from("exam_appointments").update({ status: newStatus }).eq("id", id)
       if (error) throw error
 
-      // Mirror to daily_exams
-      const dateKey = format(new Date(), 'yyyy-MM-dd')
+      // Mirror to daily_exams - Use the date of the EXAM for statistics consistency
+      const dateKey = appt.exam_date 
       const procedure = appt.procedure_name
 
-      // Check if record exists for this day/proc
       const { data: existing } = await supabase.from("daily_exams").select("*").eq("exam_date", dateKey).eq("procedure_name", procedure).maybeSingle()
 
-      if (existing) {
-        let updateData: any = {}
-        if (newStatus === "presente") updateData.present_count = existing.present_count + 1
-        if (newStatus === "falta") updateData.absent_count = existing.absent_count + 1
-        
-        // If correcting status
-        if (appt.status === "presente" && newStatus !== "presente") updateData.present_count = Math.max(0, existing.present_count - 1)
-        if (appt.status === "falta" && newStatus !== "falta") updateData.absent_count = Math.max(0, existing.absent_count - 1)
+      const isNewPresent = newStatus === "presente"
+      const isNewAbsent = newStatus === "falta"
+      const wasPresent = appt.status === "presente"
+      const wasAbsent = appt.status === "falta"
 
-        await supabase.from("daily_exams").update(updateData).eq("id", existing.id)
+      if (existing) {
+        const newPresentCount = Math.max(0, existing.present_count + (isNewPresent ? 1 : 0) - (wasPresent ? 1 : 0))
+        const newAbsentCount = Math.max(0, existing.absent_count + (isNewAbsent ? 1 : 0) - (wasAbsent ? 1 : 0))
+        
+        await supabase.from("daily_exams").update({
+          present_count: newPresentCount,
+          absent_count: newAbsentCount
+        }).eq("id", existing.id)
       } else {
         await supabase.from("daily_exams").insert([{
           exam_date: dateKey,
           procedure_name: procedure,
-          present_count: newStatus === "presente" ? 1 : 0,
-          absent_count: newStatus === "falta" ? 1 : 0
+          present_count: isNewPresent ? 1 : 0,
+          absent_count: isNewAbsent ? 1 : 0
         }])
       }
 

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { format } from "date-fns"
 
-export const PROCEDURES_WITH_SLOTS = [
+const FALLBACK_SLOT_PROCEDURES = [
   "Ultrassom",
   "Ecocardiograma",
   "Tomografia",
@@ -19,10 +19,20 @@ export default function VagasTab() {
   const [slots, setSlots] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   
-  const [newProcedure, setNewProcedure] = useState(PROCEDURES_WITH_SLOTS[0])
+  const [dynamicProcedures, setDynamicProcedures] = useState<string[]>(FALLBACK_SLOT_PROCEDURES)
+  const [newProcedure, setNewProcedure] = useState(FALLBACK_SLOT_PROCEDURES[0])
   const [newTotalSlots, setNewTotalSlots] = useState("")
 
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
+
+  const loadProcedures = async () => {
+    const { data } = await supabase.from("exam_procedures_list").select("name")
+    if (data && data.length > 0) {
+      const names = data.map((p: any) => p.name)
+      setDynamicProcedures(names)
+      setNewProcedure(names[0])
+    }
+  }
 
   const loadSlots = async () => {
     setIsLoading(true)
@@ -37,6 +47,10 @@ export default function VagasTab() {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    loadProcedures()
+  }, [])
 
   useEffect(() => {
     loadSlots()
@@ -94,7 +108,7 @@ export default function VagasTab() {
                   onChange={e => setNewProcedure(e.target.value)}
                   className="w-full appearance-none h-12 bg-background border border-border px-4 rounded-xl text-sm font-bold shadow-sm"
                >
-                 {PROCEDURES_WITH_SLOTS.map(p => <option key={p} value={p}>{p}</option>)}
+                 {dynamicProcedures.map((p: any) => <option key={p} value={p}>{p}</option>)}
                </select>
              </div>
              <div className="space-y-2">

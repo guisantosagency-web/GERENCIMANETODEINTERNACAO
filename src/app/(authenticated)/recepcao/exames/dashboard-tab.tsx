@@ -98,13 +98,14 @@ function ExamsFilterButtons({
 
 export type DailyExamRecord = {
   id: string
-  date: string
-  exame: string
-  presentes: number
-  faltas: number
+  exam_date: string
+  procedure_name: string
+  present_count: number
+  absent_count: number
 }
 
 export default function ExamesDashboardTab() {
+  const { user } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [records, setRecords] = useState<DailyExamRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -121,12 +122,52 @@ export default function ExamesDashboardTab() {
   const loadData = async () => {
     setIsLoading(true)
     try {
-      const { data, error } = await supabase.from("daily_exams").select("*").order('date', { ascending: false })
+      const { data, error } = await supabase.from("daily_exams").select("*").order('exam_date', { ascending: false })
       if (!error && data) {
         setRecords(data)
       }
     } catch (e) {
       console.error(e)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSyncStats = async () => {
+    if (!confirm("Deseja reconstruir as estatísticas com base nos agendamentos reais? Isso pode levar alguns segundos.")) return
+    setIsLoading(true)
+    try {
+      // 1. Get all relevant appointments
+      const { data: appts } = await supabase.from("exam_appointments").select("exam_date, procedure_name, status").in("status", ["presente", "falta"])
+      
+      if (!appts) return
+
+      // 2. Aggregate
+      const agg: Record<string, { present: number, absent: number }> = {}
+      appts.forEach(a => {
+        const key = `${a.exam_date}|${a.procedure_name}`
+        if (!agg[key]) agg[key] = { present: 0, absent: 0 }
+        if (a.status === "presente") agg[key].present++
+        if (a.status === "falta") agg[key].absent++
+      })
+
+      // 3. Clear and Re-insert (or UPSERT)
+      // For safety, we'll do upsert by date/proc
+      for (const [key, val] of Object.entries(agg)) {
+        const [date, proc] = key.split("|")
+        await supabase.from("daily_exams").upsert({
+          exam_date: date,
+          procedure_name: proc,
+          present_count: val.present,
+          absent_count: val.absent
+        }, { onConflict: 'exam_date,procedure_name' })
+      }
+
+      alert("Sincronização concluída!")
+      loadData()
+    } catch (e) {
+      console.error(e)
+      alert("Erro na sincronização.")
     } finally {
       setIsLoading(false)
     }
@@ -141,7 +182,7 @@ export default function ExamesDashboardTab() {
   const availableMonths = useMemo(() => Array.from({ length: 12 }, (_, i) => (i + 1).toString()), [])
   const availableYears = useMemo(() => {
     const years = new Set<string>()
-    records.forEach(r => years.add(r.date.substring(0, 4)))
+    records.forEach(r => years.add(r.exam_date.substring(0, 4)))
     const currentYear = new Date().getFullYear().toString()
     years.add(currentYear)
     return Array.from(years).sort().reverse()
@@ -149,9 +190,9 @@ export default function ExamesDashboardTab() {
 
   const filteredRecords = useMemo(() => {
     return records.filter(r => {
-      const year = r.date.substring(0, 4)
-      const month = parseInt(r.date.substring(5, 7)).toString()
-      const day = r.date.substring(8, 10)
+      const year = r.exam_date.substring(0, 4)
+      const month = parseInt(r.exam_date.substring(5, 7)).toString()
+      const day = r.exam_date.substring(8, 10)
       
       if (selectedYear && year !== selectedYear) return false
       if (selectedMonth && month !== selectedMonth) return false
@@ -166,8 +207,8 @@ export default function ExamesDashboardTab() {
     let faltas = 0
 
     filteredRecords.forEach(r => {
-      presentes += (r.presentes || 0)
-      faltas += (r.faltas || 0)
+      presentes += (r.present_count || 0)
+      faltas += (r.absent_count || 0)
     })
 
     const total = presentes + faltas
@@ -201,6 +242,11 @@ export default function ExamesDashboardTab() {
              <p className="text-slate-400 font-bold ml-16 flex items-center gap-2 uppercase text-[10px] tracking-widest">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 Dados em Tempo Real • {MONTHS_NAMES[parseInt(selectedMonth || "1") - 1]} / {selectedYear}
+                {user?.role === "admin" && (
+                   <button onClick={handleSyncStats} className="ml-4 flex items-center gap-1 text-blue-500 hover:text-blue-700 transition-colors uppercase font-black text-[9px]">
+                      <BarChart3 className="h-3 w-3" /> Sincronizar Base de Dados
+                   </button>
+                )}
              </p>
           </div>
 
@@ -269,34 +315,33 @@ export default function ExamesDashboardTab() {
                      <Button variant="ghost" size="icon" className="rounded-xl bg-slate-50 text-slate-400 hover:text-blue-500 transition-all">
                         <Download className="h-4 w-4" />
                      </Button>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar space-y-4">
+                                <div className="flex-1 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar space-y-4">
                      {filteredRecords.map(r => (
                        <div key={r.id} className="p-5 bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-[2rem] transition-all group relative overflow-hidden">
                           <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                              <AdminDeleteButton recordId={r.id} onLoad={loadData} supabase={supabase} />
                           </div>
                           <div className="flex justify-between items-start mb-3">
-                             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">{format(parseISO(r.date), 'dd MMM yyyy')}</div>
+                             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">{format(parseISO(r.exam_date), 'dd MMM yyyy')}</div>
                           </div>
                           <h4 className="font-black text-slate-800 text-sm uppercase tracking-tight mb-4 flex items-center gap-2">
                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                             {r.exame}
+                             {r.procedure_name}
                           </h4>
                           <div className="flex items-center gap-4">
                              <div className="flex-1 bg-white p-3 rounded-2xl shadow-sm border border-slate-50">
                                 <div className="text-[9px] font-black uppercase text-emerald-500 mb-0.5 tracking-tighter">Presentes</div>
-                                <div className="text-xl font-black font-space text-slate-700 leading-none">{r.presentes}</div>
+                                <div className="text-xl font-black font-space text-slate-700 leading-none">{r.present_count}</div>
                              </div>
                              <div className="flex-1 bg-white p-3 rounded-2xl shadow-sm border border-slate-50">
                                 <div className="text-[9px] font-black uppercase text-red-500 mb-0.5 tracking-tighter">Faltas</div>
-                                <div className="text-xl font-black font-space text-slate-700 leading-none">{r.faltas}</div>
+                                <div className="text-xl font-black font-space text-slate-700 leading-none">{r.absent_count}</div>
                              </div>
                           </div>
                        </div>
                      ))}
                   </div>
+      </div>
 
                   <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between opacity-50">
                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total de Registros na Fila</div>

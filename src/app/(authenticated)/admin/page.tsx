@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useAuth } from "@/lib/auth-context"
+import { createClient } from "@/lib/supabase/client"
 import { users as initialUsers, type User } from "@/lib/data"
 import { AddReceptionistModal } from "@/components/add-receptionist-modal"
 import { AddDoctorModal } from "@/components/add-doctor-modal"
@@ -34,7 +35,12 @@ import {
   Clock,
   Plus,
   CalendarDays,
+  LayoutDashboard,
+  Settings,
+  Cog,
+  FlaskConical,
 } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter } from "next/navigation"
 import { DoctorSlotsManager } from "@/components/doctor-slots-manager"
 
@@ -64,6 +70,13 @@ export default function AdminPage() {
   const [newProcedenciaName, setNewProcedenciaName] = useState("")
   const [addingProcedencia, setAddingProcedencia] = useState(false)
 
+  // Exam Config State
+  const [procedures, setProcedures] = useState<string[]>([])
+  const [examTypes, setExamTypes] = useState<{ procedure: string, name: string }[]>([])
+  const [newProcName, setNewProcName] = useState("")
+  const [newExamTypeProc, setNewExamTypeProc] = useState("")
+  const [newExamTypeName, setNewExamTypeName] = useState("")
+
   useEffect(() => {
     const storedUsers = localStorage.getItem("hto_users")
     if (storedUsers) {
@@ -84,8 +97,50 @@ export default function AdminPage() {
   useEffect(() => {
     if (user && user.role !== "admin") {
       router.push("/dashboard")
+    } else {
+      loadExamConfigs()
     }
   }, [user, router])
+
+  const supabase = useMemo(() => createClient(), [])
+
+  const loadExamConfigs = async () => {
+    try {
+      const { data: procs } = await supabase.from("exam_procedures_list").select("*")
+      const { data: types } = await supabase.from("exam_types_list").select("*")
+      
+      if (procs) setProcedures(procs.map((p: any) => p.name))
+      if (types) setExamTypes(types.map((t: any) => ({ procedure: t.procedure_name, name: t.name })))
+    } catch (e) {
+       console.error(e)
+    }
+  }
+
+  const handleAddProc = async () => {
+    if (!newProcName.trim()) return
+    await supabase.from("exam_procedures_list").insert([{ name: newProcName.trim() }])
+    setNewProcName("")
+    loadExamConfigs()
+  }
+
+  const handleDeleteProc = async (name: string) => {
+    if (!confirm(`Remover procedimento "${name}"?`)) return
+    await supabase.from("exam_procedures_list").delete().eq("name", name)
+    loadExamConfigs()
+  }
+
+  const handleAddExamType = async () => {
+    if (!newExamTypeProc || !newExamTypeName.trim()) return
+    await supabase.from("exam_types_list").insert([{ procedure_name: newExamTypeProc, name: newExamTypeName.trim() }])
+    setNewExamTypeName("")
+    loadExamConfigs()
+  }
+
+  const handleDeleteExamType = async (proc: string, name: string) => {
+    if (!confirm(`Remover tipo "${name}" de "${proc}"?`)) return
+    await supabase.from("exam_types_list").delete().eq("procedure_name", proc).eq("name", name)
+    loadExamConfigs()
+  }
 
   const stats = useMemo(() => {
     const receptionistStats: Record<string, number> = {}
@@ -194,85 +249,125 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-primary/15 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Usuários</p>
-              <p className="text-3xl font-bold text-foreground mt-1">{receptionists.length + 1}</p>
+      <Tabs defaultValue="dashboard" className="space-y-8">
+        <TabsList className="bg-card/40 backdrop-blur-sm border border-border/40 p-1.5 rounded-2xl h-auto flex flex-wrap gap-2">
+          <TabsTrigger value="dashboard" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white transition-all gap-2">
+            <LayoutDashboard className="h-4 w-4" /> Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="team" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white transition-all gap-2">
+            <Users className="h-4 w-4" /> Equipe
+          </TabsTrigger>
+          <TabsTrigger value="flow" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white transition-all gap-2">
+            <Activity className="h-4 w-4" /> Fluxo
+          </TabsTrigger>
+          <TabsTrigger value="exams" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white transition-all gap-2">
+            <FlaskConical className="h-4 w-4" /> Exames
+          </TabsTrigger>
+          <TabsTrigger value="system" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white transition-all gap-2">
+            <Settings className="h-4 w-4" /> Sistema
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="dashboard" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-primary/15 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Usuários</p>
+                  <p className="text-3xl font-bold text-foreground mt-1">{receptionists.length + 1}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+              </div>
             </div>
-            <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
-              <Users className="h-5 w-5 text-primary" />
+            <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-secondary/15 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Internações</p>
+                  <p className="text-3xl font-bold text-foreground mt-1">{stats.totalPatients}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-secondary/20 to-secondary/10">
+                  <Database className="h-5 w-5 text-secondary" />
+                </div>
+              </div>
+            </div>
+            <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-chart-3/15 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Recepcionistas</p>
+                  <p className="text-3xl font-bold text-foreground mt-1">{receptionists.length}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-chart-3/20 to-chart-3/10">
+                  <UserCog className="h-5 w-5 text-chart-3" />
+                </div>
+              </div>
+            </div>
+            <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-emerald-500/15 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Médicos</p>
+                  <p className="text-3xl font-bold text-foreground mt-1">{doctors.length}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/10">
+                  <Stethoscope className="h-5 w-5 text-emerald-500" />
+                </div>
+              </div>
+            </div>
+            <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-pink-500/15 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Crianças (0-13)</p>
+                  <p className="text-3xl font-bold text-foreground mt-1">{stats.childrenCount}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-pink-500/20 to-pink-500/10">
+                  <Baby className="h-5 w-5 text-pink-500" />
+                </div>
+              </div>
+            </div>
+            <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-violet-500/15 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Residência</p>
+                  <p className="text-3xl font-bold text-foreground mt-1">{stats.residenciaCount}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500/20 to-violet-500/10">
+                  <Home className="h-5 w-5 text-violet-500" />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-secondary/15 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Internações</p>
-              <p className="text-3xl font-bold text-foreground mt-1">{stats.totalPatients}</p>
-            </div>
-            <div className="p-3 rounded-xl bg-gradient-to-br from-secondary/20 to-secondary/10">
-              <Database className="h-5 w-5 text-secondary" />
-            </div>
-          </div>
-        </div>
-        <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-chart-3/15 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Recepcionistas</p>
-              <p className="text-3xl font-bold text-foreground mt-1">{receptionists.length}</p>
-            </div>
-            <div className="p-3 rounded-xl bg-gradient-to-br from-chart-3/20 to-chart-3/10">
-              <UserCog className="h-5 w-5 text-chart-3" />
-            </div>
-          </div>
-        </div>
-        <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-emerald-500/15 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Médicos</p>
-              <p className="text-3xl font-bold text-foreground mt-1">{doctors.length}</p>
-            </div>
-            <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/10">
-              <Stethoscope className="h-5 w-5 text-emerald-500" />
-            </div>
-          </div>
-        </div>
-        <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-pink-500/15 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Crianças (0-13)</p>
-              <p className="text-3xl font-bold text-foreground mt-1">{stats.childrenCount}</p>
-            </div>
-            <div className="p-3 rounded-xl bg-gradient-to-br from-pink-500/20 to-pink-500/10">
-              <Baby className="h-5 w-5 text-pink-500" />
-            </div>
-          </div>
-        </div>
-        <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-violet-500/15 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Residência</p>
-              <p className="text-3xl font-bold text-foreground mt-1">{stats.residenciaCount}</p>
-            </div>
-            <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500/20 to-violet-500/10">
-              <Home className="h-5 w-5 text-violet-500" />
-            </div>
-          </div>
-        </div>
-        <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-orange-500/15 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Consultas</p>
-              <p className="text-3xl font-bold text-foreground mt-1">{consultations.length}</p>
-            </div>
-            <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/10">
-              <CalendarDays className="h-5 w-5 text-orange-500" />
-            </div>
-          </div>
-        </div>
-      </div>
+
+          <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-lg">
+                <div className="p-2 rounded-xl bg-secondary/10">
+                  <Activity className="h-5 w-5 text-secondary" />
+                </div>
+                Resumo por Recepcionista
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {Object.entries(stats.receptionistStats)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([name, count]) => (
+                    <div
+                      key={name}
+                      className="p-5 rounded-2xl bg-accent/30 hover:bg-accent/50 transition-all duration-300 hover:-translate-y-0.5 text-center border border-border/30"
+                    >
+                      <p className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                        {count}
+                      </p>
+                      <p className="text-sm text-muted-foreground truncate mt-1 font-medium">{name}</p>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="team" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
       {/* Receptionists Table */}
       <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl overflow-hidden">
@@ -397,192 +492,246 @@ export default function AdminPage() {
         </CardContent>
       </Card>
 
-      {/* Procedencias Management Section */}
-      <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <div>
-            <CardTitle className="flex items-center gap-3 text-lg">
-              <div className="p-2 rounded-xl bg-blue-500/10">
-                <Building2 className="h-5 w-5 text-blue-500" />
-              </div>
-              Unidades de Procedência
-            </CardTitle>
-            <CardDescription className="mt-1.5 ml-12">Gerenciar unidades de saúde cadastradas</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4 flex gap-2">
-            <div className="flex-1">
-              <Input
-                placeholder="Digite o nome da nova unidade..."
-                value={newProcedenciaName}
-                onChange={(e) => setNewProcedenciaName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault()
-                    handleAddProcedencia()
-                  }
-                }}
-              />
-            </div>
-            <Button onClick={handleAddProcedencia} disabled={addingProcedencia || !newProcedenciaName.trim()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar
-            </Button>
-          </div>
+        </TabsContent>
 
-          <div className="rounded-xl border border-border/50 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-accent/30 hover:bg-accent/30">
-                  <TableHead className="font-semibold">Nome da Unidade</TableHead>
-                  <TableHead className="w-[120px] font-semibold">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {procedencias.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
-                      Nenhuma unidade cadastrada
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  procedencias
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((proc) => (
-                      <TableRow key={proc.id} className="hover:bg-accent/20">
-                        <TableCell className="font-medium">{proc.name}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <EditProcedenciaModal procedencia={proc} />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
-                              onClick={() => handleRemoveProcedencia(proc.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+        <TabsContent value="flow" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <DoctorSlotsManager />
+
+          {/* Procedencias Management Section */}
+          <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <div>
+                <CardTitle className="flex items-center gap-3 text-lg">
+                  <div className="p-2 rounded-xl bg-blue-500/10">
+                    <Building2 className="h-5 w-5 text-blue-500" />
+                  </div>
+                  Unidades de Procedência
+                </CardTitle>
+                <CardDescription className="mt-1.5 ml-12">Gerenciar unidades de saúde cadastradas</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4 flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Digite o nome da nova unidade..."
+                    value={newProcedenciaName}
+                    onChange={(e) => setNewProcedenciaName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        handleAddProcedencia()
+                      }
+                    }}
+                  />
+                </div>
+                <Button onClick={handleAddProcedencia} disabled={addingProcedencia || !newProcedenciaName.trim()}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar
+                </Button>
+              </div>
+
+              <div className="rounded-xl border border-border/50 overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-accent/30 hover:bg-accent/30">
+                      <TableHead className="font-semibold">Nome da Unidade</TableHead>
+                      <TableHead className="w-[120px] font-semibold">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {procedencias.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
+                          Nenhuma unidade cadastrada
                         </TableCell>
                       </TableRow>
-                    ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                    ) : (
+                      procedencias
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((proc) => (
+                          <TableRow key={proc.id} className="hover:bg-accent/20">
+                            <TableCell className="font-medium">{proc.name}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <EditProcedenciaModal procedencia={proc} />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                                  onClick={() => handleRemoveProcedencia(proc.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Visiting Hours Management Section */}
-      <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl overflow-hidden">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-3 text-lg">
-            <div className="p-2 rounded-xl bg-indigo-500/10">
-              <Clock className="h-5 w-5 text-indigo-500" />
-            </div>
-            Horários de Visitas
-          </CardTitle>
-          <CardDescription className="ml-12">
-            Configure os horários de visita que serão exibidos na ficha de internação
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="enfermaria">Enfermaria</Label>
-              <Input
-                id="enfermaria"
-                placeholder="Ex: 14h às 16h e 18h às 20h"
-                value={hoursForm.enfermaria}
-                onChange={(e) => setHoursForm({ ...hoursForm, enfermaria: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="uti">UTI</Label>
-              <Input
-                id="uti"
-                placeholder="Ex: 10h às 11h e 16h às 17h"
-                value={hoursForm.uti}
-                onChange={(e) => setHoursForm({ ...hoursForm, uti: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="trocas">Horários de Trocas de Acompanhantes</Label>
-              <Input
-                id="trocas"
-                placeholder="Ex: 8h, 14h e 20h"
-                value={hoursForm.trocas_acompanhantes}
-                onChange={(e) => setHoursForm({ ...hoursForm, trocas_acompanhantes: e.target.value })}
-              />
-            </div>
-            <Button onClick={handleUpdateVisitingHours} className="w-full">
-              Salvar Horários de Visita
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Consultation Vacancy Management Section */}
-      <DoctorSlotsManager />
-
-      {/* Logo Upload Section */}
-      <LogoUploadSection />
-
-      {/* Export Section */}
-      <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-3 text-lg">
-            <div className="p-2 rounded-xl bg-chart-4/10">
-              <FileSpreadsheet className="h-5 w-5 text-chart-4" />
-            </div>
-            Importar / Exportar Dados
-          </CardTitle>
-          <CardDescription className="ml-12">Gerenciar dados das internações</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-4">
-            <ImportCSVModal />
-            <ExportPDFModal patients={patients} />
-            <ExportCSVModal
-              patients={patients}
-              selectedCity={null}
-              selectedDestination={null}
-              selectedMonth={null}
-              selectedYear={null}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Activity Summary */}
-      <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-3 text-lg">
-            <div className="p-2 rounded-xl bg-secondary/10">
-              <Activity className="h-5 w-5 text-secondary" />
-            </div>
-            Resumo por Recepcionista
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {Object.entries(stats.receptionistStats)
-              .sort((a, b) => b[1] - a[1])
-              .map(([name, count]) => (
-                <div
-                  key={name}
-                  className="p-5 rounded-2xl bg-accent/30 hover:bg-accent/50 transition-all duration-300 hover:-translate-y-0.5 text-center border border-border/30"
-                >
-                  <p className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                    {count}
-                  </p>
-                  <p className="text-sm text-muted-foreground truncate mt-1 font-medium">{name}</p>
+          {/* Visiting Hours Management Section */}
+          <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl overflow-hidden">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-lg">
+                <div className="p-2 rounded-xl bg-indigo-500/10">
+                  <Clock className="h-5 w-5 text-indigo-500" />
                 </div>
-              ))}
-          </div>
-        </CardContent>
-      </Card>
+                Horários de Visitas
+              </CardTitle>
+              <CardDescription className="ml-12">
+                Configure os horários de visita que serão exibidos na ficha de internação
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="enfermaria">Enfermaria</Label>
+                  <Input
+                    id="enfermaria"
+                    placeholder="Ex: 14h às 16h e 18h às 20h"
+                    value={hoursForm.enfermaria}
+                    onChange={(e) => setHoursForm({ ...hoursForm, enfermaria: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="uti">UTI</Label>
+                  <Input
+                    id="uti"
+                    placeholder="Ex: 10h às 11h e 16h às 17h"
+                    value={hoursForm.uti}
+                    onChange={(e) => setHoursForm({ ...hoursForm, uti: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="trocas">Horários de Trocas de Acompanhantes</Label>
+                  <Input
+                    id="trocas"
+                    placeholder="Ex: 8h, 14h e 20h"
+                    value={hoursForm.trocas_acompanhantes}
+                    onChange={(e) => setHoursForm({ ...hoursForm, trocas_acompanhantes: e.target.value })}
+                  />
+                </div>
+                <Button onClick={handleUpdateVisitingHours} className="w-full">
+                  Salvar Horários de Visita
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="exams" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+           {/* Placeholder for dynamic Procedures/Exam types registration */}
+           <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl overflow-hidden">
+             <CardHeader className="flex flex-row items-center justify-between pb-4">
+               <div>
+                 <CardTitle className="flex items-center gap-3 text-lg">
+                   <div className="p-2 rounded-xl bg-amber-500/10">
+                     <FlaskConical className="h-5 w-5 text-amber-500" />
+                   </div>
+                   Procedimentos e Tipos de Exame
+                 </CardTitle>
+                 <CardDescription className="mt-1.5 ml-12">Gerenciar a lista de procedimentos disponíveis para agendamento</CardDescription>
+               </div>
+             </CardHeader>
+             <CardContent>
+                <div className="grid md:grid-cols-2 gap-8">
+                   {/* Procedimentos */}
+                   <div className="space-y-4">
+                      <h4 className="text-sm font-black uppercase tracking-widest text-slate-400">Procedimentos</h4>
+                      <div className="flex gap-2">
+                         <Input 
+                            placeholder="Novo Procedimento..." 
+                            value={newProcName} 
+                            onChange={e => setNewProcName(e.target.value)} 
+                         />
+                         <Button onClick={handleAddProc} size="icon"><Plus className="h-4 w-4" /></Button>
+                      </div>
+                      <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                         {procedures.map(p => (
+                            <div key={p} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 group">
+                               <span className="font-bold text-sm uppercase">{p}</span>
+                               <Button variant="ghost" size="icon" onClick={() => handleDeleteProc(p)} className="h-7 w-7 text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                               </Button>
+                            </div>
+                         ))}
+                      </div>
+                   </div>
+
+                   {/* Tipos de Exame */}
+                   <div className="space-y-4">
+                      <h4 className="text-sm font-black uppercase tracking-widest text-slate-400">Tipos por Procedimento</h4>
+                      <div className="space-y-2">
+                         <select 
+                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-sm font-bold appearance-none"
+                            value={newExamTypeProc}
+                            onChange={e => setNewExamTypeProc(e.target.value)}
+                         >
+                            <option value="">Selecionar Procedimento...</option>
+                            {procedures.map(p => <option key={p} value={p}>{p}</option>)}
+                         </select>
+                         <div className="flex gap-2">
+                            <Input 
+                               placeholder="Novo Tipo de Exame..." 
+                               value={newExamTypeName} 
+                               onChange={e => setNewExamTypeName(e.target.value)} 
+                            />
+                            <Button onClick={handleAddExamType} size="icon"><Plus className="h-4 w-4" /></Button>
+                         </div>
+                      </div>
+                      <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                         {examTypes.map((t, idx) => (
+                            <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 group">
+                               <div>
+                                  <span className="text-[10px] block font-black text-blue-500 uppercase tracking-tighter">{t.procedure}</span>
+                                  <span className="font-bold text-xs uppercase">{t.name}</span>
+                               </div>
+                               <Button variant="ghost" size="icon" onClick={() => handleDeleteExamType(t.procedure, t.name)} className="h-7 w-7 text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                               </Button>
+                            </div>
+                         ))}
+                      </div>
+                   </div>
+                </div>
+             </CardContent>
+           </Card>
+        </TabsContent>
+
+        <TabsContent value="system" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+           <LogoUploadSection />
+           
+           <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl">
+             <CardHeader className="pb-4">
+               <CardTitle className="flex items-center gap-3 text-lg">
+                 <div className="p-2 rounded-xl bg-chart-4/10">
+                   <FileSpreadsheet className="h-5 w-5 text-chart-4" />
+                 </div>
+                 Importar / Exportar Dados
+               </CardTitle>
+               <CardDescription className="ml-12">Gerenciar dados das internações</CardDescription>
+             </CardHeader>
+             <CardContent>
+               <div className="flex flex-wrap gap-4">
+                 <ImportCSVModal />
+                 <ExportPDFModal patients={patients} />
+                 <ExportCSVModal
+                   patients={patients}
+                   selectedCity={null}
+                   selectedDestination={null}
+                   selectedMonth={null}
+                   selectedYear={null}
+                 />
+               </div>
+             </CardContent>
+           </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

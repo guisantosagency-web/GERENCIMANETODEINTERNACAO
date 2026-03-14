@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { format } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
 
-const PROCEDURES = [
+const FALLBACK_PROCEDURES = [
   "Tomografia",
   "Ultrassom",
   "Ecocardiograma",
@@ -17,7 +17,7 @@ const PROCEDURES = [
   "Eletrocardiograma"
 ]
 
-const EXAM_TYPES_BY_PROCEDURE: Record<string, string[]> = {
+const FALLBACK_TYPES: Record<string, string[]> = {
   "Tomografia": ["Tomografia com Contraste", "Angiotomografia", "Tomografia sem Contraste"],
   "Ultrassom": ["Ultrassom Abdominal", "Ultrassom Pélvico", "Ultrassom Articulações", "Outros"],
   "Ecocardiograma": ["Transtorácico", "Transesofágico"],
@@ -89,17 +89,42 @@ export default function AgendamentoTab() {
   const [dateAppointments, setDateAppointments] = useState<any[]>([])
   const [lastSaved, setLastSaved] = useState<any>(null)
 
+  const [dynamicProcedures, setDynamicProcedures] = useState<string[]>(FALLBACK_PROCEDURES)
+  const [dynamicTypes, setDynamicTypes] = useState<Record<string, string[]>>(FALLBACK_TYPES)
+
   const [formData, setFormData] = useState({
     patient_name: "",
     cpf: "",
     sus: "",
     exam_date: format(new Date(), 'yyyy-MM-dd'),
     exam_time: format(new Date(), 'HH:mm'),
-    procedure_name: PROCEDURES[0],
-    exam_type: EXAM_TYPES_BY_PROCEDURE[PROCEDURES[0]][0] || "",
+    procedure_name: FALLBACK_PROCEDURES[0],
+    exam_type: FALLBACK_TYPES[FALLBACK_PROCEDURES[0]][0] || "",
   })
 
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      const { data: procs } = await supabase.from("exam_procedures_list").select("*")
+      const { data: types } = await supabase.from("exam_types_list").select("*")
+      
+      if (procs && procs.length > 0) {
+        const pList = procs.map((p: any) => p.name)
+        setDynamicProcedures(pList)
+        
+        if (types) {
+           const tMap: Record<string, string[]> = {}
+           types.forEach((t: any) => {
+              if (!tMap[t.procedure_name]) tMap[t.procedure_name] = []
+              tMap[t.procedure_name].push(t.name)
+           } )
+           setDynamicTypes(tMap)
+        }
+      }
+    }
+    loadConfig()
+  }, [supabase])
 
   const loadDateAppointments = async () => {
     const { data } = await supabase
@@ -111,9 +136,25 @@ export default function AgendamentoTab() {
     setDateAppointments(data || [])
   }
 
+  const [appointmentSearch, setAppointmentSearch] = useState("")
+
+  const filteredAppointments = useMemo(() => {
+    if (!appointmentSearch) return dateAppointments
+    return dateAppointments.filter(a => a.patient_name.toLowerCase().includes(appointmentSearch.toLowerCase()))
+  }, [dateAppointments, appointmentSearch])
+
   useEffect(() => {
     loadDateAppointments()
   }, [formData.exam_date])
+
+  useEffect(() => {
+    if (formData.procedure_name && dynamicTypes[formData.procedure_name]) {
+      setFormData(prev => ({
+        ...prev,
+        exam_type: dynamicTypes[formData.procedure_name][0] || ""
+      }))
+    }
+  }, [formData.procedure_name, dynamicTypes])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -177,7 +218,7 @@ export default function AgendamentoTab() {
     setFormData(prev => ({
       ...prev,
       procedure_name: newProc,
-      exam_type: EXAM_TYPES_BY_PROCEDURE[newProc]?.[0] || ""
+      exam_type: dynamicTypes[newProc]?.[0] || ""
     }))
   }
 
@@ -397,7 +438,7 @@ export default function AgendamentoTab() {
                         <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Procedimento Central</Label>
                         <div className="relative">
                           <select value={formData.procedure_name} onChange={e => handleProcedureChange(e.target.value)} className="w-full appearance-none h-16 bg-slate-50 border-none px-6 pl-16 rounded-[1.5rem] text-sm font-black shadow-inner focus:outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer uppercase transition-all">
-                             {PROCEDURES.map(p => <option key={p} value={p}>{p}</option>)}
+                             {dynamicProcedures.map((p: any) => <option key={p} value={p}>{p}</option>)}
                           </select>
                           <Activity className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-blue-600" />
                         </div>
@@ -406,7 +447,7 @@ export default function AgendamentoTab() {
                         <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Especificação do Exame</Label>
                         <div className="relative">
                           <select value={formData.exam_type} onChange={e => setFormData(prev => ({ ...prev, exam_type: e.target.value }))} className="w-full appearance-none h-16 bg-slate-50 border-none px-6 pl-16 rounded-[1.5rem] text-sm font-black shadow-inner focus:outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer uppercase transition-all">
-                             {EXAM_TYPES_BY_PROCEDURE[formData.procedure_name]?.map(t => <option key={t} value={t}>{t}</option>)}
+                             {(dynamicTypes[formData.procedure_name] || []).map((t: any) => <option key={t} value={t}>{t}</option>)}
                           </select>
                           <FileText className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-blue-600" />
                         </div>
@@ -446,14 +487,26 @@ export default function AgendamentoTab() {
                    Agendados para {format(new Date(formData.exam_date + 'T00:00:00'), 'dd/MM/yyyy')}
                  </h3>
               </div>
-              <div className="bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm text-xs font-black text-slate-500 uppercase">{dateAppointments.length} PACIENTES</div>
+              
+              <div className="flex flex-wrap items-center gap-4">
+                  <div className="relative">
+                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                     <input 
+                        className="bg-white border border-slate-100 rounded-xl px-3 py-2 pl-10 text-[10px] font-black uppercase tracking-widest focus:ring-0 w-64"
+                        placeholder="Filtrar por nome..."
+                        value={appointmentSearch}
+                        onChange={e => setAppointmentSearch(e.target.value)}
+                     />
+                  </div>
+                  <div className="bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm text-xs font-black text-slate-500 uppercase">{filteredAppointments.length} PACIENTES</div>
+              </div>
            </div>
 
            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {dateAppointments.length === 0 ? (
-                 <div className="col-span-full py-10 text-center text-slate-400 font-bold italic opacity-50 uppercase text-xs tracking-widest">Nenhum agendamento para esta data</div>
+              {filteredAppointments.length === 0 ? (
+                 <div className="col-span-full py-10 text-center text-slate-400 font-bold italic opacity-50 uppercase text-xs tracking-widest">Nenhum agendamento encontrado</div>
               ) : (
-                 dateAppointments.map(appt => (
+                 filteredAppointments.map(appt => (
                     <div key={appt.id} className="bg-white/60 hover:bg-white p-5 rounded-3xl border border-slate-100 flex items-center justify-between group transition-all hover:shadow-xl hover:-translate-y-1">
                        <div className="flex items-center gap-4">
                           <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">{appt.patient_name.charAt(0)}</div>
