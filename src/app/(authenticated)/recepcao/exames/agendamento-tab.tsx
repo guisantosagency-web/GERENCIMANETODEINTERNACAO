@@ -102,8 +102,23 @@ export default function AgendamentoTab() {
     exam_type: EXAM_TYPES_BY_PROCEDURE[PROCEDURES[0]][0] || "",
   })
 
+  const [dateAppointments, setDateAppointments] = useState<any[]>([])
   const [lastSaved, setLastSaved] = useState<any>(null)
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
+
+  const loadDateAppointments = async () => {
+    const { data } = await supabase
+      .from("exam_appointments")
+      .select("*")
+      .eq("exam_date", formData.exam_date)
+      .neq("status", "cancelado")
+      .order("exam_time")
+    setDateAppointments(data || [])
+  }
+
+  useEffect(() => {
+    loadDateAppointments()
+  }, [formData.exam_date])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -201,6 +216,7 @@ export default function AgendamentoTab() {
       }]).select().single()
       if (error) throw error
       setLastSaved(data)
+      loadDateAppointments()
       alert("Agendamento salvo!")
       setFormData(prev => ({ ...prev, patient_name: "", cpf: "", sus: "" }))
       if (slotInfo) setSlotInfo(p => p ? ({ ...p, occupied: p.occupied + 1 }) : null)
@@ -211,24 +227,36 @@ export default function AgendamentoTab() {
     }
   }
 
-  const downloadPDF = async () => {
-    if (!printRef.current) return
+  const downloadPDF = async (apptToPrint?: any) => {
+    const dataToUse = apptToPrint || lastSaved
+    if (!dataToUse || !printRef.current) return
+    
+    // Temporarily update lastSaved if we are printing from the list
+    if (apptToPrint) setLastSaved(apptToPrint)
+
     setIsGeneratingPDF(true)
-    try {
-       const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true })
-       const imgData = canvas.toDataURL('image/png')
-       const pdf = new jsPDF('p', 'mm', 'a5')
-       const imgProps = pdf.getImageProperties(imgData)
-       const pdfWidth = pdf.internal.pageSize.getWidth()
-       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
-       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-       pdf.save(`FICHA_EXAME_${lastSaved.patient_name.replace(/\s+/g, '_')}.pdf`)
-    } catch (e) {
-       console.error(e)
-       alert("Erro ao gerar PDF.")
-    } finally {
-       setIsGeneratingPDF(false)
-    }
+    // Pequeno delay para garantir que o React renderizou o conteúdo no template oculto
+    setTimeout(async () => {
+      try {
+         const canvas = await html2canvas(printRef.current!, { 
+           scale: 3, 
+           useCORS: true,
+           logging: false,
+           backgroundColor: "#ffffff"
+         })
+         const imgData = canvas.toDataURL('image/png')
+         const pdf = new jsPDF('p', 'mm', 'a5')
+         const pdfWidth = pdf.internal.pageSize.getWidth()
+         const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+         pdf.save(`FICHA_EXAME_${dataToUse.patient_name.replace(/\s+/g, '_')}.pdf`)
+      } catch (e) {
+         console.error(e)
+         alert("Erro ao gerar PDF. Verifique se as imagens do logo estão acessíveis.")
+      } finally {
+         setIsGeneratingPDF(false)
+      }
+    }, 100)
   }
 
   const hasSlots = formData.procedure_name === "Raio X" || (slotInfo && slotInfo.total > 0 && slotInfo.occupied < slotInfo.total)
@@ -359,15 +387,77 @@ export default function AgendamentoTab() {
              </div>
           </div>
         </div>
+
+        {/* LISTA DE AGENDADOS NA DATA */}
+        <div className="mt-12 glass-card !bg-white/40 border-none rounded-[3.5rem] p-8 lg:p-12 shadow-2xl relative overflow-hidden">
+           <div className="flex items-center justify-between mb-8">
+              <div>
+                 <h3 className="text-2xl font-black font-space uppercase tracking-tight text-slate-800 flex items-center gap-4">
+                   <div className="p-3 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20"><ClipboardList className="h-6 w-6" /></div>
+                   Agendados para {format(new Date(formData.exam_date + 'T00:00:00'), 'dd/MM/yyyy')}
+                 </h3>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 ml-14">Clique no ícone para gerar a ficha novamente</p>
+              </div>
+              <div className="bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm text-xs font-black text-slate-500 uppercase">{dateAppointments.length} PACIENTES</div>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {dateAppointments.length === 0 ? (
+                 <div className="col-span-full py-10 text-center text-slate-400 font-bold italic opacity-50 uppercase text-xs tracking-widest">Nenhum agendamento para esta data</div>
+              ) : (
+                 dateAppointments.map(appt => (
+                    <div key={appt.id} className="bg-white/60 hover:bg-white p-5 rounded-3xl border border-slate-100 flex items-center justify-between group transition-all hover:shadow-xl hover:-translate-y-1">
+                       <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">{appt.patient_name.charAt(0)}</div>
+                          <div>
+                             <p className="text-xs font-black text-slate-800 uppercase line-clamp-1">{appt.patient_name}</p>
+                             <p className="text-[8px] font-bold text-slate-400 flex items-center gap-2 mt-1 uppercase"><Clock className="h-3 w-3" /> {appt.exam_time} • {appt.procedure_name}</p>
+                          </div>
+                       </div>
+                       <Button 
+                          onClick={() => downloadPDF(appt)} 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-10 w-10 rounded-xl text-blue-500 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-100"
+                          title="Gerar PDF"
+                       >
+                          <FileDown className="h-5 w-5" />
+                       </Button>
+                    </div>
+                 ))
+              )}
+           </div>
+        </div>
       </div>
 
       {/* PDF TEMPLATE (Hidden from window but used by html2canvas) */}
-      <div className="absolute top-[-9999px] left-[-9999px]">
-        <div ref={printRef} style={{ width: '148mm', minHeight: '210mm', backgroundColor: 'white', padding: '15mm', color: 'black', fontFamily: 'sans-serif' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', height: '18mm', marginBottom: '10mm' }}>
-                {logos.logo_hto && <img src={logos.logo_hto} alt="" style={{ height: '100%' }} />}
-                {logos.logo_instituto && <img src={logos.logo_instituto} alt="" style={{ height: '80%' }} />}
-                {logos.logo_maranhao && <img src={logos.logo_maranhao} alt="" style={{ height: '80%' }} />}
+      <style jsx global>{`
+        @media print {
+          body * { visibility: hidden; }
+          #print-area, #print-area * { visibility: visible; }
+          #print-area { 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            width: 100vw; 
+            height: 100vh;
+            display: flex !important;
+            justify-content: center;
+          }
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+      `}</style>
+
+      <div className="fixed opacity-0 pointer-events-none -z-50" style={{ left: '-5000px', top: 0 }}>
+        <div id="print-area" ref={printRef} style={{ width: '148mm', minHeight: '210mm', backgroundColor: 'white', padding: '15mm', color: 'black', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '18mm', marginBottom: '10mm', width: '100%' }}>
+                {logos.logo_hto && <img src={logos.logo_hto} crossOrigin="anonymous" alt="" style={{ height: '100%', objectFit: 'contain' }} />}
+                <div style={{ display: 'flex', gap: '5mm', height: '100%' }}>
+                  {logos.logo_instituto && <img src={logos.logo_instituto} crossOrigin="anonymous" alt="" style={{ height: '100%', objectFit: 'contain' }} />}
+                  {logos.logo_maranhao && <img src={logos.logo_maranhao} crossOrigin="anonymous" alt="" style={{ height: '100%', objectFit: 'contain' }} />}
+                </div>
             </div>
 
             <h1 style={{ fontSize: '18pt', fontWeight: 900, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '2px', borderBottom: '2px solid black', paddingBottom: '3mm', marginBottom: '8mm' }}>
