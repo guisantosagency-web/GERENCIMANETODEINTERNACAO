@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { List, CheckSquare, Clock, MapPin, Key, AlertTriangle, User, Loader2, Save, Users, Trash, Search, ChevronDown, X, ArrowLeft, Send } from "lucide-react"
+import { List, CheckSquare, Clock, MapPin, Key, AlertTriangle, User, Loader2, Save, Users, Trash, Search, ChevronDown, ChevronRight, X, ArrowLeft, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
