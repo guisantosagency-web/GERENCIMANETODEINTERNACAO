@@ -84,27 +84,27 @@ export function ExamsCharts({ records }: { records: any[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
         {/* Distribuição Geral : Presentes x Faltas */}
-        <Card className="glass-card !bg-card/40 border-none rounded-[2.5rem] overflow-hidden group transition-all duration-500 hover:shadow-2xl hover:bg-card/50">
-          <CardHeader className="pb-4 border-b border-border/10">
-            <CardTitle className="flex items-center gap-4 text-2xl font-black font-space uppercase tracking-tight">
-              <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-all duration-500 shadow-indicator">
-                <PieChartIcon className="h-7 w-7" />
+        <Card className="glass-card !bg-card/40 border-none rounded-[2rem] overflow-hidden group transition-all duration-500 hover:shadow-xl hover:bg-card/50">
+          <CardHeader className="py-3 px-6 border-b border-border/10">
+            <CardTitle className="flex items-center gap-3 text-lg font-black font-space uppercase tracking-tight">
+              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-all duration-500">
+                <PieChartIcon className="h-5 w-5" />
               </div>
               Proporção Geral
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-6">
-            <div className="h-[350px] w-full flex flex-col items-center">
-              <ResponsiveContainer width="100%" height="80%">
+          <CardContent className="pt-4 px-4">
+            <div className="h-[230px] w-full flex flex-col items-center">
+              <ResponsiveContainer width="100%" height="85%">
                 <PieChart>
                   <Pie 
                     data={chartData.globalPie} 
                     cx="50%" 
                     cy="50%" 
-                    innerRadius={80} 
-                    outerRadius={120} 
+                    innerRadius={60} 
+                    outerRadius={85} 
                     paddingAngle={5} 
                     dataKey="value" 
                     stroke="none"
@@ -118,15 +118,15 @@ export function ExamsCharts({ records }: { records: any[] }) {
                   <Tooltip content={<CustomTooltip />} />
                   <Legend 
                     verticalAlign="bottom" 
-                    height={36} 
+                    height={30} 
                     content={(props: any) => {
                       const { payload } = props;
                       return (
-                        <div className="flex flex-wrap justify-center gap-3 mt-4">
+                        <div className="flex flex-wrap justify-center gap-2 mt-2">
                           {payload.map((entry: any, index: number) => (
-                            <div key={index} className="flex items-center gap-2 bg-background/40 backdrop-blur-md px-3 py-2 rounded-2xl border border-white/5 shadow-sm group/item">
-                              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest whitespace-nowrap">
+                            <div key={index} className="flex items-center gap-1.5 bg-background/40 backdrop-blur-md px-2 py-1 rounded-xl border border-white/5 shadow-sm group/item">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                              <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest whitespace-nowrap">
                                 {entry.value}: <span className="text-foreground ml-1 font-black">{chartData.globalPie[index].value}</span>
                               </span>
                             </div>
@@ -148,31 +148,31 @@ export function ExamsCharts({ records }: { records: any[] }) {
         </Card>
 
         {/* Totais por Tipo de Exame */}
-        <Card className="glass-card !bg-card/40 border-none rounded-[2.5rem] overflow-hidden group transition-all duration-500 hover:shadow-2xl hover:bg-card/50">
-          <CardHeader className="pb-4 border-b border-border/10">
-            <CardTitle className="flex items-center gap-4 text-2xl font-black font-space uppercase tracking-tight">
-              <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-500 group-hover:bg-purple-500 group-hover:text-white transition-all duration-500 shadow-indicator">
-                <FileText className="h-7 w-7" />
+        <Card className="glass-card !bg-card/40 border-none rounded-[2rem] overflow-hidden group transition-all duration-500 hover:shadow-xl hover:bg-card/50">
+          <CardHeader className="py-3 px-6 border-b border-border/10">
+            <CardTitle className="flex items-center gap-3 text-lg font-black font-space uppercase tracking-tight">
+              <div className="p-2 rounded-xl bg-purple-500/10 text-purple-500 group-hover:bg-purple-500 group-hover:text-white transition-all duration-500">
+                <FileText className="h-5 w-5" />
               </div>
               Volume por Exame
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-6">
-            <div className="h-[350px] w-full transition-all duration-500 flex flex-col">
+          <CardContent className="pt-4 px-4">
+            <div className="h-[230px] w-full transition-all duration-500 flex flex-col">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData.examData} layout="vertical" margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
+                <BarChart data={chartData.examData} layout="vertical" margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
                   <XAxis type="number" hide />
                   <YAxis 
                     dataKey="name" 
                     type="category" 
-                    width={130} 
-                    tick={{ fontSize: 10, fontWeight: 900, fill: "hsl(var(--foreground))", fontFamily: 'var(--font-space)' }} 
+                    width={100} 
+                    tick={{ fontSize: 9, fontWeight: 900, fill: "hsl(var(--foreground))", fontFamily: 'var(--font-space)' }} 
                     axisLine={false} 
                     tickLine={false} 
                   />
                   <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 10 }} content={<CustomTooltip />} />
                   <Bar dataKey="presentes" name="Presentes" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="faltas" name="Faltas" stackId="a" fill="#ef4444" radius={[0, 15, 15, 0]} />
+                  <Bar dataKey="faltas" name="Faltas" stackId="a" fill="#ef4444" radius={[0, 10, 10, 0]} />
                 </BarChart>
               </ResponsiveContainer>
               {chartData.examData.length === 0 && (
@@ -186,24 +186,24 @@ export function ExamsCharts({ records }: { records: any[] }) {
       </div>
 
       {/* Histórico Mensal */}
-      <Card className="glass-card !bg-card/40 border-none rounded-[2.5rem] overflow-hidden group transition-all duration-500 hover:shadow-2xl hover:bg-card/50 mt-8">
-        <CardHeader className="pb-4 border-b border-border/10">
-          <CardTitle className="flex items-center gap-4 text-2xl font-black font-space uppercase tracking-tight">
-            <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500 shadow-indicator">
-              <Activity className="h-7 w-7" />
+      <Card className="glass-card !bg-card/40 border-none rounded-[2rem] overflow-hidden group transition-all duration-500 hover:shadow-xl hover:bg-card/50 mt-6">
+        <CardHeader className="py-3 px-6 border-b border-border/10">
+          <CardTitle className="flex items-center gap-3 text-lg font-black font-space uppercase tracking-tight">
+            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500">
+              <Activity className="h-5 w-5" />
             </div>
-            Histórico Mensal Desempenho
+            Histórico Mensal
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-6">
-          <div className="h-[300px] w-full transition-all duration-500 flex flex-col">
+        <CardContent className="pt-4 px-4">
+          <div className="h-[200px] w-full transition-all duration-500 flex flex-col">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData.monthlyData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+              <BarChart data={chartData.monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
+                <XAxis dataKey="month" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
                 <YAxis hide />
                 <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 10 }} content={<CustomTooltip />} />
-                <Bar dataKey="presentes" name="Tot. Presentes" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="faltas" name="Tot. Faltas" stackId="a" fill="#ef4444" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="presentes" name="Presentes" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="faltas" name="Faltas" stackId="a" fill="#ef4444" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
             {chartData.monthlyData.length === 0 && (

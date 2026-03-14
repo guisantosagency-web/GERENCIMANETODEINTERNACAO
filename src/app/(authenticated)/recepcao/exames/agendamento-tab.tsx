@@ -1,12 +1,13 @@
 "use client"
 import { useState, useRef, useMemo, useEffect } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { CalendarDays, Save, Printer, User, CreditCard, Clock, Activity, FileText } from "lucide-react"
+import { CalendarDays, Save, Printer, User, CreditCard, Clock, Activity, FileText, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { useAuth } from "@/lib/auth-context"
 
 const PROCEDURES = [
   "Tomografia",
@@ -27,21 +28,63 @@ const EXAM_TYPES_BY_PROCEDURE: Record<string, string[]> = {
 }
 
 export default function AgendamentoTab() {
+  const { logos } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [slotInfo, setSlotInfo] = useState<{ total: number; occupied: number } | null>(null)
+  const [isCheckingSlots, setIsCheckingSlots] = useState(false)
+  
   const [formData, setFormData] = useState({
     patient_name: "",
     cpf: "",
     sus: "",
     exam_date: format(new Date(), 'yyyy-MM-dd'),
-    exam_time: "08:00",
+    exam_time: format(new Date(), 'HH:mm'),
     procedure_name: PROCEDURES[0],
     exam_type: EXAM_TYPES_BY_PROCEDURE[PROCEDURES[0]][0] || "",
   })
 
-  // State to hold the last saved appointment for printing
   const [lastSaved, setLastSaved] = useState<any>(null)
-  
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
+
+  // Check slots whenever date or procedure changes
+  useEffect(() => {
+    const checkSlots = async () => {
+      if (formData.procedure_name === "Raio X") {
+        setSlotInfo(null)
+        return
+      }
+
+      setIsCheckingSlots(true)
+      try {
+        // 1. Get total slots for this date/proc
+        const { data: slotData } = await supabase
+          .from("exam_slots")
+          .select("total_slots")
+          .eq("exam_date", formData.exam_date)
+          .eq("procedure_name", formData.procedure_name)
+          .maybeSingle()
+
+        // 2. Get current appointments for this date/proc
+        const { count } = await supabase
+          .from("exam_appointments")
+          .select("*", { count: 'exact', head: true })
+          .eq("exam_date", formData.exam_date)
+          .eq("procedure_name", formData.procedure_name)
+          .neq("status", "cancelado")
+
+        setSlotInfo({
+          total: slotData?.total_slots || 0,
+          occupied: count || 0
+        })
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setIsCheckingSlots(false)
+      }
+    }
+
+    checkSlots()
+  }, [formData.exam_date, formData.procedure_name, supabase])
 
   const handleProcedureChange = (newProc: string) => {
     setFormData(prev => ({
@@ -53,11 +96,23 @@ export default function AgendamentoTab() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Restriction check
+    if (formData.procedure_name !== "Raio X") {
+      if (!slotInfo || slotInfo.total === 0) {
+        alert("ERRO: Não há vagas registradas para este procedimento nesta data. Por favor, solicite ao admin o registro das vagas.")
+        return
+      }
+      if (slotInfo.occupied >= slotInfo.total) {
+        alert("ERRO: Limite de vagas atingido para este procedimento nesta data.")
+        return
+      }
+    }
+
     setIsSubmitting(true)
     try {
-      // Basic insert into our new table
       const { data, error } = await supabase.from("exam_appointments").insert([{
-        patient_name: formData.patient_name,
+        patient_name: formData.patient_name.toUpperCase(),
         cpf: formData.cpf,
         sus: formData.sus,
         exam_date: formData.exam_date,
@@ -69,16 +124,20 @@ export default function AgendamentoTab() {
 
       if (error) throw error
 
-      setLastSaved(data) // Ready for print
+      setLastSaved(data)
       alert("Agendamento salvo com sucesso!")
       
-      // Reset form (keep date/time perhaps?)
       setFormData(prev => ({
         ...prev,
         patient_name: "",
         cpf: "",
         sus: "",
       }))
+      
+      // Refresh slot info
+      if (slotInfo) {
+        setSlotInfo(prev => prev ? ({ ...prev, occupied: prev.occupied + 1 }) : null)
+      }
     } catch (err: any) {
       console.error(err)
       alert("Erro ao salvar agendamento.")
@@ -91,16 +150,36 @@ export default function AgendamentoTab() {
     window.print()
   }
 
+  const hasSlots = formData.procedure_name === "Raio X" || (slotInfo && slotInfo.total > 0 && slotInfo.occupied < slotInfo.total)
+  const noSlotsAtAll = formData.procedure_name !== "Raio X" && slotInfo && slotInfo.total === 0
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
-      {/* SEÇÃO PRINCIPAL (Visível apenas na tela, escondida na impressão) */}
       <div className="print:hidden">
         <div className="glass-card !bg-card/40 border-none rounded-[2.5rem] p-8 max-w-5xl mx-auto shadow-sm">
-          <h2 className="text-2xl font-black font-space uppercase tracking-tight mb-8 flex items-center gap-3">
-             <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl"><CalendarDays className="h-6 w-6" /></div>
-             Novo Agendamento
-          </h2>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <h2 className="text-2xl font-black font-space uppercase tracking-tight flex items-center gap-3">
+               <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl"><CalendarDays className="h-6 w-6" /></div>
+               Novo Agendamento
+            </h2>
+
+            {formData.procedure_name !== "Raio X" && (
+              <div className={`p-4 rounded-2xl border flex items-center gap-3 transition-all ${noSlotsAtAll ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-blue-500/5 border-blue-500/10 text-primary'}`}>
+                {isCheckingSlots ? (
+                  <div className="h-4 w-4 border-2 border-t-transparent border-primary rounded-full animate-spin" />
+                ) : (
+                  <AlertCircle className="h-5 w-5" />
+                )}
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Disponibilidade</p>
+                  <p className="text-sm font-bold">
+                    {noSlotsAtAll ? "BLOQUEADO: Sem vagas" : `${slotInfo?.occupied || 0} / ${slotInfo?.total || 0} vagas ocupadas`}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-muted/20 border border-white/5 rounded-3xl">
@@ -157,8 +236,8 @@ export default function AgendamentoTab() {
                 </div>
 
                 <div className="md:col-span-2 pt-4 flex gap-4">
-                  <Button type="submit" disabled={isSubmitting} className="flex-1 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold h-14 text-lg">
-                    {isSubmitting ? "Salvando..." : <><Save className="mr-2 h-5 w-5" /> Salvar Agendamento</>}
+                  <Button type="submit" disabled={isSubmitting || !hasSlots || isCheckingSlots} className={`flex-1 rounded-2xl text-white font-bold h-14 text-lg ${hasSlots ? 'bg-blue-600 hover:bg-blue-700' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}>
+                    {isSubmitting ? "Salvando..." : !hasSlots && !isCheckingSlots ? "Sem Vagas Disponíveis" : <><Save className="mr-2 h-5 w-5" /> Salvar Agendamento</>}
                   </Button>
                   
                   {lastSaved && (
@@ -172,14 +251,12 @@ export default function AgendamentoTab() {
         </div>
       </div>
 
-      {/* SEÇÃO PRINT (Visível apenas na impressão) */}
       {lastSaved && (
         <div className="hidden print:block w-[14.8cm] h-[21cm] bg-white text-black p-8 mx-auto font-sans relative border">
-            {/* Header / Logos idênticos à ficha antiga em flex */}
-            <div className="flex justify-between items-center mb-6">
-                <img src="/logo-hto.png" alt="HTO Logo" className="h-16 object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
-                <img src="/logo-invisa.png" alt="Invisa Logo" className="h-16 object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
-                <img src="/logo-ma.png" alt="Maranhão Logo" className="h-16 object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
+            <div className="flex justify-between items-center mb-6 h-16">
+                {logos.logo_hto && <img src={logos.logo_hto} alt="HTO" className="h-full object-contain" />}
+                {logos.logo_instituto && <img src={logos.logo_instituto} alt="Instituto" className="h-[80%] object-contain" />}
+                {logos.logo_maranhao && <img src={logos.logo_maranhao} alt="MA" className="h-[80%] object-contain" />}
             </div>
 
             <h1 className="text-xl font-black text-center mb-8 uppercase tracking-widest border-b-2 border-black pb-2">
@@ -191,7 +268,6 @@ export default function AgendamentoTab() {
                     <span className="font-bold w-32">PACIENTE:</span>
                     <span className="flex-1 uppercase font-bold text-lg">{lastSaved.patient_name}</span>
                 </div>
-                {/* Data de nasc ficaria em branco para a recepção colar ou a gente ignora nesse impresso inicial */}
                 <div className="flex border-b border-black border-dashed pb-1">
                     <span className="font-bold w-32">DATA DE NASC.:</span>
                     <span className="flex-1">_________________________</span>
@@ -246,6 +322,10 @@ export default function AgendamentoTab() {
                     </>
                   )}
                </ul>
+            </div>
+            
+            <div className="absolute bottom-8 right-8 text-[8px] opacity-30 font-bold uppercase">
+               Gerado em {format(new Date(), 'dd/MM/yyyy HH:mm')}
             </div>
         </div>
       )}

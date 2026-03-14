@@ -128,6 +128,20 @@ export default function ChegadaTab() {
       }).eq("id", selectedAppt.id)
 
       if (error) throw error
+
+      // UPSERT PACIENTE PERSISTENTE
+      // Salva ou atualiza os dados do paciente para uso futuro
+      await supabase.from("patients").upsert({
+        paciente: selectedAppt.patient_name,
+        cpf: selectedAppt.cpf,
+        sus: selectedAppt.sus,
+        data_nascimento: formData.birth_date,
+        cidade_origem: formData.city,
+        estado: formData.state,
+        telefone: "", // Caso queira coletar no futuro
+        updated_at: new Date().toISOString()
+      }, { onConflict: "cpf" }) // Ou SUS se CPF for vazio, mas aqui vamos usar CPF como chave principal se existir
+
       setIsModalOpen(false)
       loadData()
     } catch (err: any) {
@@ -179,10 +193,26 @@ export default function ChegadaTab() {
                        <span className="text-primary">{a.procedure_name}</span>
                        <span className="text-[10px] ml-2 px-2 py-0.5 rounded-full bg-border text-foreground">{a.exam_type}</span>
                      </td>
-                     <td className="p-4 text-right pr-6">
+                     <td className="p-4 text-right pr-6 flex items-center justify-end gap-2">
                        <Button onClick={() => handleOpenModal(a)} className="rounded-xl shadow-premium gap-2 bg-gradient-to-r from-emerald-600 to-emerald-400 hover:opacity-90 transition-all font-bold">
                          <CheckSquare className="h-4 w-4" /> Registrar Chegada
                        </Button>
+
+                       {user?.role === "admin" && (
+                         <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={async () => {
+                              if(confirm("Deseja realmente excluir este agendamento?")) {
+                                await supabase.from("exam_appointments").delete().eq("id", a.id)
+                                loadData()
+                              }
+                            }}
+                            className="text-red-500 hover:bg-red-500/10 rounded-xl"
+                         >
+                           <Trash className="h-4 w-4" />
+                         </Button>
+                       )}
                      </td>
                    </tr>
                  ))}

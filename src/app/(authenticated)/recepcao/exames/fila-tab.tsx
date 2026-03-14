@@ -22,15 +22,31 @@ export default function FilaTab() {
       setOriginsData(orgDict)
 
       // Load Fila
-      // Hoje, quem está 'aguardando', 'presente', ou 'falta' para mostrar listis completis?
-      // "vai aparecer a lista por data, mas por ordem de chegada... lista vai aparecer ... Presente | Falta | Acoes"
       const { data } = await supabase
         .from("exam_appointments")
         .select("*")
         .in("status", ["aguardando", "presente", "falta"])
         .order("arrival_time", { ascending: true })
       
-      if (data) setAppointments(data)
+      if (data) {
+        // Separa quem ainda está aguardando para aplicar a regra de intercalação
+        const aguardando = data.filter(a => a.status === "aguardando")
+        const realizados = data.filter(a => a.status !== "aguardando")
+
+        const prioridades = aguardando.filter(a => a.priority !== "Sem Prioridade")
+        const normais = aguardando.filter(a => a.priority === "Sem Prioridade")
+
+        const intercalados: any[] = []
+        const max = Math.max(prioridades.length, normais.length)
+
+        for (let i = 0; i < max; i++) {
+          if (prioridades[i]) intercalados.push(prioridades[i])
+          if (normais[i]) intercalados.push(normais[i])
+        }
+
+        // Fila final: Intercalados primeiro, depois os que já foram atendidos (histórico do dia)
+        setAppointments([...intercalados, ...realizados])
+      }
     } finally {
       setIsLoading(false)
     }

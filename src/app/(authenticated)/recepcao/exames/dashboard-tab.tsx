@@ -7,6 +7,7 @@ import { StatCard } from "@/components/stat-card"
 import { Activity, CalendarDays, BarChart3, Search, Calendar, Edit2, Trash2, CalendarX2, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format, parseISO } from "date-fns"
+import { useAuth } from "@/lib/auth-context"
 
 const ExamsCharts = dynamic(() => import("@/components/exams-charts").then(m => m.ExamsCharts), { 
   ssr: false,
@@ -199,7 +200,7 @@ export default function ExamesDashboardTab() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard title="Total Geral Escalonado" value={stats.total} subtitle="Exames (Presentes + Faltas)" icon={BarChart3} variant="primary" className="!rounded-[1.5rem]" />
             <StatCard title="Total Presentes" value={stats.presentes} subtitle="Pacientes Atendidos" icon={Users} variant="accent" className="!rounded-[1.5rem]" />
-            <StatCard title="Total Faltas" value={stats.faltas} subtitle="Pacientes Ausentes" icon={CalendarX2} variant="destructive" className="!rounded-[1.5rem]" />
+            <StatCard title="Total Faltas" value={stats.faltas} subtitle="Pacientes Ausentes" icon={CalendarX2} variant="warning" className="!rounded-[1.5rem]" />
           </div>
         </div>
       </div>
@@ -214,10 +215,74 @@ export default function ExamesDashboardTab() {
            <p className="font-space font-bold tracking-widest uppercase">Nenhum registro encontrado.</p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6 pb-20">
           <ExamsCharts records={filteredRecords} />
+          
+          <div className="glass-card !bg-card/40 border-none rounded-[2rem] p-6 shadow-sm overflow-hidden">
+             <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-black font-space uppercase tracking-tight flex items-center gap-2">
+                   <Activity className="h-5 w-5 text-primary" />
+                   Detalhamento de Registros
+                </h3>
+             </div>
+
+             <div className="overflow-x-auto">
+               <table className="w-full text-left text-xs uppercase font-bold tracking-widest whitespace-nowrap">
+                 <thead className="bg-muted/50 text-muted-foreground border-b border-border/10">
+                   <tr>
+                     <th className="p-3">Data</th>
+                     <th className="p-3">Procedimento</th>
+                     <th className="p-3 text-center">Presentes</th>
+                     <th className="p-3 text-center">Faltas</th>
+                     <th className="p-3 text-right">Ações</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-border/5">
+                   {filteredRecords.map(r => (
+                     <tr key={r.id} className="hover:bg-muted/20 transition-colors group">
+                       <td className="p-3">{format(parseISO(r.date), 'dd/MM/yyyy')}</td>
+                       <td className="p-3 font-black text-primary">{r.exame}</td>
+                       <td className="p-3 text-center">
+                          <span className="bg-emerald-500/10 text-emerald-500 px-2 py-1 rounded-lg">{r.presentes}</span>
+                       </td>
+                       <td className="p-3 text-center">
+                          <span className="bg-red-500/10 text-red-500 px-2 py-1 rounded-lg">{r.faltas}</span>
+                       </td>
+                       <td className="p-3 text-right">
+                          {/* Somente Admin deleta */}
+                          {/* Note: In this context, we need the user from useAuth */}
+                          <AdminDeleteButton recordId={r.id} onLoad={loadData} supabase={supabase} />
+                       </td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+             </div>
+          </div>
         </div>
       )}
     </div>
+  )
+}
+
+function AdminDeleteButton({ recordId, onLoad, supabase }: { recordId: string, onLoad: () => void, supabase: any }) {
+  const { user } = useAuth()
+  if (user?.role !== "admin") return null
+
+  return (
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      className="h-8 w-8 text-red-500 hover:bg-red-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+      onClick={async () => {
+        if (confirm("Deseja realmente excluir este registro de estatística?")) {
+           const { error } = await supabase.from("daily_exams").delete().eq("id", recordId)
+           if (error) alert("Erro ao excluir")
+           else onLoad()
+        }
+      }}
+    >
+      <Trash2 className="h-4 w-4" />
+    </Button>
   )
 }
