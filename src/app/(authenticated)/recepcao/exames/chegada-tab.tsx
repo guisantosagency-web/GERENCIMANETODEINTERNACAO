@@ -213,10 +213,10 @@ export default function ChegadaTab() {
   const calculatedAge = formData.birth_date ? differenceInYears(new Date(), parseISO(formData.birth_date)) : "--"
 
   return (
-    <div className="h-full min-h-[800px] flex gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden relative">
+    <div className="h-full min-h-[800px] flex flex-row-reverse gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden relative">
       
-      {/* LEFT PANEL: ARRIVAL FORM (PULLS FROM LEFT TO RIGHT) */}
-      <div className={`transition-all duration-700 ease-out h-full ${selectedAppt ? 'w-[450px] opacity-100 translate-x-0' : 'w-0 opacity-0 -translate-x-full overflow-hidden'}`}>
+      {/* RIGHT PANEL: ARRIVAL FORM (PULLS FROM RIGHT TO LEFT) */}
+      <div className={`transition-all duration-700 ease-out h-full ${selectedAppt ? 'w-[550px] opacity-100 translate-x-0' : 'w-0 opacity-0 translate-x-full overflow-hidden'}`}>
          <div className="glass-card bg-white border-none rounded-[3.5rem] h-full shadow-2xl flex flex-col overflow-hidden border-2 border-emerald-500/10">
             <div className="p-8 border-b bg-emerald-600 text-white relative">
                <div className="flex items-center justify-between mb-2">
@@ -358,7 +358,7 @@ export default function ChegadaTab() {
                                  onClick={() => handleSelectAppt(a)} 
                                  className={`h-14 px-8 rounded-2xl gap-3 font-black uppercase text-xs tracking-widest transition-all ${selectedAppt?.id === a.id ? 'bg-emerald-700 text-white shadow-none' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/10 hover:shadow-emerald-500/30'}`}
                               >
-                                 {selectedAppt?.id === a.id ? <ArrowLeft className="h-5 w-5" /> : <CheckSquare className="h-5 w-5" />}
+                                 {selectedAppt?.id === a.id ? <ChevronRight className="h-5 w-5 animate-bounce-horizontal" /> : <CheckSquare className="h-5 w-5" />}
                                  {selectedAppt?.id === a.id ? "Editando..." : "Registrar Entrada"}
                               </Button>
 
