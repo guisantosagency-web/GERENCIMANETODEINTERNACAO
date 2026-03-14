@@ -1,18 +1,16 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { List, CheckSquare, Clock, MapPin, Key, AlertTriangle, User, Loader2, Save, Users, Trash, Search, ChevronDown } from "lucide-react"
+import { List, CheckSquare, Clock, MapPin, Key, AlertTriangle, User, Loader2, Save, Users, Trash, Search, ChevronDown, X, ArrowLeft, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { differenceInYears, parseISO, format } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
 
 type IbgeEstado = { id: number, sigla: string, nome: string }
 type IbgeMunicipio = { id: number, nome: string }
 
-// Reusable Searchable Select Component
 const SearchableSelect = ({ label, options, value, onChange, placeholder, disabled = false, icon: Icon }: any) => {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -26,13 +24,13 @@ const SearchableSelect = ({ label, options, value, onChange, placeholder, disabl
 
   return (
     <div className="space-y-2 relative">
-      <Label className="uppercase text-[10px] font-black tracking-widest text-muted-foreground ml-2">{label}</Label>
+      <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-2">{label}</Label>
       <div className="relative">
         <button
           type="button"
           disabled={disabled}
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-full flex items-center justify-between bg-white border border-slate-200 px-4 h-14 rounded-2xl text-sm font-bold shadow-sm transition-all focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed ${isOpen ? 'ring-2 ring-emerald-500 border-emerald-500' : ''}`}
+          className={`w-full flex items-center justify-between bg-slate-50 border-none px-4 h-14 rounded-2xl text-sm font-bold shadow-inner transition-all focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed ${isOpen ? 'ring-2 ring-emerald-500 bg-white' : ''}`}
         >
           <div className="flex items-center gap-3">
             {Icon && <Icon className="h-5 w-5 text-emerald-500" />}
@@ -88,21 +86,17 @@ export default function ChegadaTab() {
   const [appointments, setAppointments] = useState<any[]>([])
   const [origins, setOrigins] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
-
-  // Localidades
   const [estados, setEstados] = useState<IbgeEstado[]>([])
   const [municipios, setMunicipios] = useState<IbgeMunicipio[]>([])
 
-  // Modal
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedAppt, setSelectedAppt] = useState<any>(null)
   
   const [formData, setFormData] = useState({
     origin_id: "",
     new_origin_name: "",
     birth_date: "",
-    state: "",
-    city: "",
+    state: "MA",
+    city: "São Luís",
     access_key: "",
     priority: "Sem Prioridade",
     receptionist_name: ""
@@ -149,7 +143,7 @@ export default function ChegadaTab() {
     loadData()
   }, [])
 
-  const handleOpenModal = (appt: any) => {
+  const handleSelectAppt = (appt: any) => {
     setSelectedAppt(appt)
     setFormData({
       origin_id: origins[0]?.id || "",
@@ -159,9 +153,8 @@ export default function ChegadaTab() {
       city: "São Luís",
       access_key: "",
       priority: "Sem Prioridade",
-      receptionist_name: user?.name || "Recepcionista Logado"
+      receptionist_name: user?.name || ""
     })
-    setIsModalOpen(true)
   }
 
   const handleDeleteOrigin = async (e: any, id: string) => {
@@ -205,13 +198,13 @@ export default function ChegadaTab() {
         data_nascimento: formData.birth_date,
         cidade_origem: formData.city,
         estado: formData.state,
-        telefone: "", 
         updated_at: new Date().toISOString()
       }, { onConflict: "cpf" })
 
-      setIsModalOpen(false)
+      setSelectedAppt(null)
       loadData()
-    } catch (err: any) {
+      alert("Entrada registrada com sucesso!")
+    } catch (err) {
       console.error(err)
       alert("Erro ao confirmar chegada.")
     }
@@ -220,212 +213,179 @@ export default function ChegadaTab() {
   const calculatedAge = formData.birth_date ? differenceInYears(new Date(), parseISO(formData.birth_date)) : "--"
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="glass-card !bg-card/40 border-none rounded-[3rem] p-6 lg:p-8 shadow-sm relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl animate-pulse" />
-        
-        <h2 className="text-3xl font-black font-space uppercase tracking-tight mb-10 flex items-center gap-4">
-          <div className="p-4 bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-500/20"><List className="h-7 w-7" /></div>
-          Pacientes em Espera de Recepção
-        </h2>
+    <div className="h-full min-h-[800px] flex gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden relative">
+      
+      {/* LEFT PANEL: ARRIVAL FORM (PULLS FROM LEFT TO RIGHT) */}
+      <div className={`transition-all duration-700 ease-out h-full ${selectedAppt ? 'w-[450px] opacity-100 translate-x-0' : 'w-0 opacity-0 -translate-x-full overflow-hidden'}`}>
+         <div className="glass-card bg-white border-none rounded-[3.5rem] h-full shadow-2xl flex flex-col overflow-hidden border-2 border-emerald-500/10">
+            <div className="p-8 border-b bg-emerald-600 text-white relative">
+               <div className="flex items-center justify-between mb-2">
+                 <div className="h-10 w-10 flex items-center justify-center bg-white/20 rounded-xl"><CheckSquare className="h-6 w-6" /></div>
+                 <Button variant="ghost" size="icon" onClick={() => setSelectedAppt(null)} className="h-10 w-10 text-white hover:bg-white/10 rounded-full"><X className="h-6 w-6" /></Button>
+               </div>
+               <h3 className="text-2xl font-black font-space uppercase tracking-tight">Protocolo de Entrada</h3>
+               <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1">Paciente: {selectedAppt?.patient_name}</p>
+            </div>
 
-        {isLoading ? (
-           <div className="h-80 flex flex-col items-center justify-center gap-4">
-             <div className="relative">
-                <Loader2 className="h-12 w-12 animate-spin text-emerald-600" />
-                <div className="absolute inset-0 bg-emerald-600/10 rounded-full blur-xl" />
-             </div>
-             <p className="font-bold text-slate-400 animate-pulse tracking-[0.3em] text-[10px] uppercase">Sincronizando Banco de Dados...</p>
-           </div>
-        ) : appointments.length === 0 ? (
-           <div className="h-80 flex flex-col items-center justify-center opacity-30 text-slate-400">
-             <Clock className="h-20 w-20 mb-6 stroke-[1.5px]" />
-             <p className="text-xl font-black font-space tracking-widest uppercase">Sem Fila de Chegada no Momento</p>
-           </div>
-        ) : (
-           <div className="overflow-x-auto rounded-[2.5rem] border border-slate-100 bg-white shadow-soft p-1">
-             <table className="w-full text-left text-sm whitespace-nowrap">
-               <thead className="bg-slate-50/50 font-black uppercase tracking-widest text-[10px] text-slate-400">
-                 <tr>
-                   <th className="p-6">Data / Hora</th>
-                   <th className="p-6">Paciente</th>
-                   <th className="p-6">Documento Principal</th>
-                   <th className="p-6">Procedimento Central</th>
-                   <th className="p-6 text-right">Controle</th>
-                 </tr>
-               </thead>
-               <tbody className="divide-y divide-slate-50">
-                 {appointments.map(a => (
-                   <tr key={a.id} className="hover:bg-slate-50/80 transition-all duration-300 group">
-                     <td className="p-6">
-                       <div className="flex flex-col">
-                         <span className="font-black text-slate-800 text-base">{format(new Date(a.exam_date + 'T00:00:00'), 'dd/MM')}</span>
-                         <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-lg w-fit mt-1">{a.exam_time}</span>
+            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+               <form id="arrival-form" onSubmit={handleSubmit} className="space-y-8 pb-10">
+                  <div className="space-y-6">
+                    <div className="space-y-2 group">
+                       <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Origem do Encaminhamento</Label>
+                       <div className="flex gap-2">
+                         <select required value={formData.origin_id} onChange={e => setFormData(p => ({ ...p, origin_id: e.target.value }))} className="flex-1 appearance-none bg-slate-50 border-none px-4 h-14 rounded-2xl text-sm font-bold shadow-inner focus:ring-2 focus:ring-emerald-500/20 uppercase transition-all">
+                            {origins.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                            <option value="NOVO" className="font-black text-emerald-600">+ NOVA UNIDADE</option>
+                         </select>
+                         {formData.origin_id && formData.origin_id !== "NOVO" && user?.role === "admin" && (
+                           <Button type="button" size="icon" variant="ghost" className="h-14 w-14 rounded-2xl bg-red-50 text-red-400 hover:bg-red-500 hover:text-white" onClick={(e) => handleDeleteOrigin(e, formData.origin_id)}>
+                              <Trash className="h-5 w-5" />
+                           </Button>
+                         )}
                        </div>
-                     </td>
-                     <td className="p-6">
-                        <div className="flex items-center gap-4">
-                           <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">
-                              {a.patient_name.charAt(0)}
-                           </div>
-                           <span className="font-black uppercase text-slate-800 text-base tracking-tight">{a.patient_name}</span>
-                        </div>
-                     </td>
-                     <td className="p-6 font-bold text-slate-500 tabular-nums">
-                        {a.cpf ? a.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : a.sus}
-                     </td>
-                     <td className="p-6">
-                        <div className="flex flex-col">
-                          <span className="text-blue-600 font-black tracking-tight">{a.procedure_name}</span>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">{a.exam_type}</span>
-                        </div>
-                     </td>
-                     <td className="p-6 text-right flex items-center justify-end gap-3">
-                       <Button onClick={() => handleOpenModal(a)} className="h-12 px-6 rounded-2xl shadow-premium-hover gap-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-xs tracking-widest transition-all">
-                         <CheckSquare className="h-5 w-5" /> Registrar Entrada
-                       </Button>
+                    </div>
 
-                       {user?.role === "admin" && (
-                         <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={async () => {
-                               if(confirm("Deseja realmente excluir este agendamento?")) {
-                                 await supabase.from("exam_appointments").delete().eq("id", a.id)
-                                 loadData()
-                               }
-                            }}
-                            className="h-12 w-12 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-2xl transition-all"
-                         >
-                           <Trash className="h-5 w-5" />
-                         </Button>
-                       )}
-                     </td>
-                   </tr>
-                 ))}
-               </tbody>
-             </table>
-           </div>
-        )}
+                    {formData.origin_id === "NOVO" && (
+                       <div className="animate-in zoom-in duration-300">
+                          <Label className="uppercase text-[10px] font-black tracking-widest text-emerald-600 ml-2">Nova Unidade</Label>
+                          <Input required placeholder="DIGITE O NOME..." value={formData.new_origin_name} onChange={e => setFormData(p => ({ ...p, new_origin_name: e.target.value }))} className="h-14 font-black uppercase bg-emerald-50 border-emerald-200 rounded-2xl" />
+                       </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                          <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Nascimento</Label>
+                          <Input type="date" required value={formData.birth_date} onChange={e => setFormData(p => ({ ...p, birth_date: e.target.value }))} className="h-14 font-bold bg-slate-50 border-none rounded-2xl text-center shadow-inner" />
+                       </div>
+                       <div className="space-y-2">
+                          <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Idade Atual</Label>
+                          <div className="h-14 flex items-center justify-center bg-slate-100/50 rounded-2xl font-black text-slate-500 border-2 border-dashed border-slate-200">{calculatedAge} ANOS</div>
+                       </div>
+                    </div>
+
+                    <SearchableSelect label="Estado (UF)" options={estados} value={formData.state} onChange={(val: string) => setFormData(p => ({ ...p, state: val, city: "" }))} icon={MapPin} />
+                    <SearchableSelect label="Cidade" options={municipios} value={formData.city} onChange={(val: string) => setFormData(p => ({ ...p, city: val }))} icon={Search} disabled={!formData.state} />
+
+                    <div className="space-y-2">
+                       <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Chave de Protocolo</Label>
+                       <div className="relative">
+                          <Input required type="number" placeholder="DIGITE A CHAVE..." value={formData.access_key} onChange={e => setFormData(p => ({ ...p, access_key: e.target.value }))} className="h-14 pl-12 font-black text-center tracking-widest bg-slate-50 border-none rounded-2xl shadow-inner" />
+                          <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-500" />
+                       </div>
+                    </div>
+
+                    <div className="space-y-2">
+                       <Label className="uppercase text-[10px] font-black tracking-widest text-red-500 ml-2">Classificação de Prioridade</Label>
+                       <select value={formData.priority} onChange={e => setFormData(p => ({ ...p, priority: e.target.value }))} className="w-full h-14 bg-red-50/50 border-red-100 border-2 text-red-600 font-black uppercase text-xs rounded-2xl px-4 cursor-pointer focus:ring-0">
+                          <option value="Sem Prioridade">NORMAL (SEM PRIORIDADE)</option>
+                          <option value="Idoso (+60)">Idoso (+60)</option>
+                          <option value="Gestante / Lactante">Gestante / Lactante</option>
+                          <option value="PcD">Pessoa com Deficiência (PcD)</option>
+                          <option value="Autismo (TEA)">Autismo (TEA)</option>
+                          <option value="Criança de Colo">Criança de Colo</option>
+                       </select>
+                    </div>
+
+                    <div className="space-y-2">
+                       <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Responsável Técnica</Label>
+                       <div className="h-14 flex items-center px-6 bg-slate-100 rounded-2xl text-slate-400 font-black text-xs uppercase shadow-inner border border-slate-200/50">{user?.name || "LOGADO"}</div>
+                    </div>
+                  </div>
+               </form>
+            </div>
+
+            <div className="p-8 border-t bg-slate-50/50">
+               <Button form="arrival-form" type="submit" className="w-full h-16 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-emerald-500/20 gap-4 transition-all active:scale-95 group">
+                  <Send className="h-6 w-6 group-hover:translate-x-1 transition-transform" /> Confirmar Chegada
+               </Button>
+            </div>
+         </div>
       </div>
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl bg-white border-none shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] rounded-[3rem] p-0 overflow-hidden">
-          <div className="h-2 bg-gradient-to-r from-emerald-600 via-emerald-400 to-emerald-600" />
-          
-          <div className="p-8 lg:p-12">
-            <DialogHeader className="mb-10">
-              <div className="flex items-center gap-6">
-                 <div className="p-5 bg-emerald-50 text-emerald-600 rounded-[2rem] shadow-inner"><CheckSquare className="h-8 w-8" /></div>
-                 <div>
-                    <DialogTitle className="text-3xl font-black font-space uppercase tracking-tight text-slate-900">
-                       Formulário de Entrada
-                    </DialogTitle>
-                    <DialogDescription className="font-bold text-slate-400 mt-1 uppercase text-xs tracking-widest">
-                       Protocolo de Recepção para <span className="text-emerald-600">{selectedAppt?.patient_name}</span>
-                    </DialogDescription>
-                 </div>
-              </div>
-            </DialogHeader>
+      {/* RIGHT PANEL: WAIT LIST */}
+      <div className={`flex-1 transition-all duration-700 ${selectedAppt ? 'translate-x-0' : '-translate-x-0'}`}>
+         <div className="glass-card !bg-white/40 border-none rounded-[3.5rem] p-8 lg:p-10 shadow-sm h-full flex flex-col relative overflow-hidden">
+            <div className="flex items-center justify-between mb-10">
+               <div>
+                  <h2 className="text-3xl font-black font-space uppercase tracking-tight flex items-center gap-4 text-slate-800">
+                    <div className="p-4 bg-emerald-600 text-white rounded-[1.5rem] shadow-xl shadow-emerald-500/10"><Users className="h-7 w-7" /></div>
+                    Fila de Triagem / Recepção
+                  </h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-3 ml-20">Controle Dinâmico de Pacientes Aguardando</p>
+               </div>
+               
+               <div className="px-5 py-3 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                  <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{appointments.length} AGUARDANDO</span>
+               </div>
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10">
-                
-                <div className="space-y-3 relative group lg:col-span-2">
-                  <Label className="uppercase text-[10px] font-black tracking-widest text-muted-foreground ml-2 group-hover:text-emerald-500 transition-colors">Origem do Encaminhamento <span className="text-emerald-500">*</span></Label>
-                  <div className="flex gap-3">
-                     <div className="relative flex-1">
-                        <select required value={formData.origin_id} onChange={e => setFormData(p => ({ ...p, origin_id: e.target.value }))} className="w-full appearance-none bg-slate-50 border-white/40 border-2 px-12 h-14 rounded-2xl text-sm font-bold shadow-soft focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-all cursor-pointer">
-                           {origins.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-                           <option value="NOVO" className="font-black text-emerald-500">+ CADASTRAR NOVA ORIGEM</option>
-                        </select>
-                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-500" />
-                     </div>
-                     {formData.origin_id && formData.origin_id !== "NOVO" && user?.role === "admin" && (
-                        <Button type="button" variant="ghost" size="icon" className="h-14 w-14 rounded-2xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm" onClick={(e) => handleDeleteOrigin(e, formData.origin_id)}>
-                           <Trash className="h-5 w-5" />
-                        </Button>
-                     )}
+            {isLoading ? (
+               <div className="flex-1 flex flex-col items-center justify-center gap-4 text-slate-400">
+                  <Loader2 className="h-12 w-12 animate-spin text-emerald-500" />
+                  <span className="text-[10px] font-black uppercase tracking-widest animate-pulse">Consultando Banco...</span>
+               </div>
+            ) : appointments.length === 0 ? (
+               <div className="flex-1 flex flex-col items-center justify-center opacity-30 text-slate-400">
+                  <Clock className="h-32 w-32 mb-8 stroke-[1px]" />
+                  <p className="text-2xl font-black font-space uppercase tracking-widest">Nenhum Registro para Recepção</p>
+               </div>
+            ) : (
+               <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-10">
+                  <div className="grid grid-cols-1 gap-4">
+                     {appointments.map(a => (
+                        <div key={a.id} className={`p-6 rounded-[2rem] transition-all duration-500 border-2 flex items-center justify-between group ${selectedAppt?.id === a.id ? 'bg-emerald-50 border-emerald-500 shadow-xl' : 'bg-white border-slate-100 hover:border-emerald-200 hover:shadow-lg'}`}>
+                           <div className="flex items-center gap-6">
+                              <div className={`h-16 w-16 rounded-[1.5rem] flex items-center justify-center font-black text-2xl transition-all duration-500 ${selectedAppt?.id === a.id ? 'bg-emerald-600 text-white scale-110 rotate-3' : 'bg-slate-50 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 group-hover:-rotate-3'}`}>
+                                 {a.patient_name.charAt(0)}
+                              </div>
+                              <div className="space-y-1">
+                                 <h4 className="font-black text-lg text-slate-800 uppercase tracking-tight">{a.patient_name}</h4>
+                                 <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                    <span className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-emerald-500" /> {a.exam_time} • {format(new Date(a.exam_date + 'T00:00:00'), 'dd/MM/yyyy')}</span>
+                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md font-black">{a.procedure_name}</span>
+                                 </div>
+                              </div>
+                           </div>
+
+                           <div className="flex items-center gap-4">
+                              <div className="hidden md:flex flex-col items-end mr-4">
+                                 <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Doc. Identificação</span>
+                                 <span className="text-xs font-black text-slate-500 tabular-nums lowercase">{a.cpf ? 'cpf: ' + a.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : 'sus: ' + a.sus}</span>
+                              </div>
+                              
+                              <Button 
+                                 onClick={() => handleSelectAppt(a)} 
+                                 className={`h-14 px-8 rounded-2xl gap-3 font-black uppercase text-xs tracking-widest transition-all ${selectedAppt?.id === a.id ? 'bg-emerald-700 text-white shadow-none' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/10 hover:shadow-emerald-500/30'}`}
+                              >
+                                 {selectedAppt?.id === a.id ? <ArrowLeft className="h-5 w-5" /> : <CheckSquare className="h-5 w-5" />}
+                                 {selectedAppt?.id === a.id ? "Editando..." : "Registrar Entrada"}
+                              </Button>
+
+                              {user?.role === "admin" && (
+                                <Button 
+                                   variant="ghost" 
+                                   size="icon" 
+                                   onClick={async () => {
+                                      if(confirm("Excluir agendamento permanentemente?")) {
+                                        await supabase.from("exam_appointments").delete().eq("id", a.id)
+                                        loadData()
+                                      }
+                                   }}
+                                   className="h-14 w-14 rounded-2xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all border border-slate-100"
+                                >
+                                  <Trash className="h-5 w-5" />
+                                </Button>
+                              )}
+                           </div>
+                        </div>
+                     ))}
                   </div>
-                </div>
+               </div>
+            )}
+         </div>
+      </div>
 
-                {formData.origin_id === "NOVO" && (
-                  <div className="space-y-3 relative animate-in slide-in-from-left-4 duration-500">
-                    <Label className="uppercase text-[10px] font-black tracking-widest text-emerald-600 ml-2">Nova Unidade / Origem</Label>
-                    <Input required placeholder="Ex: SECRETARIA DE SAÚDE" value={formData.new_origin_name} onChange={e => setFormData(p => ({ ...p, new_origin_name: e.target.value }))} className="h-14 font-bold uppercase bg-white border-2 border-emerald-100 rounded-2xl shadow-indicator" />
-                  </div>
-                )}
-
-                <div className="space-y-3 relative group">
-                  <Label className="uppercase text-[10px] font-black tracking-widest text-muted-foreground ml-2">Data de Nascimento <span className="text-red-500">*</span></Label>
-                  <div className="flex items-center gap-3">
-                     <Input type="date" required value={formData.birth_date} onChange={e => setFormData(p => ({ ...p, birth_date: e.target.value }))} className="flex-1 h-14 font-bold bg-slate-50 border-none rounded-2xl text-center shadow-soft" />
-                     <div className="h-14 px-4 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-xs font-space shrink-0 shadow-sm">
-                        {calculatedAge} ANOS
-                     </div>
-                  </div>
-                </div>
-
-                <SearchableSelect 
-                  label="Estado de Residência" 
-                  placeholder="Selecione UF..." 
-                  options={estados} 
-                  value={formData.state} 
-                  onChange={(val: string) => setFormData(p => ({ ...p, state: val, city: "" }))} 
-                  icon={MapPin}
-                />
-
-                <SearchableSelect 
-                  label="Município de Origem" 
-                  placeholder="Buscar Cidade..." 
-                  options={municipios} 
-                  value={formData.city} 
-                  onChange={(val: string) => setFormData(p => ({ ...p, city: val }))} 
-                  disabled={!formData.state}
-                  icon={Search}
-                />
-
-                <div className="space-y-3 relative">
-                  <Label className="uppercase text-[10px] font-black tracking-widest text-muted-foreground ml-2">Chave / Protocolo <span className="text-red-500">*</span></Label>
-                  <div className="relative">
-                    <Input required type="number" placeholder="Somente Números" value={formData.access_key} onChange={e => setFormData(p => ({ ...p, access_key: e.target.value }))} className="h-14 font-bold text-center tracking-widest bg-slate-50 border-none rounded-2xl shadow-soft" />
-                    <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-500" />
-                  </div>
-                </div>
-
-                <div className="space-y-3 relative lg:col-span-2">
-                  <Label className="uppercase text-[10px] font-black tracking-widest text-red-500 ml-4 flex items-center gap-2 font-space"><AlertTriangle className="h-4 w-4"/> Classificação de Prioridade</Label>
-                  <div className="relative">
-                    <select value={formData.priority} onChange={e => setFormData(p => ({ ...p, priority: e.target.value }))} className="w-full appearance-none bg-red-50/30 border-2 border-red-100 px-6 h-16 rounded-[1.5rem] text-sm font-black shadow-sm focus:outline-none focus:ring-4 focus:ring-red-500/10 text-red-600 uppercase transition-all cursor-pointer">
-                       <option value="Sem Prioridade">ATENDIMENTO NORMAL (Sem Prioridade)</option>
-                       <option value="Idoso (+60)">Idoso (+60)</option>
-                       <option value="Gestante / Lactante">Gestante / Lactante</option>
-                       <option value="PcD">Pessoa com Deficiência (PcD)</option>
-                       <option value="Autismo (TEA)">Autismo (TEA)</option>
-                       <option value="Criança de Colo">Criança de Colo</option>
-                    </select>
-                    <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 h-6 w-6 text-red-400" />
-                  </div>
-                </div>
-                
-                <div className="space-y-3 relative lg:col-span-1">
-                  <Label className="uppercase text-[10px] font-black tracking-widest text-muted-foreground ml-2 flex items-center gap-2"><Users className="h-3 w-3" /> Responsável</Label>
-                  <Input required readOnly value={formData.receptionist_name} className="h-14 font-black uppercase bg-slate-100 border-none rounded-2xl shadow-inner text-slate-400 text-xs px-6 cursor-not-allowed" />
-                </div>
-
-              </div>
-              
-              <DialogFooter className="pt-8 border-t border-slate-50 flex gap-4">
-                <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)} className="rounded-2xl px-10 h-16 font-bold text-slate-400 hover:bg-slate-50">Fechar</Button>
-                <Button type="submit" className="rounded-2xl px-12 h-16 bg-gradient-to-r from-emerald-700 to-emerald-600 text-white font-black uppercase tracking-widest text-sm shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:opacity-90 transition-all active:scale-95 gap-4">
-                  <Save className="h-6 w-6" /> Liberar para Fila de Exame
-                </Button>
-              </DialogFooter>
-            </form>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
