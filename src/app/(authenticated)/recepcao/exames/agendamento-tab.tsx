@@ -7,8 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { format } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
-import jsPDF from "jspdf"
-import html2canvas from "html2canvas"
 
 const PROCEDURES = [
   "Tomografia",
@@ -80,17 +78,16 @@ const HumanModel = ({ procedure }: { procedure: string }) => {
 
 export default function AgendamentoTab() {
   const { logos } = useAuth()
-  const printRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [slotInfo, setSlotInfo] = useState<{ total: number; occupied: number } | null>(null)
   const [isCheckingSlots, setIsCheckingSlots] = useState(false)
   
-  // Search States
   const [searchResults, setSearchResults] = useState<any[]>([])
-  const [isSearching, setIsSearching] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [dateAppointments, setDateAppointments] = useState<any[]>([])
+  const [lastSaved, setLastSaved] = useState<any>(null)
 
   const [formData, setFormData] = useState({
     patient_name: "",
@@ -102,8 +99,6 @@ export default function AgendamentoTab() {
     exam_type: EXAM_TYPES_BY_PROCEDURE[PROCEDURES[0]][0] || "",
   })
 
-  const [dateAppointments, setDateAppointments] = useState<any[]>([])
-  const [lastSaved, setLastSaved] = useState<any>(null)
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
 
   const loadDateAppointments = async () => {
@@ -143,14 +138,11 @@ export default function AgendamentoTab() {
       setShowDropdown(false)
       return
     }
-    setIsSearching(true)
     setShowDropdown(true)
     try {
       const { data } = await supabase.from("patients").select("*").ilike("paciente", `%${val}%`).limit(5)
       setSearchResults(data || [])
-    } finally {
-      setIsSearching(false)
-    }
+    } catch(e) {}
   }
 
   const handleSelectPatient = (patient: any) => {
@@ -161,7 +153,6 @@ export default function AgendamentoTab() {
       sus: patient.sus || "",
     }))
     setShowDropdown(false)
-    setSearchResults([])
   }
 
   useEffect(() => {
@@ -227,36 +218,101 @@ export default function AgendamentoTab() {
     }
   }
 
-  const downloadPDF = async (apptToPrint?: any) => {
-    const dataToUse = apptToPrint || lastSaved
-    if (!dataToUse || !printRef.current) return
-    
-    // Temporarily update lastSaved if we are printing from the list
-    if (apptToPrint) setLastSaved(apptToPrint)
+  const generatePrintableFicha = (apptToPrint?: any) => {
+    const data = apptToPrint || lastSaved
+    if (!data) return
 
-    setIsGeneratingPDF(true)
-    // Pequeno delay para garantir que o React renderizou o conteúdo no template oculto
-    setTimeout(async () => {
-      try {
-         const canvas = await html2canvas(printRef.current!, { 
-           scale: 3, 
-           useCORS: true,
-           logging: false,
-           backgroundColor: "#ffffff"
-         })
-         const imgData = canvas.toDataURL('image/png')
-         const pdf = new jsPDF('p', 'mm', 'a5')
-         const pdfWidth = pdf.internal.pageSize.getWidth()
-         const pdfHeight = (canvas.height * pdfWidth) / canvas.width
-         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-         pdf.save(`FICHA_EXAME_${dataToUse.patient_name.replace(/\s+/g, '_')}.pdf`)
-      } catch (e) {
-         console.error(e)
-         alert("Erro ao gerar PDF. Verifique se as imagens do logo estão acessíveis.")
-      } finally {
-         setIsGeneratingPDF(false)
-      }
-    }, 100)
+    const printWindow = window.open("", "_blank")
+    if (!printWindow) return
+
+    const logoSection = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+        <div style="display: flex; gap: 20px; height: 60px;">
+          ${logos.logo_hto ? `<img src="${logos.logo_hto}" style="height: 100%;"/>` : ""}
+          ${logos.logo_instituto ? `<img src="${logos.logo_instituto}" style="height: 100%;"/>` : ""}
+          ${logos.logo_maranhao ? `<img src="${logos.logo_maranhao}" style="height: 100%;"/>` : ""}
+          ${logos.logo_sus ? `<img src="${logos.logo_sus}" style="height: 100%;"/>` : ""}
+        </div>
+        <div style="text-align: right; font-size: 8pt; font-weight: bold; opacity: 0.6;">
+          EMITIDO EM ${format(new Date(), 'dd/MM/yyyy HH:mm')}
+        </div>
+      </div>
+    `
+
+    const content = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Ficha de Agendamento - ${data.patient_name}</title>
+        <style>
+          @page { size: A5; margin: 10mm; }
+          body { font-family: sans-serif; color: #000; line-height: 1.4; margin: 0; padding: 0; }
+          h1 { font-size: 16pt; font-weight: 900; text-align: center; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #000; padding-bottom: 5mm; margin-bottom: 8mm; }
+          .info-block { font-size: 11pt; margin-bottom: 8mm; }
+          .info-row { margin-bottom: 3mm; display: flex; }
+          .label { font-weight: 900; width: 45mm; text-transform: uppercase; }
+          .value { text-transform: uppercase; border-bottom: 1px dashed #ccc; flex: 1; }
+          table { width: 100%; border-collapse: collapse; border: 1.5px solid #000; margin-bottom: 10mm; }
+          th { background-color: #f0f0f0; border: 1.5px solid #000; padding: 3mm; text-transform: uppercase; font-size: 9pt; }
+          td { border: 1.5px solid #000; padding: 4mm; text-align: center; font-weight: bold; text-transform: uppercase; font-size: 11pt; }
+          .instructions { border: 1.5px solid #000; padding: 5mm; border-radius: 4mm; }
+          .instructions h2 { font-size: 10pt; font-weight: 900; text-transform: uppercase; margin: 0 0 3mm 0; }
+          .instructions ul { margin: 0; padding-left: 5mm; font-size: 9.5pt; font-weight: bold; }
+          .instructions li { margin-bottom: 1.5mm; }
+          .footer { margin-top: 15mm; border-top: 1px solid #000; padding-top: 5mm; text-align: center; font-size: 8pt; font-weight: bold; opacity: 0.5; }
+        </style>
+      </head>
+      <body>
+        ${logoSection}
+        <h1>Ficha de Agendamento</h1>
+        <div class="info-block">
+          <div class="info-row"><span class="label">Paciente:</span> <span class="value">${data.patient_name}</span></div>
+          <div class="info-row"><span class="label">CPF:</span> <span class="value">${maskCPF(data.cpf || "")}</span></div>
+          <div class="info-row"><span class="label">Cartão SUS:</span> <span class="value">${data.sus || "--"}</span></div>
+          <div class="info-row" style="margin-top: 5mm; font-size: 13pt;"><span class="label">Data Exame:</span> <span class="value" style="font-weight: 900;">${format(new Date(data.exam_date + 'T00:00:00'), 'dd/MM/yyyy')} às ${data.exam_time}</span></div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Procedimento Central</th>
+              <th>Especificação do Exame</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>${data.procedure_name}</td>
+              <td>${data.exam_type}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="instructions">
+          <h2>Orientações Importantes:</h2>
+          <ul>
+            ${data.procedure_name === "Tomografia" ? `
+              <li>PACIENTE EM JEJUM DE 6 HORAS</li>
+              <li>TRAZER EXAMES DE UREIA E CREATININA RECENTE (MÁXIMO 30 DIAS)</li>
+              <li>NÃO FAZER USO DE METFORMINA NO DIA DO EXAME</li>
+              <li>TRAZER SOLICITAÇÃO MÉDICA E DOCUMENTOS ORIGINAIS</li>
+            ` : `
+              <li>TRAZER REQUISIÇÃO DO EXAME</li>
+              <li>DOCUMENTO COM FOTO (RG/CPF) E CARTÃO DO SUS</li>
+              <li>CHEGAR COM 20 MINUTOS DE ANTECEDÊNCIA</li>
+            `}
+          </ul>
+        </div>
+        <div class="footer">DESENVOLVIDO POR GUILHERME SANTOS - AVERO AGENCY</div>
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 500);
+          };
+        </script>
+      </body>
+      </html>
+    `
+    printWindow.document.write(content)
+    printWindow.document.close()
   }
 
   const hasSlots = formData.procedure_name === "Raio X" || (slotInfo && slotInfo.total > 0 && slotInfo.occupied < slotInfo.total)
@@ -337,7 +393,6 @@ export default function AgendamentoTab() {
                         <Input required type="time" value={formData.exam_time} onChange={e => setFormData(p => ({ ...p, exam_time: e.target.value }))} className="pl-16 h-16 font-black text-2xl text-center bg-slate-50 border-none rounded-[1.5rem]" />
                         <Clock className="absolute left-6 bottom-[1.2rem] h-6 w-6 text-amber-500" />
                      </div>
-                     
                      <div className="space-y-3 relative group">
                         <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Procedimento Central</Label>
                         <div className="relative">
@@ -347,7 +402,6 @@ export default function AgendamentoTab() {
                           <Activity className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-blue-600" />
                         </div>
                      </div>
-
                      <div className="space-y-3 relative group">
                         <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Especificação do Exame</Label>
                         <div className="relative">
@@ -362,14 +416,9 @@ export default function AgendamentoTab() {
                            {isSubmitting ? <Loader2 className="animate-spin" /> : "Confirmar Agendamento"}
                         </Button>
                         {lastSaved && (
-                          <div className="flex gap-4">
-                             <Button type="button" onClick={() => window.print()} variant="outline" className="flex-1 rounded-[2rem] border-2 h-20 font-black uppercase">
-                               <Printer className="mr-2" /> Imprimir
-                             </Button>
-                             <Button type="button" onClick={downloadPDF} disabled={isGeneratingPDF} className="flex-1 rounded-[2rem] bg-emerald-600 text-white h-20 font-black uppercase shadow-xl hover:bg-emerald-700">
-                               {isGeneratingPDF ? <Loader2 className="animate-spin" /> : <><FileDown className="mr-2" /> PDF</>}
-                             </Button>
-                          </div>
+                          <Button type="button" onClick={() => generatePrintableFicha()} className="rounded-[2rem] bg-emerald-600 text-white h-20 font-black uppercase shadow-xl hover:bg-emerald-700">
+                             <Printer className="mr-2" /> Gerar Ficha (Impressão/PDF)
+                          </Button>
                         )}
                      </div>
                   </div>
@@ -396,7 +445,6 @@ export default function AgendamentoTab() {
                    <div className="p-3 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20"><ClipboardList className="h-6 w-6" /></div>
                    Agendados para {format(new Date(formData.exam_date + 'T00:00:00'), 'dd/MM/yyyy')}
                  </h3>
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 ml-14">Clique no ícone para gerar a ficha novamente</p>
               </div>
               <div className="bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm text-xs font-black text-slate-500 uppercase">{dateAppointments.length} PACIENTES</div>
            </div>
@@ -414,101 +462,13 @@ export default function AgendamentoTab() {
                              <p className="text-[8px] font-bold text-slate-400 flex items-center gap-2 mt-1 uppercase"><Clock className="h-3 w-3" /> {appt.exam_time} • {appt.procedure_name}</p>
                           </div>
                        </div>
-                       <Button 
-                          onClick={() => downloadPDF(appt)} 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-10 w-10 rounded-xl text-blue-500 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-100"
-                          title="Gerar PDF"
-                       >
-                          <FileDown className="h-5 w-5" />
+                       <Button onClick={() => generatePrintableFicha(appt)} variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-blue-500 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-100">
+                          <Printer className="h-5 w-5" />
                        </Button>
                     </div>
                  ))
               )}
            </div>
-        </div>
-      </div>
-
-      {/* PDF TEMPLATE (Hidden from window but used by html2canvas) */}
-      <style jsx global>{`
-        @media print {
-          body * { visibility: hidden; }
-          #print-area, #print-area * { visibility: visible; }
-          #print-area { 
-            position: fixed; 
-            left: 0; 
-            top: 0; 
-            width: 100vw; 
-            height: 100vh;
-            display: flex !important;
-            justify-content: center;
-          }
-        }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-      `}</style>
-
-      <div className="fixed opacity-0 pointer-events-none -z-50" style={{ left: '-5000px', top: 0 }}>
-        <div id="print-area" ref={printRef} style={{ width: '148mm', minHeight: '210mm', backgroundColor: 'white', padding: '15mm', color: 'black', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '18mm', marginBottom: '10mm', width: '100%' }}>
-                {logos.logo_hto && <img src={logos.logo_hto} crossOrigin="anonymous" alt="" style={{ height: '100%', objectFit: 'contain' }} />}
-                <div style={{ display: 'flex', gap: '5mm', height: '100%' }}>
-                  {logos.logo_instituto && <img src={logos.logo_instituto} crossOrigin="anonymous" alt="" style={{ height: '100%', objectFit: 'contain' }} />}
-                  {logos.logo_maranhao && <img src={logos.logo_maranhao} crossOrigin="anonymous" alt="" style={{ height: '100%', objectFit: 'contain' }} />}
-                </div>
-            </div>
-
-            <h1 style={{ fontSize: '18pt', fontWeight: 900, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '2px', borderBottom: '2px solid black', paddingBottom: '3mm', marginBottom: '8mm' }}>
-                Ficha de Agendamento
-            </h1>
-
-            <div style={{ fontSize: '12pt', lineHeight: '1.6', marginBottom: '8mm' }}>
-                <p><strong>PACIENTE:</strong> <span style={{ textTransform: 'uppercase', borderBottom: '1px dashed black', display: 'inline-block', width: '100mm' }}>{lastSaved?.patient_name}</span></p>
-                <p><strong>CPF:</strong> {lastSaved && maskCPF(lastSaved.cpf)}</p>
-                <p><strong>SUS:</strong> {lastSaved?.sus || "--"}</p>
-                <p style={{ marginTop: '5mm', fontSize: '14pt' }}><strong>DATA DO EXAME:</strong> {lastSaved && format(new Date(lastSaved.exam_date + 'T00:00:00'), 'dd/MM/yyyy')} às {lastSaved?.exam_time}</p>
-            </div>
-
-            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', textAlign: 'center', marginBottom: '10mm' }}>
-               <thead>
-                 <tr style={{ backgroundColor: '#f0f0f0', textTransform: 'uppercase', fontSize: '10pt' }}>
-                   <th style={{ border: '1px solid black', padding: '3mm' }}>Procedimento</th>
-                   <th style={{ border: '1px solid black', padding: '3mm' }}>Tipo de Exame</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 <tr>
-                   <td style={{ border: '1px solid black', padding: '5mm', fontWeight: 'bold', textTransform: 'uppercase' }}>{lastSaved?.procedure_name}</td>
-                   <td style={{ border: '1px solid black', padding: '5mm', fontWeight: 'bold', textTransform: 'uppercase' }}>{lastSaved?.exam_type}</td>
-                 </tr>
-               </tbody>
-            </table>
-
-            <div style={{ border: '1px solid #ccc', padding: '5mm', borderRadius: '5mm' }}>
-               <h2 style={{ fontSize: '11pt', fontWeight: 900, textTransform: 'uppercase', marginBottom: '4mm' }}>Orientações Importantes:</h2>
-               <ul style={{ paddingLeft: '6mm', fontSize: '10pt', fontWeight: 700, lineHeight: '1.8' }}>
-                  {lastSaved?.procedure_name === "Tomografia" ? (
-                    <>
-                       <li>PACIENTE EM JEJUM DE 6 HORAS</li>
-                       <li>TRAZER EXAMES DE UREIA E CREATININA RECENTE (MÁXIMO 30 DIAS)</li>
-                       <li>NÃO FAZER USO DE METFORMINA NO DIA DO EXAME</li>
-                       <li>TRAZER SOLICITAÇÃO MÉDICA E DOCUMENTOS ORIGINAIS</li>
-                    </>
-                  ) : (
-                    <>
-                       <li>TRAZER REQUISIÇÃO DO EXAME</li>
-                       <li>DOCUMENTO COM FOTO (RG/CPF) E CARTÃO DO SUS</li>
-                       <li>CHEGAR COM 20 MINUTOS DE ANTECEDÊNCIA</li>
-                    </>
-                  )}
-               </ul>
-            </div>
-            
-            <div style={{ position: 'absolute', bottom: '10mm', right: '15mm', fontSize: '8pt', opacity: 0.5 }}>
-               Emitido em {format(new Date(), 'dd/MM/yyyy HH:mm')}
-            </div>
         </div>
       </div>
     </div>
