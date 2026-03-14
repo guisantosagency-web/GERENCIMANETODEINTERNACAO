@@ -309,6 +309,26 @@ export default function AgendamentoTab() {
                         <Input required type="time" value={formData.exam_time} onChange={e => setFormData(p => ({ ...p, exam_time: e.target.value }))} className="pl-16 h-16 font-black text-2xl text-center bg-slate-50 border-none rounded-[1.5rem]" />
                         <Clock className="absolute left-6 bottom-[1.2rem] h-6 w-6 text-amber-500" />
                      </div>
+                     
+                     <div className="space-y-3 relative group">
+                        <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Procedimento Central</Label>
+                        <div className="relative">
+                          <select value={formData.procedure_name} onChange={e => handleProcedureChange(e.target.value)} className="w-full appearance-none h-16 bg-slate-50 border-none px-6 pl-16 rounded-[1.5rem] text-sm font-black shadow-inner focus:outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer uppercase transition-all">
+                             {PROCEDURES.map(p => <option key={p} value={p}>{p}</option>)}
+                          </select>
+                          <Activity className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-blue-600" />
+                        </div>
+                     </div>
+
+                     <div className="space-y-3 relative group">
+                        <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Especificação do Exame</Label>
+                        <div className="relative">
+                          <select value={formData.exam_type} onChange={e => setFormData(prev => ({ ...prev, exam_type: e.target.value }))} className="w-full appearance-none h-16 bg-slate-50 border-none px-6 pl-16 rounded-[1.5rem] text-sm font-black shadow-inner focus:outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer uppercase transition-all">
+                             {EXAM_TYPES_BY_PROCEDURE[formData.procedure_name]?.map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                          <FileText className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-blue-600" />
+                        </div>
+                     </div>
                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-10">
                         <Button type="submit" disabled={isSubmitting || !hasSlots || isCheckingSlots} className={`h-20 rounded-[2rem] text-white font-black text-xl tracking-widest uppercase shadow-xl transition-all ${hasSlots ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-200 text-slate-400'}`}>
                            {isSubmitting ? <Loader2 className="animate-spin" /> : "Confirmar Agendamento"}
