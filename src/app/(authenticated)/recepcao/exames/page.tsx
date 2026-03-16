@@ -7,6 +7,7 @@ import VagasTab from "./vagas-tab"
 import AgendamentoTab from "./agendamento-tab"
 import ChegadaTab from "./chegada-tab"
 import FilaTab from "./fila-tab"
+import HistoricoTab from "./historico-tab"
 import { useAuth } from "@/lib/auth-context"
 
 export default function ExamesHubPage() {
@@ -19,6 +20,7 @@ export default function ExamesHubPage() {
     { id: "agendamento", label: "Agendamentos", icon: CalendarDays, adminOnly: false },
     { id: "chegada", label: "Recepção / Chegada", icon: List, adminOnly: false },
     { id: "fila", label: "Fila de Atendimento", icon: Play, adminOnly: false },
+    { id: "historico", label: "Historico", icon: List, adminOnly: false },
   ]
 
   const visibleTabs = tabs.filter(t => !t.adminOnly || user?.role === "admin")
@@ -62,6 +64,7 @@ export default function ExamesHubPage() {
         {activeTab === "agendamento" && <AgendamentoTab />}
         {activeTab === "chegada" && <ChegadaTab />}
         {activeTab === "fila" && <FilaTab />}
+        {activeTab === "historico" && <HistoricoTab />}
       </div>
     </div>
   )

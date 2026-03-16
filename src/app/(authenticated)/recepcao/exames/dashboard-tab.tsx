@@ -109,6 +109,7 @@ export default function ExamesDashboardTab() {
   const [mounted, setMounted] = useState(false)
   const [records, setRecords] = useState<DailyExamRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [realTimeStats, setRealTimeStats] = useState({ total: 0, presente: 0, falta: 0 })
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<string | null>(new Date().getMonth() + 1 + "")
@@ -122,9 +123,35 @@ export default function ExamesDashboardTab() {
   const loadData = async () => {
     setIsLoading(true)
     try {
-      const { data, error } = await supabase.from("daily_exams").select("*").order('exam_date', { ascending: false })
-      if (!error && data) {
-        setRecords(data)
+      // Fetch daily_exams for the log list
+      const { data: dailyData, error: dailyError } = await supabase.from("daily_exams").select("*").order('exam_date', { ascending: false })
+      if (!dailyError && dailyData) {
+        setRecords(dailyData)
+      }
+
+      // If daily_exams is empty or we want real-time stats for the summary cards, 
+      // we can also fetch from exam_appointments to ensure the dashboard "works" even without sync
+      const { data: appts, error: apptsError } = await supabase
+        .from("exam_appointments")
+        .select("exam_date, status, procedure_name")
+        .neq("status", "cancelado")
+      
+      if (!apptsError && appts) {
+        const s = appts.reduce((acc, a) => {
+           const y = a.exam_date.substring(0,4)
+           const m = parseInt(a.exam_date.substring(5,7)).toString()
+           const d = a.exam_date.substring(8, 10)
+
+           if (selectedYear && y !== selectedYear) return acc
+           if (selectedMonth && m !== selectedMonth) return acc
+           if (selectedDay && d !== selectedDay.padStart(2, '0')) return acc
+
+           acc.total++
+           if (a.status === 'presente') acc.presente++
+           if (a.status === 'falta') acc.falta++
+           return acc
+        }, { total: 0, presente: 0, falta: 0 })
+        setRealTimeStats(s)
       }
     } catch (e) {
       console.error(e)
@@ -176,7 +203,7 @@ export default function ExamesDashboardTab() {
   useEffect(() => {
     setMounted(true)
     loadData()
-  }, [])
+  }, [selectedYear, selectedMonth, selectedDay])
 
   const availableDays = useMemo(() => Array.from({ length: 31 }, (_, i) => (i + 1).toString()), [])
   const availableMonths = useMemo(() => Array.from({ length: 12 }, (_, i) => (i + 1).toString()), [])
@@ -203,24 +230,13 @@ export default function ExamesDashboardTab() {
   }, [records, selectedDay, selectedMonth, selectedYear])
 
   const stats = useMemo(() => {
-    let presentes = 0
-    let faltas = 0
-
-    filteredRecords.forEach(r => {
-      presentes += (r.present_count || 0)
-      faltas += (r.absent_count || 0)
-    })
-
-    const total = presentes + faltas
+    const total = realTimeStats.total
+    const presentes = realTimeStats.presente
+    const faltas = realTimeStats.falta
     const rate = total > 0 ? ((presentes / total) * 100).toFixed(1) : "0"
 
-    return {
-      presentes,
-      faltas,
-      total,
-      rate
-    }
-  }, [filteredRecords])
+    return { presentes, faltas, total, rate }
+  }, [realTimeStats])
 
   if (!mounted) return null
 
