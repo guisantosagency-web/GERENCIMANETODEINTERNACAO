@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { format } from "date-fns"
+import { format, differenceInYears } from "date-fns"
 import { 
   Save, 
   User, 
@@ -38,7 +38,6 @@ const CHECKLIST_ITEMS = [
   { id: "hipertensao", label: "Hipertensos" },
   { id: "medicamentos", label: "Uso de Medicamentos Contínuos" },
   { id: "alergias", label: "Possui Alergias?" },
-  { id: "declara_orientacao", label: "Declaro que recebi meus exames e as orientações pré-operatórias" },
   { id: "outros", label: "Outros" },
 ]
 
@@ -72,10 +71,10 @@ export default function FormularioTab() {
     }
   })
 
-  const [checklist, setChecklist] = useState<Record<string, { sim: boolean, data: string }>>(
+  const [checklist, setChecklist] = useState<Record<string, { sim: boolean, data: string, motivo: string }>>(
     CHECKLIST_ITEMS.reduce((acc, item) => ({ 
       ...acc, 
-      [item.id]: { sim: false, data: "" } 
+      [item.id]: { sim: false, data: "", motivo: "" } 
     }), {})
   )
 
@@ -158,7 +157,7 @@ export default function FormularioTab() {
           observacao_nir: ""
         }
       })
-      setChecklist(CHECKLIST_ITEMS.reduce((acc, item) => ({ ...acc, [item.id]: { sim: false, data: "" } }), {}))
+      setChecklist(CHECKLIST_ITEMS.reduce((acc, item) => ({ ...acc, [item.id]: { sim: false, data: "", motivo: "" } }), {}))
     } catch (err: any) {
       console.error(err)
       toast.error(`Erro ao salvar: ${err.message || 'Verifique se a tabela foi criada no Supabase'}`)
@@ -216,7 +215,7 @@ export default function FormularioTab() {
                 placeholder="000.000.000-00" 
                 value={formData.cpf} 
                 onChange={e => setFormData(p => ({ ...p, cpf: maskCPF(e.target.value) }))}
-                className="pl-14 h-14 font-bold bg-slate-50 border-none rounded-2xl"
+                className="pl-14 h-14 font-bold bg-slate-50 border-none rounded-2xl shadow-inner"
               />
               <CreditCard className="absolute left-6 bottom-[1rem] h-5 w-5 text-emerald-500" />
             </div>
@@ -228,20 +227,9 @@ export default function FormularioTab() {
                 placeholder="000 0000 0000 0000" 
                 value={formData.sus} 
                 onChange={e => setFormData(p => ({ ...p, sus: e.target.value }))}
-                className="pl-14 h-14 font-bold bg-slate-50 border-none rounded-2xl"
+                className="pl-14 h-14 font-bold bg-slate-50 border-none rounded-2xl shadow-inner"
               />
               <ClipboardList className="absolute left-6 bottom-[1rem] h-5 w-5 text-emerald-500" />
-            </div>
-
-            <div className="md:col-span-4 space-y-2 relative">
-              <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Data de Nascimento</Label>
-              <Input 
-                type="date"
-                value={formData.data_nascimento}
-                onChange={e => setFormData(p => ({ ...p, data_nascimento: e.target.value }))}
-                className="pl-14 h-14 font-bold bg-slate-50 border-none rounded-2xl"
-              />
-              <Calendar className="absolute left-6 bottom-[1rem] h-5 w-5 text-emerald-500" />
             </div>
 
             <div className="md:col-span-4 space-y-2 relative">
@@ -250,9 +238,27 @@ export default function FormularioTab() {
                 placeholder="(00) 00000-0000" 
                 value={formData.contato}
                 onChange={e => setFormData(p => ({ ...p, contato: e.target.value }))}
-                className="pl-14 h-14 font-bold bg-slate-50 border-none rounded-2xl"
+                className="pl-14 h-14 font-bold bg-slate-50 border-none rounded-2xl shadow-inner"
               />
               <Phone className="absolute left-6 bottom-[1rem] h-5 w-5 text-emerald-500" />
+            </div>
+
+            <div className="md:col-span-4 space-y-2 relative">
+              <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Data de Nascimento</Label>
+              <div className="relative">
+                <Input 
+                  type="date"
+                  value={formData.data_nascimento}
+                  onChange={e => setFormData(p => ({ ...p, data_nascimento: e.target.value }))}
+                  className="pl-14 h-14 font-bold bg-slate-50 border-none rounded-2xl shadow-inner"
+                />
+                <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-500" />
+                {formData.data_nascimento && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase shadow-lg shadow-emerald-500/20">
+                    {differenceInYears(new Date(), new Date(formData.data_nascimento))} anos
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="md:col-span-4 space-y-2 relative">
@@ -260,7 +266,7 @@ export default function FormularioTab() {
               <select 
                 value={formData.tipagem_sanguinea}
                 onChange={e => setFormData(p => ({ ...p, tipagem_sanguinea: e.target.value }))}
-                className="w-full h-14 bg-slate-50 border-none rounded-2xl px-14 font-bold appearance-none cursor-pointer"
+                className="w-full h-14 bg-slate-50 border-none rounded-2xl px-14 font-bold appearance-none cursor-pointer shadow-inner"
               >
                 <option value="">Selecione...</option>
                 <option value="A+">A+</option>
@@ -288,36 +294,62 @@ export default function FormularioTab() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6">
             {CHECKLIST_ITEMS.map((item) => (
-              <div key={item.id} className="group/item p-8 bg-slate-50/50 rounded-[2.5rem] border-2 border-transparent hover:border-emerald-500/20 hover:bg-white hover:scale-[1.02] hover:shadow-xl transition-all duration-500 flex items-center justify-between gap-8">
-                <div className="flex-1">
-                  <p className="text-xs font-black text-slate-700 uppercase tracking-tight group-hover/item:text-emerald-600 transition-colors">{item.label}</p>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="flex bg-slate-200 p-1.5 rounded-[1.5rem] shadow-inner">
-                    <button 
-                      type="button"
-                      onClick={() => setChecklist(p => ({ ...p, [item.id]: { ...p[item.id], sim: true } }))}
-                      className={`px-6 py-3 rounded-xl text-[10px] font-black transition-all duration-300 ${checklist[item.id].sim ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                      SIM
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => setChecklist(p => ({ ...p, [item.id]: { ...p[item.id], sim: false } }))}
-                      className={`px-6 py-3 rounded-xl text-[10px] font-black transition-all duration-300 ${!checklist[item.id].sim ? 'bg-red-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                      NÃO
-                    </button>
+              <div key={item.id} className="group/item p-8 bg-slate-50/50 rounded-[2.5rem] border-2 border-transparent hover:border-emerald-500/20 hover:bg-white hover:scale-[1.01] hover:shadow-xl transition-all duration-500 flex flex-col gap-6">
+                <div className="flex items-center justify-between gap-8">
+                  <div className="flex-1">
+                    <p className="text-xs font-black text-slate-700 uppercase tracking-tight group-hover/item:text-emerald-600 transition-colors">{item.label}</p>
                   </div>
-                  {checklist[item.id].sim && (
-                    <Input 
-                      type="date"
-                      value={checklist[item.id].data}
-                      onChange={e => setChecklist(p => ({ ...p, [item.id]: { ...p[item.id], data: e.target.value } }))}
-                      className="w-36 h-12 bg-white border-slate-100 rounded-xl text-[10px] font-bold shadow-sm focus:ring-emerald-500/20"
-                    />
-                  )}
+                  <div className="flex items-center gap-6">
+                    <div className="flex bg-slate-200 p-1.5 rounded-[1.5rem] shadow-inner">
+                      <button 
+                        type="button"
+                        onClick={() => setChecklist(p => ({ ...p, [item.id]: { ...p[item.id], sim: true } }))}
+                        className={`px-6 py-3 rounded-xl text-[10px] font-black transition-all duration-300 ${checklist[item.id].sim ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
+                      >
+                        SIM
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => setChecklist(p => ({ ...p, [item.id]: { ...p[item.id], sim: false } }))}
+                        className={`px-6 py-3 rounded-xl text-[10px] font-black transition-all duration-300 ${!checklist[item.id].sim ? 'bg-red-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
+                      >
+                        NÃO
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
+                {checklist[item.id].sim && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="space-y-2">
+                       <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Data Relacionada</Label>
+                       <Input 
+                        type="date"
+                        value={checklist[item.id].data}
+                        onChange={e => setChecklist(p => ({ ...p, [item.id]: { ...p[item.id], data: e.target.value } }))}
+                        className="h-12 bg-white border-slate-100 rounded-xl text-xs font-bold shadow-sm focus:ring-emerald-500/20"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                       <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Motivo / Descrição</Label>
+                       {item.id === 'outros' ? (
+                         <textarea 
+                           value={checklist[item.id].motivo}
+                           onChange={e => setChecklist(p => ({ ...p, [item.id]: { ...p[item.id], motivo: e.target.value } }))}
+                           className="w-full h-12 bg-white border border-slate-100 rounded-xl p-3 text-xs font-bold shadow-sm focus:ring-emerald-500/20 resize-none"
+                           placeholder="DESCREVA OS MOTIVOS..."
+                         />
+                       ) : (
+                         <Input 
+                          placeholder="DESCREVA O MOTIVO..."
+                          value={checklist[item.id].motivo}
+                          onChange={e => setChecklist(p => ({ ...p, [item.id]: { ...p[item.id], motivo: e.target.value } }))}
+                          className="h-12 bg-white border-slate-100 rounded-xl text-xs font-bold shadow-sm focus:ring-emerald-500/20"
+                        />
+                       )}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
 

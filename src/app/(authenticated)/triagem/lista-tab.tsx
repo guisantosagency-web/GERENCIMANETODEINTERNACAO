@@ -29,7 +29,7 @@ import {
   DialogTitle,
   DialogFooter
 } from "@/components/ui/dialog"
-import { format } from "date-fns"
+import { format, differenceInYears } from "date-fns"
 import { toast } from "sonner"
 import { useRef } from "react"
 
@@ -56,7 +56,6 @@ export default function ListaTab() {
     { id: "hipertensao", label: "Hipertensos" },
     { id: "medicamentos", label: "Uso de Medicamentos Contínuos" },
     { id: "alergias", label: "Possui Alergias?" },
-    { id: "declara_orientacao", label: "Declaro que recebi meus exames e as orientações pré-operatórias" },
     { id: "outros", label: "Outros" },
   ]
 
@@ -210,8 +209,13 @@ export default function ListaTab() {
                         </div>
                         <div>
                           <p className="font-black text-slate-800 uppercase text-sm leading-tight">{record.patient_name}</p>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 flex items-center gap-1">
-                            <Calendar className="h-3 w-3" /> Triagem em {format(new Date(record.created_at), 'dd/MM/yyyy HH:mm')}
+                          <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 flex items-center gap-2">
+                            <Calendar className="h-3 w-3" /> Triagem em {format(new Date(record.created_at), 'dd/MM/yyyy')}
+                            {record.data_nascimento && (
+                              <span className="bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-md text-[8px] font-black">
+                                {differenceInYears(new Date(), new Date(record.data_nascimento))} ANOS
+                              </span>
+                            )}
                           </p>
                         </div>
                       </div>
@@ -302,6 +306,9 @@ export default function ListaTab() {
               </div>
               <div className="border-b-2 border-black pb-2">
                 <span className="font-bold">D/N: </span>{printingRecord.data_nascimento ? format(new Date(printingRecord.data_nascimento), 'dd/MM/yyyy') : '____/____/_______'}
+                {printingRecord.data_nascimento && (
+                  <span className="ml-2 font-bold">({differenceInYears(new Date(), new Date(printingRecord.data_nascimento))} ANOS)</span>
+                )}
               </div>
               <div className="border-b-2 border-black pb-2">
                 <span className="font-bold">Tipagem Sanguínea: </span>{printingRecord.tipagem_sanguinea || '________________'}
@@ -311,15 +318,22 @@ export default function ListaTab() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-xs border-black pb-6">
+            <div className="grid grid-cols-1 gap-2 text-xs border-black pb-6">
               {Object.entries(printingRecord.checklist_data || {}).map(([key, data]: [string, any]) => (
-                <div key={key} className="border-2 border-black p-3 rounded-lg flex flex-col gap-2">
-                  <span className="font-bold text-[10px] uppercase">{key.replace('_', ' ')}</span>
-                  <div className="flex gap-4 items-center">
-                    <span>( {data.sim ? 'X' : ' '} ) SIM</span>
-                    <span>( {!data.sim ? 'X' : ' '} ) NÃO</span>
-                    <span className="ml-auto">Data: {data.data || '__/__/____'}</span>
+                <div key={key} className="border-2 border-black p-3 rounded-lg flex flex-col gap-1">
+                  <div className="flex justify-between items-center border-b border-black/10 pb-1">
+                    <span className="font-black text-[10px] uppercase">{key.replace('_', ' ')}</span>
+                    <div className="flex gap-4 items-center">
+                      <span>( {data.sim ? 'X' : ' '} ) SIM</span>
+                      <span>( {!data.sim ? 'X' : ' '} ) NÃO</span>
+                      <span className="ml-4">Data: {data.data || '__/__/____'}</span>
+                    </div>
                   </div>
+                  {data.sim && data.motivo && (
+                    <div className="text-[10px] italic">
+                      <span className="font-bold">Motivo:</span> {data.motivo}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -355,12 +369,15 @@ export default function ListaTab() {
               </div>
             </div>
 
-            <div className="mt-20 flex justify-center gap-20">
-              <div className="text-center w-64">
-                <div className="border-t-2 border-black pt-2 text-[10px] font-bold uppercase">Responsável pelo Preenchimento</div>
+            <div className="mt-16 flex justify-between gap-10 px-4">
+              <div className="text-center w-72">
+                <div className="border-t-2 border-black pt-2 text-[10px] font-black uppercase">Responsável pelo Preenchimento</div>
               </div>
-               <div className="text-center w-64">
-                <div className="border-t-2 border-black pt-2 text-[10px] font-bold uppercase">Assinatura do Paciente</div>
+              <div className="text-center w-[28rem]">
+                <div className="border-t-2 border-black pt-2 text-[10px] font-black uppercase leading-tight">
+                  Assinatura do Paciente<br/>
+                  <span className="text-[8px] font-normal normal-case">Declaro que recebi meus exames e as orientações pré-operatórias</span>
+                </div>
               </div>
             </div>
           </div>
@@ -454,42 +471,100 @@ export default function ListaTab() {
                   </div>
                   <div className="space-y-2">
                     <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Data de Nascimento</Label>
-                    <Input 
-                      type="date"
-                      value={editingRecord.data_nascimento}
-                      onChange={e => setEditingRecord({...editingRecord, data_nascimento: e.target.value})}
-                      className="h-14 font-bold rounded-2xl border-slate-200"
-                    />
+                    <div className="relative">
+                      <Input 
+                        type="date"
+                        value={editingRecord.data_nascimento}
+                        onChange={e => setEditingRecord({...editingRecord, data_nascimento: e.target.value})}
+                        className="h-14 font-bold rounded-2xl border-slate-200 shadow-inner"
+                      />
+                      {editingRecord.data_nascimento && (
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase">
+                          {differenceInYears(new Date(), new Date(editingRecord.data_nascimento))} anos
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Checklist */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   {CHECKLIST_ITEMS.map((item) => (
-                    <div key={item.id} className="p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase text-slate-600 truncate mr-4">{item.label}</span>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => setEditingRecord({
-                            ...editingRecord, 
-                            checklist_data: {
-                              ...editingRecord.checklist_data,
-                              [item.id]: { ...editingRecord.checklist_data[item.id], sim: true }
-                            }
-                          })}
-                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all ${editingRecord.checklist_data[item.id]?.sim ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}
-                        >SIM</button>
-                        <button 
-                          onClick={() => setEditingRecord({
-                            ...editingRecord, 
-                            checklist_data: {
-                              ...editingRecord.checklist_data,
-                              [item.id]: { ...editingRecord.checklist_data[item.id], sim: false }
-                            }
-                          })}
-                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all ${!editingRecord.checklist_data[item.id]?.sim ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-400'}`}
-                        >NÃO</button>
+                    <div key={item.id} className="p-6 bg-white border border-slate-100 rounded-[2rem] space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase text-slate-600">{item.label}</span>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => setEditingRecord({
+                              ...editingRecord, 
+                              checklist_data: {
+                                ...editingRecord.checklist_data,
+                                [item.id]: { ...editingRecord.checklist_data[item.id], sim: true }
+                              }
+                            })}
+                            className={`px-4 py-2 rounded-lg text-[9px] font-black transition-all ${editingRecord.checklist_data[item.id]?.sim ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}
+                          >SIM</button>
+                          <button 
+                            onClick={() => setEditingRecord({
+                              ...editingRecord, 
+                              checklist_data: {
+                                ...editingRecord.checklist_data,
+                                [item.id]: { ...editingRecord.checklist_data[item.id], sim: false }
+                              }
+                            })}
+                            className={`px-4 py-2 rounded-lg text-[9px] font-black transition-all ${!editingRecord.checklist_data[item.id]?.sim ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-400'}`}
+                          >NÃO</button>
+                        </div>
                       </div>
+                      
+                      {editingRecord.checklist_data[item.id]?.sim && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-50">
+                          <div className="space-y-1">
+                            <Label className="text-[9px] font-black uppercase text-slate-400 ml-2">Data</Label>
+                            <Input 
+                              type="date"
+                              value={editingRecord.checklist_data[item.id]?.data || ""}
+                              onChange={e => setEditingRecord({
+                                ...editingRecord,
+                                checklist_data: {
+                                  ...editingRecord.checklist_data,
+                                  [item.id]: { ...editingRecord.checklist_data[item.id], data: e.target.value }
+                                }
+                              })}
+                              className="h-10 rounded-xl"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[9px] font-black uppercase text-slate-400 ml-2">Motivo</Label>
+                            {item.id === 'outros' ? (
+                              <textarea 
+                                value={editingRecord.checklist_data[item.id]?.motivo || ""}
+                                onChange={e => setEditingRecord({
+                                  ...editingRecord,
+                                  checklist_data: {
+                                    ...editingRecord.checklist_data,
+                                    [item.id]: { ...editingRecord.checklist_data[item.id], motivo: e.target.value }
+                                  }
+                                })}
+                                className="w-full h-10 p-2 rounded-xl border border-slate-200 text-xs resize-none"
+                              />
+                            ) : (
+                              <Input 
+                                placeholder="Descreva o motivo..."
+                                value={editingRecord.checklist_data[item.id]?.motivo || ""}
+                                onChange={e => setEditingRecord({
+                                  ...editingRecord,
+                                  checklist_data: {
+                                    ...editingRecord.checklist_data,
+                                    [item.id]: { ...editingRecord.checklist_data[item.id], motivo: e.target.value }
+                                  }
+                                })}
+                                className="h-10 rounded-xl"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
