@@ -33,6 +33,9 @@ const CHECKLIST_ITEMS = [
   { id: "hemo", label: "Solicitação de Hemocomponentes" },
   { id: "opme", label: "OPME (Ambulatório)" },
   { id: "vacina", label: "Carteira de Vacinação" },
+  { id: "resp", label: "Problemas Respiratórios" },
+  { id: "diabetes", label: "Diabetes" },
+  { id: "hipertensao", label: "Hipertensos" },
   { id: "outros", label: "Outros" },
 ]
 
@@ -340,83 +343,6 @@ export default function FormularioTab() {
           </div>
         </div>
 
-        {/* NIR Section */}
-        <div className="glass-card bg-slate-900 border-none rounded-[3.5rem] p-12 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
-          <h3 className="text-2xl font-black font-space uppercase tracking-tight text-white flex items-center gap-5 mb-10">
-            <div className="p-3 bg-emerald-500 rounded-xl"><Stethoscope className="h-6 w-6" /></div>
-            Núcleo Interno de Regulação - NIR
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="space-y-2">
-              <Label className="uppercase text-[9px] font-black tracking-[0.2em] text-slate-400 ml-4">Procedência</Label>
-              <Input 
-                value={formData.nir_data.procedencia}
-                onChange={e => setFormData(p => ({ ...p, nir_data: { ...p.nir_data, procedencia: e.target.value } }))}
-                className="h-14 bg-white/5 border-none text-white rounded-2xl px-6 font-bold"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="uppercase text-[9px] font-black tracking-[0.2em] text-slate-400 ml-4">Nome de Contato</Label>
-              <Input 
-                value={formData.nir_data.nome_contato}
-                onChange={e => setFormData(p => ({ ...p, nir_data: { ...p.nir_data, nome_contato: e.target.value } }))}
-                className="h-14 bg-white/5 border-none text-white rounded-2xl px-6 font-bold"
-              />
-            </div>
-            <div className="space-y-2 text-white">
-              <Label className="uppercase text-[9px] font-black tracking-[0.2em] text-slate-400 ml-4">Data da Cirurgia</Label>
-              <Input 
-                type="date"
-                value={formData.nir_data.data_cirurgia}
-                onChange={e => setFormData(p => ({ ...p, nir_data: { ...p.nir_data, data_cirurgia: e.target.value } }))}
-                className="h-14 bg-white/5 border-none text-white rounded-2xl px-6 font-bold"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="uppercase text-[9px] font-black tracking-[0.2em] text-slate-400 ml-4">Procedimento</Label>
-              <Input 
-                value={formData.nir_data.procedimento}
-                onChange={e => setFormData(p => ({ ...p, nir_data: { ...p.nir_data, procedimento: e.target.value } }))}
-                className="h-14 bg-white/5 border-none text-white rounded-2xl px-6 font-bold uppercase"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="uppercase text-[9px] font-black tracking-[0.2em] text-slate-400 ml-4">Cirurgião</Label>
-              <Input 
-                value={formData.nir_data.cirurgiao}
-                onChange={e => setFormData(p => ({ ...p, nir_data: { ...p.nir_data, cirurgiao: e.target.value } }))}
-                className="h-14 bg-white/5 border-none text-white rounded-2xl px-6 font-bold uppercase"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="uppercase text-[9px] font-black tracking-[0.2em] text-slate-400 ml-4">Empresa</Label>
-              <Input 
-                value={formData.nir_data.empresa}
-                onChange={e => setFormData(p => ({ ...p, nir_data: { ...p.nir_data, empresa: e.target.value } }))}
-                className="h-14 bg-white/5 border-none text-white rounded-2xl px-6 font-bold uppercase"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="uppercase text-[9px] font-black tracking-[0.2em] text-slate-400 ml-4">OPME</Label>
-              <Input 
-                value={formData.nir_data.opme_nir}
-                onChange={e => setFormData(p => ({ ...p, nir_data: { ...p.nir_data, opme_nir: e.target.value } }))}
-                className="h-14 bg-white/5 border-none text-white rounded-2xl px-6 font-bold uppercase"
-              />
-            </div>
-            <div className="md:col-span-2 space-y-2">
-              <Label className="uppercase text-[9px] font-black tracking-[0.2em] text-slate-400 ml-4">Observação NIR</Label>
-              <Input 
-                value={formData.nir_data.observacao_nir}
-                onChange={e => setFormData(p => ({ ...p, nir_data: { ...p.nir_data, observacao_nir: e.target.value } }))}
-                className="h-14 bg-white/5 border-none text-white rounded-2xl px-6 font-bold"
-                placeholder="DETALHES ADICIONAIS DO NIR..."
-              />
-            </div>
-          </div>
-        </div>
 
         {/* Submit Section */}
         <div className="flex justify-end gap-6 pb-20">
