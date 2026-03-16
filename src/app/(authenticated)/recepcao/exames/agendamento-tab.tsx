@@ -5,7 +5,7 @@ import { CalendarDays, Save, Printer, Activity, FileText, AlertCircle, Heart, Se
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
 
 const FALLBACK_PROCEDURES = [
@@ -79,8 +79,8 @@ const HumanModel = ({ procedure }: { procedure: string }) => {
 export default function AgendamentoTab() {
   const { user, logos } = useAuth()
   const dropdownRef = useRef<HTMLDivElement>(null)
-
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [procedurePatients, setProcedurePatients] = useState<Record<string, any[]>>({})
   const [slotInfo, setSlotInfo] = useState<{ total: number; occupied: number } | null>(null)
   const [isCheckingSlots, setIsCheckingSlots] = useState(false)
 
@@ -136,6 +136,26 @@ export default function AgendamentoTab() {
       loadDateAppointments(exams[0].exam_date)
     }
   }, [exams[0]?.exam_date])
+
+  useEffect(() => {
+    const loadProcedureSlots = async () => {
+      if (exams.length === 0) return
+      
+      const results: Record<string, any[]> = {}
+      for (const ex of exams) {
+        const { data } = await supabase
+          .from("exam_appointments")
+          .select("patient_name, exam_time, status")
+          .eq("exam_date", ex.exam_date)
+          .eq("procedure_name", ex.procedure_name)
+          .neq("status", "cancelado")
+          .order("exam_time")
+        results[`${ex.procedure_name}|${ex.exam_date}`] = data || []
+      }
+      setProcedurePatients(results)
+    }
+    loadProcedureSlots()
+  }, [exams, supabase])
 
   const [appointmentSearch, setAppointmentSearch] = useState("")
 
@@ -246,9 +266,38 @@ export default function AgendamentoTab() {
     e.preventDefault()
     setIsSubmitting(true)
     try {
+      // 1. Validation for Duplication in Patients Table
+      const cleanCPF = formData.cpf.replace(/\D/g, "")
+      const { data: existingPatient } = await supabase
+        .from("patients")
+        .select("*")
+        .or(`cpf.eq.${cleanCPF},sus.eq.${formData.sus}`)
+        .maybeSingle()
+
+      // If we find a patient but the name is significantly different, we might want to warn
+      // But for now, if it's a new patient entry and CPF/SUS matches someone else, show error
+      if (existingPatient && !formData.patient_name.toUpperCase().includes(existingPatient.paciente.toUpperCase().split(' ')[0])) {
+         if(!confirm(`AVISO: Já existe um cadastro com este CPF/SUS no nome de ${existingPatient.paciente}. Deseja continuar mesmo assim?`)) {
+           setIsSubmitting(false)
+           return
+         }
+      }
+
+      // 2. Automatic Patient Registration if not exists
+      if (!existingPatient) {
+        const { error: patientErr } = await supabase.from("patients").insert([{
+          paciente: formData.patient_name.toUpperCase(),
+          cpf: cleanCPF,
+          sus: formData.sus,
+          recepcionista: user?.name || "RECEPÇÃO"
+        }])
+        if (patientErr) console.error("Erro ao registrar paciente:", patientErr)
+      }
+
+      // 3. Insert Appointments
       const inserts = exams.map(exam => ({
         patient_name: formData.patient_name.toUpperCase(),
-        cpf: formData.cpf.replace(/\D/g, ""),
+        cpf: cleanCPF,
         sus: formData.sus,
         exam_date: exam.exam_date,
         exam_time: exam.exam_time,
@@ -264,7 +313,7 @@ export default function AgendamentoTab() {
       
       setLastSaved(data)
       if (exams[0]) loadDateAppointments(exams[0].exam_date)
-      alert("Agendamentos salvos com sucesso!")
+      alert("Agendamentos e Cadastro processados com sucesso!")
       
       setFormData({ patient_name: "", cpf: "", sus: "" })
       setExams([{
@@ -276,7 +325,7 @@ export default function AgendamentoTab() {
       }])
     } catch (err) {
       console.error(err)
-      alert("Erro ao salvar agendamento.")
+      alert("Erro ao processar agendamento.")
     } finally {
       setIsSubmitting(false)
     }
@@ -513,13 +562,48 @@ export default function AgendamentoTab() {
               </form>
             </div>
           </div>
-          <div className="hidden xl:block xl:col-span-4 self-stretch">
-            <div className="glass-card bg-white border-none rounded-[4rem] p-8 shadow-2xl h-full flex flex-col items-center justify-between sticky top-8">
+          <div className="hidden xl:block xl:col-span-4 self-stretch space-y-8">
+            <div className="glass-card bg-white border-none rounded-[4rem] p-8 shadow-2xl flex flex-col items-center justify-between sticky top-8">
               <HumanModel procedure={exams[0]?.procedure_name || ""} />
               <div className="mt-8 p-8 bg-slate-50 rounded-[3rem] w-full">
                 <p className="text-sm font-bold text-slate-600 leading-relaxed uppercase">
                   Zona diagnosticada para <span className="text-blue-600 font-extrabold">{exams[0]?.procedure_name || "Exame"}</span>. Verifique orientações no PDF.
                 </p>
+              </div>
+
+              {/* DETALHAMENTO DE VAGAS POR PROCEDIMENTO */}
+              <div className="w-full mt-10 space-y-6">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Ocupação das Vagas</h4>
+                
+                {exams.map((ex, idx) => {
+                  const key = `${ex.procedure_name}|${ex.exam_date}`
+                  const occupants = procedurePatients[key] || []
+                  
+                  return (
+                    <div key={idx} className="bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100">
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-[10px] font-black uppercase text-blue-600">{ex.procedure_name}</span>
+                        <span className="text-[9px] font-bold text-slate-400">{format(parseISO(ex.exam_date), 'dd/MM')}</span>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        {occupants.length === 0 ? (
+                          <p className="text-[8px] font-bold text-slate-300 uppercase italic text-center">Nenhum ocupante ainda</p>
+                        ) : (
+                          occupants.slice(0, 5).map((occ, i) => (
+                            <div key={i} className="flex items-center justify-between bg-white px-3 py-2 rounded-xl shadow-sm">
+                              <span className="text-[9px] font-black text-slate-600 uppercase truncate max-w-[120px]">{occ.patient_name}</span>
+                              <span className="text-[8px] font-bold text-blue-500">{occ.exam_time}</span>
+                            </div>
+                          ))
+                        )}
+                        {occupants.length > 5 && (
+                          <p className="text-[8px] font-black text-slate-400 text-center mt-2">+{occupants.length - 5} OUTROS</p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
