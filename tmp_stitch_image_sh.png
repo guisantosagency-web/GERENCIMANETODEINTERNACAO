@@ -1,0 +1,78 @@
+<!DOCTYPE html><html lang="en" class="dark-theme bg-surface-primary text-content-primary"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="/assets/root-CghKoyVO.css"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&amp;display=swap"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono:wght@400;700&amp;display=swap"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700&amp;display=swap"/><style>
+          :root {
+            --accent-color: #323232;
+            --accent-color-light: #323232CC;
+            --accent-color-dark: #323232DD;
+          }
+        </style><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 64 64&#x27;%3E%3Ccircle cx=&#x27;30&#x27; cy=&#x27;30&#x27; r=&#x27;30&#x27; fill=&#x27;%23323232&#x27;/%3E%3C/svg%3E" sizes="any" type="image/svg+xml"/><title data-testid="title" class="hidden">Stitch Interface</title></head><body><h1 style="font-size:24px">404<!-- --> <!-- -->Not Found</h1><script>
+        console.log(
+          "💿 Hey developer 👋. You can provide a way better UX than this when your app throws errors. Check out https://remix.run/guides/errors for more information."
+        );
+      </script><script>((STORAGE_KEY2, restoreKey) => {
+    if (!window.history.state || !window.history.state.key) {
+      let key2 = Math.random().toString(32).slice(2);
+      window.history.replaceState({
+        key: key2
+      }, "");
+    }
+    try {
+      let positions = JSON.parse(sessionStorage.getItem(STORAGE_KEY2) || "{}");
+      let storedY = positions[restoreKey || window.history.state.key];
+      if (typeof storedY === "number") {
+        window.scrollTo(0, storedY);
+      }
+    } catch (error3) {
+      console.error(error3);
+      sessionStorage.removeItem(STORAGE_KEY2);
+    }
+  })("positions", null)</script><link rel="modulepreload" href="/assets/entry.client-CRxMxbrq.js"/><link rel="modulepreload" href="/assets/components-2poVwe72.js"/><link rel="modulepreload" href="/assets/ThemeContext-EIFdmbfB.js"/><link rel="modulepreload" href="/assets/root-CnaKH2Cy.js"/><script>window.__remixContext = {"basename":"/","future":{"v3_fetcherPersist":true,"v3_relativeSplatPath":true,"v3_throwAbortReason":true,"v3_routeConfig":false,"v3_singleFetch":true,"v3_lazyRouteDiscovery":true,"unstable_optimizeDeps":false},"isSpaMode":false};window.__remixContext.stream = new ReadableStream({start(controller){window.__remixContext.streamController = controller;}}).pipeThrough(new TextEncoderStream());</script><script type="module" async="">;
+import * as route0 from "/assets/root-CnaKH2Cy.js";
+window.__remixManifest = {
+  "entry": {
+    "module": "/assets/entry.client-CRxMxbrq.js",
+    "imports": [
+      "/assets/components-2poVwe72.js"
+    ],
+    "css": []
+  },
+  "routes": {
+    "root": {
+      "id": "root",
+      "path": "",
+      "hasAction": false,
+      "hasLoader": true,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasErrorBoundary": false,
+      "module": "/assets/root-CnaKH2Cy.js",
+      "imports": [
+        "/assets/components-2poVwe72.js",
+        "/assets/ThemeContext-EIFdmbfB.js"
+      ],
+      "css": [
+        "/assets/root-CghKoyVO.css"
+      ]
+    },
+    "routes/_index": {
+      "id": "routes/_index",
+      "parentId": "root",
+      "index": true,
+      "hasAction": true,
+      "hasLoader": true,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasErrorBoundary": false,
+      "module": "/assets/_index-Cp6rjGFi.js",
+      "imports": [
+        "/assets/components-2poVwe72.js",
+        "/assets/ThemeContext-EIFdmbfB.js"
+      ],
+      "css": []
+    }
+  },
+  "url": "/assets/manifest-0b2c1b19.js",
+  "version": "0b2c1b19"
+};
+window.__remixRouteModules = {"root":route0};
+
+import("/assets/entry.client-CRxMxbrq.js");</script></body></html><!--$--><script>window.__remixContext.streamController.enqueue("[{\"_1\":2,\"_3\":-5,\"_4\":5},\"loaderData\",{},\"actionData\",\"errors\",{\"_6\":7},\"root\",{\"_8\":9,\"_10\":11,\"_12\":13,\"_14\":15,\"_16\":17,\"_20\":21},\"status\",404,\"statusText\",\"Not Found\",\"internal\",true,\"data\",\"Error: No route matches URL \\\"/api/project/14795369478148527505/screen/2856306029240062298/image\\\"\",\"error\",[\"SanitizedError\",18,19,-7],\"Error\",\"Unexpected Server Error\",\"__type\",\"RouteErrorResponse\"]\n");</script><!--$--><script>window.__remixContext.streamController.close();</script><!--/$--><!--/$-->
