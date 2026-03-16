@@ -36,6 +36,9 @@ const CHECKLIST_ITEMS = [
   { id: "resp", label: "Problemas Respiratórios" },
   { id: "diabetes", label: "Diabetes" },
   { id: "hipertensao", label: "Hipertensos" },
+  { id: "medicamentos", label: "Uso de Medicamentos Contínuos" },
+  { id: "alergias", label: "Possui Alergias?" },
+  { id: "declara_orientacao", label: "Declaro que recebi meus exames e as orientações pré-operatórias" },
   { id: "outros", label: "Outros" },
 ]
 
@@ -127,9 +130,13 @@ export default function FormularioTab() {
         is_launched: false
       }])
 
-      if (error) throw error
+      if (error) {
+        console.error("Supabase Error:", error)
+        throw new Error(error.message)
+      }
 
       toast.success("Triagem cadastrada com sucesso!")
+      
       // Reset form
       setFormData({
         patient_name: "",
@@ -152,9 +159,9 @@ export default function FormularioTab() {
         }
       })
       setChecklist(CHECKLIST_ITEMS.reduce((acc, item) => ({ ...acc, [item.id]: { sim: false, data: "" } }), {}))
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      alert("Erro ao salvar triagem.")
+      toast.error(`Erro ao salvar: ${err.message || 'Verifique se a tabela foi criada no Supabase'}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -164,25 +171,28 @@ export default function FormularioTab() {
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Identificação Section */}
-        <div className="glass-card bg-white border-none rounded-[3rem] p-10 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500" />
-          <h3 className="text-xl font-black font-space uppercase tracking-tight text-slate-800 flex items-center gap-4 mb-8">
-            <User className="h-6 w-6 text-emerald-500" /> Identificação do Paciente
+        <div className="glass-card bg-white border-none rounded-[3.5rem] p-12 shadow-2xl relative overflow-hidden transition-all duration-500 hover:shadow-emerald-500/5 group">
+          <div className="absolute top-0 left-0 w-full h-3 bg-emerald-500 transition-all duration-500 group-hover:h-4" />
+          <h3 className="text-2xl font-black font-space uppercase tracking-tight text-slate-800 flex items-center gap-5 mb-10 group-hover:translate-x-2 transition-transform duration-500">
+            <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-500">
+              <User className="h-7 w-7" />
+            </div>
+            Identificação do Paciente
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             <div className="md:col-span-12 relative" ref={dropdownRef}>
               <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Nome Completo</Label>
-              <div className="relative">
+              <div className="relative group/input">
                 <Input 
                   required 
                   autoComplete="off" 
                   placeholder="BUSCAR OU DIGITAR NOME..." 
                   value={formData.patient_name} 
                   onChange={e => handleNameInput(e.target.value)}
-                  className="pl-16 h-16 text-lg font-black bg-slate-50 border-none rounded-[1.5rem] shadow-inner uppercase"
+                  className="pl-16 h-20 text-xl font-black bg-slate-50 border-none rounded-[2rem] shadow-inner uppercase transition-all duration-300 focus:bg-white focus:ring-4 focus:ring-emerald-500/5"
                 />
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-300" />
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-7 w-7 text-slate-300 group-focus-within/input:text-emerald-500 transition-colors duration-300" />
               </div>
               {showDropdown && (
                 <div className="absolute z-50 mt-2 w-full bg-white border border-slate-100 rounded-[2rem] shadow-2xl overflow-hidden">
@@ -268,30 +278,33 @@ export default function FormularioTab() {
         </div>
 
         {/* Checklist Section */}
-        <div className="glass-card bg-white border-none rounded-[3rem] p-10 shadow-xl">
-          <h3 className="text-xl font-black font-space uppercase tracking-tight text-slate-800 flex items-center gap-4 mb-8">
-            <ClipboardList className="h-6 w-6 text-emerald-500" /> Checklist Pré-Operatório
+        <div className="glass-card bg-white border-none rounded-[4rem] p-14 shadow-2xl relative transition-all duration-500 hover:shadow-emerald-500/5 group">
+          <h3 className="text-2xl font-black font-space uppercase tracking-tight text-slate-800 flex items-center gap-5 mb-12 group-hover:translate-x-2 transition-transform duration-500">
+            <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-500">
+              <ClipboardList className="h-7 w-7" />
+            </div>
+            Checklist Pré-Operatório
           </h3>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6">
             {CHECKLIST_ITEMS.map((item) => (
-              <div key={item.id} className="group p-6 bg-slate-50/50 rounded-[2rem] border border-transparent hover:border-emerald-100 hover:bg-white transition-all flex items-center justify-between gap-6">
+              <div key={item.id} className="group/item p-8 bg-slate-50/50 rounded-[2.5rem] border-2 border-transparent hover:border-emerald-500/20 hover:bg-white hover:scale-[1.02] hover:shadow-xl transition-all duration-500 flex items-center justify-between gap-8">
                 <div className="flex-1">
-                  <p className="text-[11px] font-black text-slate-600 uppercase tracking-tight">{item.label}</p>
+                  <p className="text-xs font-black text-slate-700 uppercase tracking-tight group-hover/item:text-emerald-600 transition-colors">{item.label}</p>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex bg-slate-200 p-1 rounded-2xl">
+                <div className="flex items-center gap-6">
+                  <div className="flex bg-slate-200 p-1.5 rounded-[1.5rem] shadow-inner">
                     <button 
                       type="button"
                       onClick={() => setChecklist(p => ({ ...p, [item.id]: { ...p[item.id], sim: true } }))}
-                      className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${checklist[item.id].sim ? 'bg-emerald-500 text-white' : 'text-slate-500'}`}
+                      className={`px-6 py-3 rounded-xl text-[10px] font-black transition-all duration-300 ${checklist[item.id].sim ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                       SIM
                     </button>
                     <button 
                       type="button"
                       onClick={() => setChecklist(p => ({ ...p, [item.id]: { ...p[item.id], sim: false } }))}
-                      className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${!checklist[item.id].sim ? 'bg-red-500 text-white' : 'text-slate-500'}`}
+                      className={`px-6 py-3 rounded-xl text-[10px] font-black transition-all duration-300 ${!checklist[item.id].sim ? 'bg-red-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                       NÃO
                     </button>
@@ -301,7 +314,7 @@ export default function FormularioTab() {
                       type="date"
                       value={checklist[item.id].data}
                       onChange={e => setChecklist(p => ({ ...p, [item.id]: { ...p[item.id], data: e.target.value } }))}
-                      className="w-32 h-10 bg-white border-slate-200 rounded-xl text-[10px] font-bold"
+                      className="w-36 h-12 bg-white border-slate-100 rounded-xl text-[10px] font-bold shadow-sm focus:ring-emerald-500/20"
                     />
                   )}
                 </div>

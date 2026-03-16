@@ -14,10 +14,21 @@ import {
   RefreshCcw,
   Loader2,
   Printer,
-  FileText
+  FileText,
+  Pencil,
+  Trash2,
+  AlertTriangle
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog"
 import { format } from "date-fns"
 import { toast } from "sonner"
 import { useRef } from "react"
@@ -29,6 +40,25 @@ export default function ListaTab() {
   const [searchTerm, setSearchTerm] = useState("")
   const printRef = useRef<HTMLDivElement>(null)
   const [printingRecord, setPrintingRecord] = useState<any>(null)
+  const [editingRecord, setEditingRecord] = useState<any>(null)
+  const [isUpdating, setIsUpdating] = useState(false)
+
+  const CHECKLIST_ITEMS = [
+    { id: "lab", label: "Exames de Laboratório de Análises Clínicas" },
+    { id: "rx", label: "Exames de imagem Radiografia" },
+    { id: "risco", label: "Risco Cirúrgico" },
+    { id: "tomografia", label: "Tomografia" },
+    { id: "hemo", label: "Solicitação de Hemocomponentes" },
+    { id: "opme", label: "OPME (Ambulatório)" },
+    { id: "vacina", label: "Carteira de Vacinação" },
+    { id: "resp", label: "Problemas Respiratórios" },
+    { id: "diabetes", label: "Diabetes" },
+    { id: "hipertensao", label: "Hipertensos" },
+    { id: "medicamentos", label: "Uso de Medicamentos Contínuos" },
+    { id: "alergias", label: "Possui Alergias?" },
+    { id: "declara_orientacao", label: "Declaro que recebi meus exames e as orientações pré-operatórias" },
+    { id: "outros", label: "Outros" },
+  ]
 
   useEffect(() => {
     fetchRecords()
@@ -63,6 +93,50 @@ export default function ListaTab() {
       window.print()
       setPrintingRecord(null)
     }, 100)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Deseja realmente excluir este atendimento? Esta ação não pode ser desfeita.")) return
+
+    const { error } = await supabase
+      .from("surgery_triage")
+      .delete()
+      .eq("id", id)
+    
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message)
+    } else {
+      setRecords(prev => prev.filter(r => r.id !== id))
+      toast.success("Atendimento excluído com sucesso")
+    }
+  }
+
+  const handleUpdate = async () => {
+    if (!editingRecord) return
+    setIsUpdating(true)
+    
+    const { error } = await supabase
+      .from("surgery_triage")
+      .update({
+        patient_name: editingRecord.patient_name.toUpperCase(),
+        cpf: editingRecord.cpf.replace(/\D/g, ""),
+        sus: editingRecord.sus,
+        contato: editingRecord.contato,
+        data_nascimento: editingRecord.data_nascimento,
+        tipagem_sanguinea: editingRecord.tipagem_sanguinea,
+        checklist_data: editingRecord.checklist_data,
+        obs: editingRecord.obs
+      })
+      .eq("id", editingRecord.id)
+
+    if (error) {
+      toast.error("Erro ao atualizar: " + error.message)
+    } else {
+      setRecords(prev => prev.map(r => r.id === editingRecord.id ? editingRecord : r))
+      toast.success("Atendimento atualizado com sucesso")
+      setEditingRecord(null)
+    }
+    setIsUpdating(false)
   }
 
   const filteredRecords = useMemo(() => {
@@ -171,6 +245,22 @@ export default function ListaTab() {
                           title="Imprimir Ficha"
                         >
                           <Printer className="h-5 w-5" />
+                        </Button>
+                        <Button 
+                          onClick={() => setEditingRecord(JSON.parse(JSON.stringify(record)))}
+                          variant="outline"
+                          className="rounded-2xl h-12 w-12 p-0 flex items-center justify-center border-slate-200 text-slate-400 hover:text-blue-500 hover:border-blue-200 transition-all"
+                          title="Editar Ficha"
+                        >
+                          <Pencil className="h-5 w-5" />
+                        </Button>
+                        <Button 
+                          onClick={() => handleDelete(record.id)}
+                          variant="outline"
+                          className="rounded-2xl h-12 w-12 p-0 flex items-center justify-center border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 transition-all"
+                          title="Excluir Ficha"
+                        >
+                          <Trash2 className="h-5 w-5" />
                         </Button>
                         <Button 
                           onClick={() => toggleLaunched(record.id, record.is_launched)}
@@ -296,6 +386,134 @@ export default function ListaTab() {
           }
         }
       `}</style>
+
+      {/* Edit Modal */}
+      <Dialog open={!!editingRecord} onOpenChange={(o) => !o && setEditingRecord(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden">
+          <div className="p-10 space-y-8">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-4">
+                <div className="p-3 bg-blue-500 rounded-xl text-white"><Pencil className="h-6 w-6" /></div>
+                Editar Ficha de Triagem
+              </DialogTitle>
+            </DialogHeader>
+
+            {editingRecord && (
+              <div className="space-y-8">
+                {/* Basic Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 bg-slate-50 rounded-[2rem]">
+                  <div className="space-y-2">
+                    <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Nome do Paciente</Label>
+                    <Input 
+                      value={editingRecord.patient_name}
+                      onChange={e => setEditingRecord({...editingRecord, patient_name: e.target.value})}
+                      className="h-14 font-bold rounded-2xl border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">CPF</Label>
+                    <Input 
+                      value={editingRecord.cpf}
+                      onChange={e => setEditingRecord({...editingRecord, cpf: e.target.value})}
+                      className="h-14 font-bold rounded-2xl border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">SUS</Label>
+                    <Input 
+                      value={editingRecord.sus}
+                      onChange={e => setEditingRecord({...editingRecord, sus: e.target.value})}
+                      className="h-14 font-bold rounded-2xl border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Tipagem Sanguínea</Label>
+                    <select 
+                      value={editingRecord.tipagem_sanguinea}
+                      onChange={e => setEditingRecord({...editingRecord, tipagem_sanguinea: e.target.value})}
+                      className="w-full h-14 bg-white border border-slate-200 rounded-2xl px-6 font-bold"
+                    >
+                      <option value="">Selecione...</option>
+                      <option value="A+">A+</option>
+                      <option value="A-">A-</option>
+                      <option value="B+">B+</option>
+                      <option value="B-">B-</option>
+                      <option value="AB+">AB+</option>
+                      <option value="AB-">AB-</option>
+                      <option value="O+">O+</option>
+                      <option value="O-">O-</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Contato</Label>
+                    <Input 
+                      value={editingRecord.contato}
+                      onChange={e => setEditingRecord({...editingRecord, contato: e.target.value})}
+                      className="h-14 font-bold rounded-2xl border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Data de Nascimento</Label>
+                    <Input 
+                      type="date"
+                      value={editingRecord.data_nascimento}
+                      onChange={e => setEditingRecord({...editingRecord, data_nascimento: e.target.value})}
+                      className="h-14 font-bold rounded-2xl border-slate-200"
+                    />
+                  </div>
+                </div>
+
+                {/* Checklist */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {CHECKLIST_ITEMS.map((item) => (
+                    <div key={item.id} className="p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase text-slate-600 truncate mr-4">{item.label}</span>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setEditingRecord({
+                            ...editingRecord, 
+                            checklist_data: {
+                              ...editingRecord.checklist_data,
+                              [item.id]: { ...editingRecord.checklist_data[item.id], sim: true }
+                            }
+                          })}
+                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all ${editingRecord.checklist_data[item.id]?.sim ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}
+                        >SIM</button>
+                        <button 
+                          onClick={() => setEditingRecord({
+                            ...editingRecord, 
+                            checklist_data: {
+                              ...editingRecord.checklist_data,
+                              [item.id]: { ...editingRecord.checklist_data[item.id], sim: false }
+                            }
+                          })}
+                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all ${!editingRecord.checklist_data[item.id]?.sim ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-400'}`}
+                        >NÃO</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Observações Adicionais</Label>
+                  <textarea 
+                    value={editingRecord.obs}
+                    onChange={e => setEditingRecord({...editingRecord, obs: e.target.value})}
+                    className="w-full h-24 p-4 bg-slate-50 border-none rounded-[1.5rem] text-sm resize-none shadow-inner"
+                  />
+                </div>
+              </div>
+            )}
+
+            <DialogFooter className="flex gap-4">
+              <Button onClick={() => setEditingRecord(null)} variant="outline" className="h-14 px-8 rounded-2xl font-black uppercase text-xs">Cancelar</Button>
+              <Button onClick={handleUpdate} disabled={isUpdating} className="h-14 px-10 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs shadow-lg shadow-emerald-500/20">
+                {isUpdating ? <Loader2 className="h-5 w-5 animate-spin" /> : "Salvar Alterações"}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
