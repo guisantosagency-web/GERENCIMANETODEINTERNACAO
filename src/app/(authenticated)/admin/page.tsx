@@ -369,294 +369,328 @@ export default function AdminPage() {
 
         <TabsContent value="team" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-      {/* Receptionists Table */}
-      <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <div>
-            <CardTitle className="flex items-center gap-3 text-lg">
-              <div className="p-2 rounded-xl bg-primary/10">
-                <Shield className="h-5 w-5 text-primary" />
+      <div className="grid grid-cols-1 gap-8">
+        {/* Receptionists Section */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-4 px-2">
+            <div className="h-8 w-1 bg-primary rounded-full" />
+            <h2 className="text-xl font-black uppercase tracking-tight text-slate-800">Gerenciamento de Equipe</h2>
+          </div>
+          
+          <Card className="shadow-premium border-border/50 bg-card/80 backdrop-blur-sm rounded-[2.5rem] overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-border/10 bg-slate-50/50">
+              <div>
+                <CardTitle className="flex items-center gap-3 text-lg">
+                  <div className="p-2 rounded-xl bg-primary/10">
+                    <Shield className="h-5 w-5 text-primary" />
+                  </div>
+                  Recepcionistas
+                </CardTitle>
+                <CardDescription className="mt-1 ml-12">Usuários com acesso ao sistema</CardDescription>
               </div>
-              Recepcionistas do Sistema
-            </CardTitle>
-            <CardDescription className="mt-1.5 ml-12">Gerenciar recepcionistas e acesso ao sistema</CardDescription>
-          </div>
-          <AddReceptionistModal />
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-xl border border-border/50 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-accent/30 hover:bg-accent/30">
-                  <TableHead className="font-semibold">Nome</TableHead>
-                  <TableHead className="font-semibold">Usuário</TableHead>
-                  <TableHead className="font-semibold">Senha</TableHead>
-                  <TableHead className="font-semibold">Atendimentos</TableHead>
-                  <TableHead className="w-[100px] font-semibold">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow className="hover:bg-accent/20">
-                  <TableCell className="font-medium">Administrador</TableCell>
-                  <TableCell className="text-muted-foreground">admin</TableCell>
-                  <TableCell className="font-mono text-sm text-muted-foreground">••••••••</TableCell>
-                  <TableCell className="text-muted-foreground">-</TableCell>
-                  <TableCell>
-                    <Badge className="bg-gradient-to-r from-primary to-secondary text-primary-foreground border-0">
-                      Admin
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-                {receptionists.map((r) => (
-                  <TableRow key={r.id} className="hover:bg-accent/20">
-                    <TableCell className="font-medium">{r.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{r.username}</TableCell>
-                    <TableCell className="font-mono text-sm text-muted-foreground">@htocaxias</TableCell>
-                    <TableCell>
-                      <span className="font-semibold text-primary">
-                        {stats.receptionistStats[r.name.toUpperCase()] || 0}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <EditReceptionistModal receptionist={r} />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
-                          onClick={() => handleRemoveReceptionist(r.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+              <AddReceptionistModal />
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-border/10">
+                      <TableHead className="font-black text-[10px] uppercase tracking-widest pl-8">Nome</TableHead>
+                      <TableHead className="font-black text-[10px] uppercase tracking-widest">Usuário</TableHead>
+                      <TableHead className="font-black text-[10px] uppercase tracking-widest text-center">Atendimentos</TableHead>
+                      <TableHead className="w-[120px] font-black text-[10px] uppercase tracking-widest text-right pr-8">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow className="hover:bg-primary/5 transition-colors group">
+                      <TableCell className="pl-8 font-bold flex items-center gap-3">
+                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-black">AD</div>
+                         Administrador
+                      </TableCell>
+                      <TableCell className="text-muted-foreground font-mono text-xs">admin</TableCell>
+                      <TableCell className="text-center">-</TableCell>
+                      <TableCell className="pr-8 text-right">
+                        <Badge className="bg-primary/10 text-primary border-0 text-[9px] font-black uppercase tracking-tighter">
+                          Sistema
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                    {receptionists.map((r) => (
+                      <TableRow key={r.id} className="hover:bg-slate-50 group transition-colors">
+                        <TableCell className="pl-8 font-bold flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px] font-black group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                            {r.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          {r.name}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground font-mono text-xs">{r.username}</TableCell>
+                        <TableCell className="text-center">
+                          <span className="font-black text-primary bg-primary/5 px-2 py-0.5 rounded-md">
+                            {stats.receptionistStats[r.name.toUpperCase()] || 0}
+                          </span>
+                        </TableCell>
+                        <TableCell className="pr-8 text-right">
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <EditReceptionistModal receptionist={r} />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                              onClick={() => handleRemoveReceptionist(r.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
 
-      {/* Doctors Table */}
-      <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <div>
-            <CardTitle className="flex items-center gap-3 text-lg">
-              <div className="p-2 rounded-xl bg-emerald-500/10">
-                <Stethoscope className="h-5 w-5 text-emerald-500" />
+        {/* Doctors Section */}
+        <section className="space-y-4">
+          <Card className="shadow-premium border-border/50 bg-card/80 backdrop-blur-sm rounded-[2.5rem] overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-border/10 bg-slate-50/50">
+              <div>
+                <CardTitle className="flex items-center gap-3 text-lg">
+                  <div className="p-2 rounded-xl bg-emerald-500/10">
+                    <Stethoscope className="h-5 w-5 text-emerald-500" />
+                  </div>
+                  Corpo Clínico
+                </CardTitle>
+                <CardDescription className="mt-1 ml-12">Médicos cadastrados no sistema</CardDescription>
               </div>
-              Cadastro de Médicos
-            </CardTitle>
-            <CardDescription className="mt-1.5 ml-12">Lista de médicos para internações</CardDescription>
-          </div>
-          <AddDoctorModal />
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-xl border border-border/50 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-accent/30 hover:bg-accent/30">
-                  <TableHead className="font-semibold">Nome</TableHead>
-                  <TableHead className="font-semibold">Especialidade</TableHead>
-                  <TableHead className="w-[100px] font-semibold">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {doctors.map((doc) => (
-                  <TableRow key={doc.id} className="hover:bg-accent/20">
-                    <TableCell className="font-medium">{doc.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="rounded-lg bg-accent/50 border-border/50">
-                        {doc.specialty}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <EditDoctorModal doctor={doc} />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
-                          onClick={() => handleRemoveDoctor(doc.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+              <AddDoctorModal />
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-border/10">
+                      <TableHead className="font-black text-[10px] uppercase tracking-widest pl-8">Nome do Médico</TableHead>
+                      <TableHead className="font-black text-[10px] uppercase tracking-widest">Especialidade</TableHead>
+                      <TableHead className="w-[120px] font-black text-[10px] uppercase tracking-widest text-right pr-8">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {doctors.map((doc) => (
+                      <TableRow key={doc.id} className="hover:bg-slate-50 group transition-colors">
+                        <TableCell className="pl-8 font-bold flex items-center gap-3">
+                           <div className="h-8 w-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-[10px] font-black group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                              DR
+                           </div>
+                           {doc.name}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="rounded-lg bg-emerald-50/50 border-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 uppercase tracking-tighter">
+                            {doc.specialty}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="pr-8 text-right">
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <EditDoctorModal doctor={doc} />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                              onClick={() => handleRemoveDoctor(doc.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+      </div>
 
         </TabsContent>
 
         <TabsContent value="flow" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <DoctorSlotsManager />
 
-          {/* Procedencias Management Section */}
-          <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <div>
-                <CardTitle className="flex items-center gap-3 text-lg">
-                  <div className="p-2 rounded-xl bg-blue-500/10">
-                    <Building2 className="h-5 w-5 text-blue-500" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="space-y-8">
+            <DoctorSlotsManager />
+          </div>
+
+          <div className="space-y-8">
+            {/* Procedencias Management Section */}
+            <Card className="shadow-premium border-border/50 bg-card/80 backdrop-blur-sm rounded-[2.5rem] overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-border/10 bg-slate-50/50">
+                <div>
+                  <CardTitle className="flex items-center gap-3 text-lg">
+                    <div className="p-2 rounded-xl bg-blue-500/10">
+                      <Building2 className="h-5 w-5 text-blue-500" />
+                    </div>
+                    Unidades de Procedência
+                  </CardTitle>
+                  <CardDescription className="mt-1 ml-12">Origens de pacientes</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="mb-6 flex gap-2">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Nome da nova unidade..."
+                      value={newProcedenciaName}
+                      onChange={(e) => setNewProcedenciaName(e.target.value)}
+                      className="rounded-xl border-slate-200 bg-white"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault()
+                          handleAddProcedencia()
+                        }
+                      }}
+                    />
                   </div>
-                  Unidades de Procedência
-                </CardTitle>
-                <CardDescription className="mt-1.5 ml-12">Gerenciar unidades de saúde cadastradas</CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4 flex gap-2">
-                <div className="flex-1">
-                  <Input
-                    placeholder="Digite o nome da nova unidade..."
-                    value={newProcedenciaName}
-                    onChange={(e) => setNewProcedenciaName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault()
-                        handleAddProcedencia()
-                      }
-                    }}
-                  />
+                  <Button onClick={handleAddProcedencia} disabled={addingProcedencia || !newProcedenciaName.trim()} className="rounded-xl font-bold">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar
+                  </Button>
                 </div>
-                <Button onClick={handleAddProcedencia} disabled={addingProcedencia || !newProcedenciaName.trim()}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar
-                </Button>
-              </div>
 
-              <div className="rounded-xl border border-border/50 overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-accent/30 hover:bg-accent/30">
-                      <TableHead className="font-semibold">Nome da Unidade</TableHead>
-                      <TableHead className="w-[120px] font-semibold">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {procedencias.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
-                          Nenhuma unidade cadastrada
-                        </TableCell>
+                <div className="rounded-2xl border border-border/50 overflow-hidden bg-white/50">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50/50 hover:bg-slate-50/50 border-b border-border/10">
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest pl-6">Nome</TableHead>
+                        <TableHead className="w-[100px] font-black text-[10px] uppercase tracking-widest text-right pr-6">Ações</TableHead>
                       </TableRow>
-                    ) : (
-                      procedencias
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((proc) => (
-                          <TableRow key={proc.id} className="hover:bg-accent/20">
-                            <TableCell className="font-medium">{proc.name}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                <EditProcedenciaModal procedencia={proc} />
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
-                                  onClick={() => handleRemoveProcedencia(proc.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {procedencias.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={2} className="text-center text-muted-foreground py-8 italic text-sm">
+                            Nenhuma unidade cadastrada
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        procedencias
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((proc) => (
+                            <TableRow key={proc.id} className="hover:bg-blue-50/30 transition-colors group">
+                              <TableCell className="font-bold pl-6 text-slate-700 uppercase text-xs tracking-tight">{proc.name}</TableCell>
+                              <TableCell className="pr-6 text-right">
+                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <EditProcedenciaModal procedencia={proc} />
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                                    onClick={() => handleRemoveProcedencia(proc.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Visiting Hours Management Section */}
-          <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl overflow-hidden">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-3 text-lg">
-                <div className="p-2 rounded-xl bg-indigo-500/10">
-                  <Clock className="h-5 w-5 text-indigo-500" />
+            {/* Visiting Hours Management Section */}
+            <Card className="shadow-premium border-border/50 bg-card/80 backdrop-blur-sm rounded-[2.5rem] overflow-hidden">
+              <CardHeader className="pb-4 border-b border-border/10 bg-slate-50/50">
+                <CardTitle className="flex items-center gap-3 text-lg">
+                  <div className="p-2 rounded-xl bg-indigo-500/10">
+                    <Clock className="h-5 w-5 text-indigo-500" />
+                  </div>
+                  Horários de Visitas
+                </CardTitle>
+                <CardDescription className="ml-12">Exibidos na ficha de internação</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-6">
+                <div className="grid gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="enfermaria" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Enfermaria</Label>
+                    <Input
+                      id="enfermaria"
+                      placeholder="Ex: 14h às 16h e 18h às 20h"
+                      value={hoursForm.enfermaria}
+                      onChange={(e) => setHoursForm({ ...hoursForm, enfermaria: e.target.value })}
+                      className="rounded-xl border-slate-200 bg-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="uti" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">UTI</Label>
+                    <Input
+                      id="uti"
+                      placeholder="Ex: 10h às 11h e 16h às 17h"
+                      value={hoursForm.uti}
+                      onChange={(e) => setHoursForm({ ...hoursForm, uti: e.target.value })}
+                      className="rounded-xl border-slate-200 bg-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="trocas" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Trocas de Acompanhantes</Label>
+                    <Input
+                      id="trocas"
+                      placeholder="Ex: 8h, 14h e 20h"
+                      value={hoursForm.trocas_acompanhantes}
+                      onChange={(e) => setHoursForm({ ...hoursForm, trocas_acompanhantes: e.target.value })}
+                      className="rounded-xl border-slate-200 bg-white"
+                    />
+                  </div>
                 </div>
-                Horários de Visitas
-              </CardTitle>
-              <CardDescription className="ml-12">
-                Configure os horários de visita que serão exibidos na ficha de internação
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="enfermaria">Enfermaria</Label>
-                  <Input
-                    id="enfermaria"
-                    placeholder="Ex: 14h às 16h e 18h às 20h"
-                    value={hoursForm.enfermaria}
-                    onChange={(e) => setHoursForm({ ...hoursForm, enfermaria: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="uti">UTI</Label>
-                  <Input
-                    id="uti"
-                    placeholder="Ex: 10h às 11h e 16h às 17h"
-                    value={hoursForm.uti}
-                    onChange={(e) => setHoursForm({ ...hoursForm, uti: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="trocas">Horários de Trocas de Acompanhantes</Label>
-                  <Input
-                    id="trocas"
-                    placeholder="Ex: 8h, 14h e 20h"
-                    value={hoursForm.trocas_acompanhantes}
-                    onChange={(e) => setHoursForm({ ...hoursForm, trocas_acompanhantes: e.target.value })}
-                  />
-                </div>
-                <Button onClick={handleUpdateVisitingHours} className="w-full">
-                  Salvar Horários de Visita
+                <Button onClick={handleUpdateVisitingHours} className="w-full h-12 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95">
+                  Atualizar Horários
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
         </TabsContent>
 
         <TabsContent value="exams" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-           {/* Placeholder for dynamic Procedures/Exam types registration */}
-           <Card className="shadow-card border-border/50 bg-card/80 backdrop-blur-sm rounded-2xl overflow-hidden">
-             <CardHeader className="flex flex-row items-center justify-between pb-4">
+           <Card className="shadow-premium border-border/50 bg-card/80 backdrop-blur-sm rounded-[2.5rem] overflow-hidden">
+             <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-border/10 bg-slate-50/50">
                <div>
                  <CardTitle className="flex items-center gap-3 text-lg">
                    <div className="p-2 rounded-xl bg-amber-500/10">
                      <FlaskConical className="h-5 w-5 text-amber-500" />
                    </div>
-                   Procedimentos e Tipos de Exame
+                   Catálogo de Agendamento
                  </CardTitle>
-                 <CardDescription className="mt-1.5 ml-12">Gerenciar a lista de procedimentos disponíveis para agendamento</CardDescription>
+                 <CardDescription className="mt-1 ml-12">Procedimentos e Tipos de Exame</CardDescription>
                </div>
              </CardHeader>
-             <CardContent>
-                <div className="grid md:grid-cols-2 gap-8">
+             <CardContent className="pt-8">
+                <div className="grid md:grid-cols-2 gap-12">
                    {/* Procedimentos */}
-                   <div className="space-y-4">
-                      <h4 className="text-sm font-black uppercase tracking-widest text-slate-400">Procedimentos</h4>
+                   <div className="space-y-6">
+                      <div className="flex items-center gap-3">
+                         <div className="h-6 w-1 bg-amber-500 rounded-full" />
+                         <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Procedimentos</h4>
+                      </div>
                       <div className="flex gap-2">
                          <Input 
                             placeholder="Novo Procedimento..." 
                             value={newProcName} 
                             onChange={e => setNewProcName(e.target.value)} 
+                            className="rounded-xl border-slate-200 bg-white"
                          />
-                         <Button onClick={handleAddProc} size="icon"><Plus className="h-4 w-4" /></Button>
+                         <Button onClick={handleAddProc} size="icon" className="h-10 w-10 shrink-0 bg-amber-500 hover:bg-amber-600 rounded-xl"><Plus className="h-4 w-4" /></Button>
                       </div>
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                          {procedures.map(p => (
-                            <div key={p} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 group">
-                               <span className="font-bold text-sm uppercase">{p}</span>
-                               <Button variant="ghost" size="icon" onClick={() => handleDeleteProc(p)} className="h-7 w-7 text-red-500 opacity-0 group-hover:opacity-100 transition-all">
-                                  <Trash2 className="h-3.5 w-3.5" />
+                            <div key={p} className="flex justify-between items-center p-4 bg-white rounded-2xl border border-slate-100 group shadow-sm hover:shadow-md transition-all">
+                               <span className="font-bold text-xs uppercase tracking-tight text-slate-700">{p}</span>
+                               <Button variant="ghost" size="icon" onClick={() => handleDeleteProc(p)} className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-destructive/10">
+                                  <Trash2 className="h-4 w-4" />
                                </Button>
                             </div>
                          ))}
@@ -664,11 +698,14 @@ export default function AdminPage() {
                    </div>
 
                    {/* Tipos de Exame */}
-                   <div className="space-y-4">
-                      <h4 className="text-sm font-black uppercase tracking-widest text-slate-400">Tipos por Procedimento</h4>
-                      <div className="space-y-2">
+                   <div className="space-y-6">
+                      <div className="flex items-center gap-3">
+                         <div className="h-6 w-1 bg-amber-500 rounded-full" />
+                         <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tipos por Procedimento</h4>
+                      </div>
+                      <div className="space-y-3">
                          <select 
-                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-sm font-bold appearance-none"
+                            className="w-full h-12 px-4 bg-white border border-slate-200 rounded-2xl text-xs font-bold appearance-none cursor-pointer focus:ring-4 focus:ring-amber-500/10 transition-all"
                             value={newExamTypeProc}
                             onChange={e => setNewExamTypeProc(e.target.value)}
                          >
@@ -680,19 +717,20 @@ export default function AdminPage() {
                                placeholder="Novo Tipo de Exame..." 
                                value={newExamTypeName} 
                                onChange={e => setNewExamTypeName(e.target.value)} 
+                               className="rounded-xl border-slate-200 bg-white"
                             />
-                            <Button onClick={handleAddExamType} size="icon"><Plus className="h-4 w-4" /></Button>
+                            <Button onClick={handleAddExamType} size="icon" className="h-10 w-10 shrink-0 bg-amber-500 hover:bg-amber-600 rounded-xl"><Plus className="h-4 w-4" /></Button>
                          </div>
                       </div>
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                          {examTypes.map((t, idx) => (
-                            <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 group">
+                            <div key={idx} className="flex justify-between items-center p-4 bg-white rounded-2xl border border-slate-100 group shadow-sm hover:shadow-md transition-all">
                                <div>
-                                  <span className="text-[10px] block font-black text-blue-500 uppercase tracking-tighter">{t.procedure}</span>
-                                  <span className="font-bold text-xs uppercase">{t.name}</span>
-                               </div>
-                               <Button variant="ghost" size="icon" onClick={() => handleDeleteExamType(t.procedure, t.name)} className="h-7 w-7 text-red-500 opacity-0 group-hover:opacity-100 transition-all">
-                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <span className="text-[8px] block font-black text-amber-600 uppercase tracking-widest mb-1">{t.procedure}</span>
+                                  <span className="font-black text-xs uppercase text-slate-800">{t.name}</span>
+                                </div>
+                               <Button variant="ghost" size="icon" onClick={() => handleDeleteExamType(t.procedure, t.name)} className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-destructive/10">
+                                  <Trash2 className="h-4 w-4" />
                                </Button>
                             </div>
                          ))}

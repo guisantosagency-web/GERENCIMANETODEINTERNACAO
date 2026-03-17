@@ -17,6 +17,8 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
+  Plus,
+  Trash2,
   Stethoscope
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -71,10 +73,11 @@ export default function FormularioTab() {
     }
   })
 
-  const [checklist, setChecklist] = useState<Record<string, { sim: boolean, data: string, motivo: string }>>(
+  // Novo estado para o checklist: cada item tem um array de entries { data, motivo }
+  const [checklist, setChecklist] = useState<Record<string, { sim: boolean, entries: Array<{ data: string, motivo: string }> }>>(
     CHECKLIST_ITEMS.reduce((acc, item) => ({ 
       ...acc, 
-      [item.id]: { sim: false, data: "", motivo: "" } 
+      [item.id]: { sim: false, entries: [{ data: "", motivo: "" }] } 
     }), {})
   )
 
@@ -107,6 +110,40 @@ export default function FormularioTab() {
       data_nascimento: patient.data_nascimento || "",
     }))
     setShowDropdown(false)
+  }
+
+  const handleAddEntry = (id: string) => {
+    setChecklist(prev => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        entries: [...prev[id].entries, { data: "", motivo: "" }]
+      }
+    }))
+  }
+
+  const handleRemoveEntry = (id: string, index: number) => {
+    setChecklist(prev => {
+      const newEntries = [...prev[id].entries]
+      newEntries.splice(index, 1)
+      // Garantir ao menos 1 entry se estiver no SIM
+      if (newEntries.length === 0) newEntries.push({ data: "", motivo: "" })
+      return {
+        ...prev,
+        [id]: { ...prev[id], entries: newEntries }
+      }
+    })
+  }
+
+  const handleEntryChange = (id: string, index: number, field: "data" | "motivo", value: string) => {
+    setChecklist(prev => {
+      const newEntries = [...prev[id].entries]
+      newEntries[index][field] = value
+      return {
+        ...prev,
+        [id]: { ...prev[id], entries: newEntries }
+      }
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -157,7 +194,7 @@ export default function FormularioTab() {
           observacao_nir: ""
         }
       })
-      setChecklist(CHECKLIST_ITEMS.reduce((acc, item) => ({ ...acc, [item.id]: { sim: false, data: "", motivo: "" } }), {}))
+      setChecklist(CHECKLIST_ITEMS.reduce((acc, item) => ({ ...acc, [item.id]: { sim: false, entries: [{ data: "", motivo: "" }] } }), {}))
     } catch (err: any) {
       console.error(err)
       toast.error(`Erro ao salvar: ${err.message || 'Verifique se a tabela foi criada no Supabase'}`)
@@ -179,7 +216,7 @@ export default function FormularioTab() {
             Identificação do Paciente
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-x-8 gap-y-10">
             <div className="md:col-span-12 relative" ref={dropdownRef}>
               <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Nome Completo</Label>
               <div className="relative group/input">
@@ -243,42 +280,54 @@ export default function FormularioTab() {
               <Phone className="absolute left-6 bottom-[1rem] h-5 w-5 text-emerald-500" />
             </div>
 
-            <div className="md:col-span-4 space-y-2 relative">
+            <div className="md:col-span-3 space-y-2 relative">
               <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Data de Nascimento</Label>
               <div className="relative">
                 <Input 
+                  required
                   type="date"
                   value={formData.data_nascimento}
                   onChange={e => setFormData(p => ({ ...p, data_nascimento: e.target.value }))}
                   className="pl-14 h-14 font-bold bg-slate-50 border-none rounded-2xl shadow-inner"
                 />
                 <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-500" />
-                {formData.data_nascimento && (
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase shadow-lg shadow-emerald-500/20">
-                    {differenceInYears(new Date(), new Date(formData.data_nascimento))} anos
-                  </div>
-                )}
               </div>
             </div>
 
-            <div className="md:col-span-4 space-y-2 relative">
+            <div className="md:col-span-3 space-y-2 relative">
+              <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Idade</Label>
+              <div className="h-14 flex items-center px-8 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100/50 shadow-inner">
+                 {formData.data_nascimento ? (
+                   <div className="flex items-center gap-3">
+                      <p className="text-xl font-black font-space">{differenceInYears(new Date(), new Date(formData.data_nascimento))}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Anos Completos</p>
+                   </div>
+                 ) : (
+                   <p className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Aguardando Data...</p>
+                 )}
+              </div>
+            </div>
+
+            <div className="md:col-span-6 space-y-2 relative">
               <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Tipagem Sanguínea</Label>
-              <select 
-                value={formData.tipagem_sanguinea}
-                onChange={e => setFormData(p => ({ ...p, tipagem_sanguinea: e.target.value }))}
-                className="w-full h-14 bg-slate-50 border-none rounded-2xl px-14 font-bold appearance-none cursor-pointer shadow-inner"
-              >
-                <option value="">Selecione...</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-              </select>
-              <Activity className="absolute left-6 bottom-[1.2rem] h-5 w-5 text-red-500" />
+              <div className="relative">
+                <select 
+                  value={formData.tipagem_sanguinea}
+                  onChange={e => setFormData(p => ({ ...p, tipagem_sanguinea: e.target.value }))}
+                  className="w-full h-14 bg-slate-50 border-none rounded-2xl px-14 font-bold appearance-none cursor-pointer shadow-inner"
+                >
+                  <option value="">Selecione...</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
+                <Activity className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500" />
+              </div>
             </div>
           </div>
         </div>
@@ -294,7 +343,7 @@ export default function FormularioTab() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6">
             {CHECKLIST_ITEMS.map((item) => (
-              <div key={item.id} className="group/item p-8 bg-slate-50/50 rounded-[2.5rem] border-2 border-transparent hover:border-emerald-500/20 hover:bg-white hover:scale-[1.01] hover:shadow-xl transition-all duration-500 flex flex-col gap-6">
+              <div key={item.id} className="group/item p-8 bg-slate-50/50 rounded-[2.5rem] border-2 border-transparent hover:border-emerald-500/20 hover:bg-white transition-all duration-500 flex flex-col gap-6">
                 <div className="flex items-center justify-between gap-8">
                   <div className="flex-1">
                     <p className="text-xs font-black text-slate-700 uppercase tracking-tight group-hover/item:text-emerald-600 transition-colors">{item.label}</p>
@@ -320,34 +369,59 @@ export default function FormularioTab() {
                 </div>
 
                 {checklist[item.id].sim && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="space-y-2">
-                       <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Data Relacionada</Label>
-                       <Input 
-                        type="date"
-                        value={checklist[item.id].data}
-                        onChange={e => setChecklist(p => ({ ...p, [item.id]: { ...p[item.id], data: e.target.value } }))}
-                        className="h-12 bg-white border-slate-100 rounded-xl text-xs font-bold shadow-sm focus:ring-emerald-500/20"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                       <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Motivo / Descrição</Label>
-                       {item.id === 'outros' ? (
-                         <textarea 
-                           value={checklist[item.id].motivo}
-                           onChange={e => setChecklist(p => ({ ...p, [item.id]: { ...p[item.id], motivo: e.target.value } }))}
-                           className="w-full h-12 bg-white border border-slate-100 rounded-xl p-3 text-xs font-bold shadow-sm focus:ring-emerald-500/20 resize-none"
-                           placeholder="DESCREVA OS MOTIVOS..."
-                         />
-                       ) : (
-                         <Input 
-                          placeholder="DESCREVA O MOTIVO..."
-                          value={checklist[item.id].motivo}
-                          onChange={e => setChecklist(p => ({ ...p, [item.id]: { ...p[item.id], motivo: e.target.value } }))}
-                          className="h-12 bg-white border-slate-100 rounded-xl text-xs font-bold shadow-sm focus:ring-emerald-500/20"
-                        />
-                       )}
-                    </div>
+                  <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    {checklist[item.id].entries.map((entry, idx) => (
+                      <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-slate-50/50 p-4 rounded-2xl border border-slate-100 shadow-sm relative group-entries">
+                        <div className="md:col-span-4 space-y-2">
+                           <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Data Relacionada</Label>
+                           <Input 
+                            type="date"
+                            value={entry.data}
+                            onChange={e => handleEntryChange(item.id, idx, "data", e.target.value)}
+                            className="h-12 bg-white border-slate-100 rounded-xl text-xs font-bold shadow-sm focus:ring-emerald-500/20"
+                          />
+                        </div>
+                        <div className="md:col-span-7 space-y-2">
+                           <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Motivo / Descrição</Label>
+                           {item.id === 'outros' ? (
+                             <textarea 
+                               value={entry.motivo}
+                               onChange={e => handleEntryChange(item.id, idx, "motivo", e.target.value)}
+                               className="w-full h-12 bg-white border border-slate-100 rounded-xl p-3 text-xs font-bold shadow-sm focus:ring-emerald-500/20 resize-none"
+                               placeholder="DESCREVA OS MOTIVOS..."
+                             />
+                           ) : (
+                             <Input 
+                              placeholder="DESCREVA O MOTIVO..."
+                              value={entry.motivo}
+                              onChange={e => handleEntryChange(item.id, idx, "motivo", e.target.value)}
+                              className="h-12 bg-white border-slate-100 rounded-xl text-xs font-bold shadow-sm focus:ring-emerald-500/20"
+                             />
+                           )}
+                        </div>
+                        <div className="md:col-span-1 flex justify-center pb-1">
+                           <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="icon" 
+                              disabled={checklist[item.id].entries.length <= 1}
+                              onClick={() => handleRemoveEntry(item.id, idx)}
+                              className="p-3 h-10 w-10 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
+                           >
+                              <Trash2 className="h-5 w-5" />
+                           </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => handleAddEntry(item.id)}
+                      className="w-full h-12 border-dashed border-2 border-emerald-200 text-emerald-500 hover:bg-emerald-50 hover:border-emerald-300 font-black text-[10px] uppercase tracking-widest rounded-xl transition-all"
+                    >
+                      <Plus className="h-4 w-4 mr-2" /> Adicionar Detalhe
+                    </Button>
                   </div>
                 )}
               </div>
