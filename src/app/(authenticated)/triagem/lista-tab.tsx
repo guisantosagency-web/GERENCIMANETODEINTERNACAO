@@ -110,9 +110,8 @@ export default function ListaTab() {
     `
 
     const checklistContent = CHECKLIST_ITEMS.map((item) => {
-      const data = record.checklist_data?.[item.id] || { sim: false, entries: [{ data: "", motivo: "" }] }
-      // Adapt for old format or new format
-      const entries = data.entries || [{ data: data.data || "", motivo: data.motivo || "" }]
+      const data = record.checklist_data?.[item.id] || { sim: false, entries: [{ motivo: "" }] }
+      const entries = data.entries || [{ motivo: data.motivo || "" }]
       
       return `
         <div style="margin-bottom: 8px; border: 1.5px solid #000; padding: 10px; border-radius: 6px; page-break-inside: avoid;">
@@ -122,12 +121,11 @@ export default function ListaTab() {
               STATUS: [ ${data.sim ? 'X' : '&nbsp;&nbsp;'} ] SIM &nbsp;&nbsp; [ ${!data.sim ? 'X' : '&nbsp;&nbsp;'} ] NÃO
             </div>
           </div>
-          ${data.sim ? entries.map((e: any) => `
+          ${entries.map((e: any) => e.motivo ? `
             <div style="display: flex; gap: 20px; font-size: 8.5pt; margin-top: 4px;">
-              <div style="font-weight: 800; min-width: 100px;">DATA: ${e.data ? format(new Date(e.data), 'dd/MM/yyyy') : '___/___/____'}</div>
-              <div style="flex: 1;"><span style="font-weight: 800;">MOTIVO/DESCRIÇÃO:</span> ${e.motivo || 'N/A'}</div>
+              <div style="flex: 1;"><span style="font-weight: 800;">DESCRIÇÃO:</span> ${e.motivo}</div>
             </div>
-          `).join('') : ''}
+          ` : '').join('')}
         </div>
       `
     }).join('')
@@ -144,6 +142,11 @@ export default function ListaTab() {
           <div style="grid-column: span 2; border-bottom: 1px solid #ccc; padding-bottom: 4px;"><span style="font-weight: 900; text-transform: uppercase;">Procedimento:</span> ${record.nir_data?.procedimento || '________________'}</div>
           <div style="border-bottom: 1px solid #ccc; padding-bottom: 4px;"><span style="font-weight: 900; text-transform: uppercase;">Cirurgião:</span> ${record.nir_data?.cirurgiao || '________________'}</div>
           <div style="border-bottom: 1px solid #ccc; padding-bottom: 4px;"><span style="font-weight: 900; text-transform: uppercase;">OPME:</span> ${record.nir_data?.opme_nir || '________________'}</div>
+          
+          <div style="grid-column: span 2; margin-top: 10px; border-bottom: 1px solid #ccc; padding-bottom: 4px;">
+            <span style="font-weight: 900; text-transform: uppercase;">Uso de Anticoagulante:</span> ${record.checklist_data?.faz_uso_anticoagulantes ? `SIM (${record.checklist_data.faz_uso_anticoagulantes_desc || 'SEM DESCRIÇÃO'})` : 'NÃO'}
+          </div>
+
           <div style="grid-column: span 2; border: 1.5px solid #000; padding: 10px; min-height: 80px; margin-top: 10px; border-radius: 4px;">
             <span style="font-weight: 900; text-transform: uppercase; font-size: 8pt; font-style: italic;">Observações da Triagem/NIR:</span><br/>
             <span style="font-size: 9pt;">${record.obs || 'NENHUMA OBSERVAÇÃO REGISTRADA.'}</span>
@@ -623,10 +626,9 @@ export default function ListaTab() {
                 {/* Checklist */}
                 <div className="grid grid-cols-1 gap-4">
                   {CHECKLIST_ITEMS.map((item) => {
-                    const data = editingRecord.checklist_data[item.id] || { sim: false, entries: [{ data: "", motivo: "" }] }
-                    // Handle transition from old format to new format in modal
+                    const data = editingRecord.checklist_data[item.id] || { sim: false, entries: [{ motivo: "" }] }
                     if (!data.entries) {
-                      data.entries = [{ data: data.data || "", motivo: data.motivo || "" }]
+                      data.entries = [{ motivo: data.motivo || "" }]
                     }
 
                     return (
@@ -658,76 +660,88 @@ export default function ListaTab() {
                           </div>
                         </div>
                         
-                        {data.sim && (
-                          <div className="space-y-4 pt-4 border-t border-slate-50">
-                            {data.entries.map((entry: any, entryIdx: number) => (
-                              <div key={entryIdx} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-slate-50/50 p-4 rounded-2xl relative group">
-                                <div className="md:col-span-4 space-y-1">
-                                  <Label className="text-[9px] font-black uppercase text-slate-400 ml-2">Data</Label>
-                                  <Input 
-                                    type="date"
-                                    value={entry.data || ""}
-                                    onChange={e => {
-                                      const newChecklist = { ...editingRecord.checklist_data }
-                                      const newEntries = [...data.entries]
-                                      newEntries[entryIdx] = { ...entry, data: e.target.value }
-                                      newChecklist[item.id] = { ...data, entries: newEntries }
-                                      setEditingRecord({ ...editingRecord, checklist_data: newChecklist })
-                                    }}
-                                    className="h-12 rounded-xl bg-white border-none shadow-sm font-bold text-xs"
-                                  />
-                                </div>
-                                <div className="md:col-span-7 space-y-1">
-                                  <Label className="text-[9px] font-black uppercase text-slate-400 ml-2">Motivo / Descrição</Label>
-                                  <Input 
-                                    placeholder="Descreva o motivo..."
-                                    value={entry.motivo || ""}
-                                    onChange={e => {
-                                      const newChecklist = { ...editingRecord.checklist_data }
-                                      const newEntries = [...data.entries]
-                                      newEntries[entryIdx] = { ...entry, motivo: e.target.value }
-                                      newChecklist[item.id] = { ...data, entries: newEntries }
-                                      setEditingRecord({ ...editingRecord, checklist_data: newChecklist })
-                                    }}
-                                    className="h-12 rounded-xl bg-white border-none shadow-sm font-bold text-xs"
-                                  />
-                                </div>
-                                <div className="md:col-span-1 flex justify-center pb-1">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    disabled={data.entries.length <= 1}
-                                    onClick={() => {
-                                      const newChecklist = { ...editingRecord.checklist_data }
-                                      const newEntries = [...data.entries]
-                                      newEntries.splice(entryIdx, 1)
-                                      newChecklist[item.id] = { ...data, entries: newEntries }
-                                      setEditingRecord({ ...editingRecord, checklist_data: newChecklist })
-                                    }}
-                                    className="h-10 w-10 text-red-300 hover:text-red-500 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="h-5 w-5" />
-                                  </Button>
-                                </div>
+                        <div className="space-y-4 pt-4 border-t border-slate-50">
+                          {data.entries.map((entry: any, entryIdx: number) => (
+                            <div key={entryIdx} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-slate-50/50 p-4 rounded-2xl relative group">
+                              <div className="md:col-span-11 space-y-1">
+                                <Label className="text-[9px] font-black uppercase text-slate-400 ml-2">Motivo / Descrição</Label>
+                                <Input 
+                                  placeholder="Descreva o motivo..."
+                                  value={entry.motivo || ""}
+                                  onChange={e => {
+                                    const newChecklist = { ...editingRecord.checklist_data }
+                                    const newEntries = [...data.entries]
+                                    newEntries[entryIdx] = { ...entry, motivo: e.target.value }
+                                    newChecklist[item.id] = { ...data, entries: newEntries }
+                                    setEditingRecord({ ...editingRecord, checklist_data: newChecklist })
+                                  }}
+                                  className="h-12 rounded-xl bg-white border-none shadow-sm font-bold text-xs"
+                                />
                               </div>
-                            ))}
-                            <Button 
-                              variant="outline" 
-                              onClick={() => {
-                                const newChecklist = { ...editingRecord.checklist_data }
-                                const newEntries = [...data.entries, { data: "", motivo: "" }]
-                                newChecklist[item.id] = { ...data, entries: newEntries }
-                                setEditingRecord({ ...editingRecord, checklist_data: newChecklist })
-                              }}
-                              className="w-full h-12 border-dashed border-2 bg-slate-50/50 hover:bg-emerald-50 hover:border-emerald-200 text-emerald-500 font-black uppercase text-[9px] tracking-widest rounded-xl transition-all"
-                            >
-                              <Plus className="h-4 w-4 mr-2" /> Adicionar Detalhe
-                            </Button>
-                          </div>
-                        )}
+                              <div className="md:col-span-1 flex justify-center pb-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  disabled={data.entries.length <= 1}
+                                  onClick={() => {
+                                    const newChecklist = { ...editingRecord.checklist_data }
+                                    const newEntries = [...data.entries]
+                                    newEntries.splice(entryIdx, 1)
+                                    newChecklist[item.id] = { ...data, entries: newEntries }
+                                    setEditingRecord({ ...editingRecord, checklist_data: newChecklist })
+                                  }}
+                                  className="h-10 w-10 text-red-300 hover:text-red-500 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-5 w-5" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                          <Button 
+                            variant="outline" 
+                            onClick={() => {
+                              const newChecklist = { ...editingRecord.checklist_data }
+                              const newEntries = [...data.entries, { motivo: "" }]
+                              newChecklist[item.id] = { ...data, entries: newEntries }
+                              setEditingRecord({ ...editingRecord, checklist_data: newChecklist })
+                            }}
+                            className="w-full h-12 border-dashed border-2 bg-slate-50/50 hover:bg-emerald-50 hover:border-emerald-200 text-emerald-500 font-black uppercase text-[9px] tracking-widest rounded-xl transition-all"
+                          >
+                            <Plus className="h-4 w-4 mr-2" /> Adicionar Detalhe
+                          </Button>
+                        </div>
                       </div>
                     )
                   })}
+                  <div className="p-8 bg-red-50 rounded-[2.5rem] space-y-4 border border-red-100">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <AlertTriangle className="h-6 w-6 text-red-500" />
+                        <span className="text-xs font-black uppercase text-slate-700">Faz uso de anticoagulantes?</span>
+                      </div>
+                      <div className="flex bg-slate-200 p-1 rounded-xl">
+                        <button 
+                          onClick={() => setEditingRecord({...editingRecord, checklist_data: {...editingRecord.checklist_data, faz_uso_anticoagulantes: true}})}
+                          className={`px-6 py-2 rounded-lg text-[9px] font-black transition-all ${editingRecord.checklist_data.faz_uso_anticoagulantes ? 'bg-red-500 text-white shadow-lg' : 'text-slate-500'}`}
+                        >SIM</button>
+                        <button 
+                          onClick={() => setEditingRecord({...editingRecord, checklist_data: {...editingRecord.checklist_data, faz_uso_anticoagulantes: false}})}
+                          className={`px-6 py-2 rounded-lg text-[9px] font-black transition-all ${!editingRecord.checklist_data.faz_uso_anticoagulantes ? 'bg-slate-400 text-white' : 'text-slate-500'}`}
+                        >NÃO</button>
+                      </div>
+                    </div>
+                    {editingRecord.checklist_data.faz_uso_anticoagulantes && (
+                      <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                        <Label className="text-[9px] font-black uppercase text-slate-400 ml-2">Descrição do Uso</Label>
+                        <Input 
+                          placeholder="Descreva o medicamento e dosagem..."
+                          value={editingRecord.checklist_data.faz_uso_anticoagulantes_desc || ""}
+                          onChange={e => setEditingRecord({...editingRecord, checklist_data: {...editingRecord.checklist_data, faz_uso_anticoagulantes_desc: e.target.value.toUpperCase()}})}
+                          className="h-12 bg-white rounded-xl border-red-100 shadow-sm font-bold text-xs"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">

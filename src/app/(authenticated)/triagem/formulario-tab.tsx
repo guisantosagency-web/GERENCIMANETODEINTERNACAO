@@ -61,6 +61,7 @@ export default function FormularioTab() {
     tipagem_sanguinea: "",
     obs: "",
     faz_uso_anticoagulantes: false,
+    faz_uso_anticoagulantes_desc: "",
     nir_data: {
       procedencia: "",
       nome_contato: "",
@@ -74,10 +75,10 @@ export default function FormularioTab() {
   })
 
   // Novo estado para o checklist: cada item tem um array de entries { data, motivo }
-  const [checklist, setChecklist] = useState<Record<string, { sim: boolean, entries: Array<{ data: string, motivo: string }> }>>(
+  const [checklist, setChecklist] = useState<Record<string, { sim: boolean, entries: Array<{ motivo: string }> }>>(
     CHECKLIST_ITEMS.reduce((acc, item) => ({ 
       ...acc, 
-      [item.id]: { sim: false, entries: [{ data: "", motivo: "" }] } 
+      [item.id]: { sim: false, entries: [{ motivo: "" }] } 
     }), {})
   )
 
@@ -117,7 +118,7 @@ export default function FormularioTab() {
       ...prev,
       [id]: {
         ...prev[id],
-        entries: [...prev[id].entries, { data: "", motivo: "" }]
+        entries: [...prev[id].entries, { motivo: "" }]
       }
     }))
   }
@@ -126,8 +127,7 @@ export default function FormularioTab() {
     setChecklist(prev => {
       const newEntries = [...prev[id].entries]
       newEntries.splice(index, 1)
-      // Garantir ao menos 1 entry se estiver no SIM
-      if (newEntries.length === 0) newEntries.push({ data: "", motivo: "" })
+      if (newEntries.length === 0) newEntries.push({ motivo: "" })
       return {
         ...prev,
         [id]: { ...prev[id], entries: newEntries }
@@ -135,10 +135,10 @@ export default function FormularioTab() {
     })
   }
 
-  const handleEntryChange = (id: string, index: number, field: "data" | "motivo", value: string) => {
+  const handleEntryChange = (id: string, index: number, value: string) => {
     setChecklist(prev => {
       const newEntries = [...prev[id].entries]
-      newEntries[index][field] = value
+      newEntries[index].motivo = value
       return {
         ...prev,
         [id]: { ...prev[id], entries: newEntries }
@@ -159,7 +159,11 @@ export default function FormularioTab() {
         contato: formData.contato,
         data_nascimento: formData.data_nascimento || null,
         tipagem_sanguinea: formData.tipagem_sanguinea,
-        checklist_data: checklist,
+        checklist_data: {
+          ...checklist,
+          faz_uso_anticoagulantes: formData.faz_uso_anticoagulantes,
+          faz_uso_anticoagulantes_desc: formData.faz_uso_anticoagulantes_desc
+        },
         nir_data: formData.nir_data,
         obs: formData.obs,
         recepcionista: user?.name || "SISTEMA",
@@ -194,7 +198,7 @@ export default function FormularioTab() {
           observacao_nir: ""
         }
       })
-      setChecklist(CHECKLIST_ITEMS.reduce((acc, item) => ({ ...acc, [item.id]: { sim: false, entries: [{ data: "", motivo: "" }] } }), {}))
+      setChecklist(CHECKLIST_ITEMS.reduce((acc, item) => ({ ...acc, [item.id]: { sim: false, entries: [{ motivo: "" }] } }), {}))
     } catch (err: any) {
       console.error(err)
       toast.error(`Erro ao salvar: ${err.message || 'Verifique se a tabela foi criada no Supabase'}`)
@@ -368,86 +372,89 @@ export default function FormularioTab() {
                   </div>
                 </div>
 
-                {checklist[item.id].sim && (
-                  <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                    {checklist[item.id].entries.map((entry, idx) => (
-                      <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-slate-50/50 p-4 rounded-2xl border border-slate-100 shadow-sm relative group-entries">
-                        <div className="md:col-span-4 space-y-2">
-                           <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Data Relacionada</Label>
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  {checklist[item.id].entries.map((entry, idx) => (
+                    <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-slate-50/50 p-4 rounded-2xl border border-slate-100 shadow-sm relative group-entries">
+                      <div className="md:col-span-11 space-y-2">
+                         <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Motivo / Descrição</Label>
+                         {item.id === 'outros' ? (
+                           <textarea 
+                             value={entry.motivo}
+                             onChange={e => handleEntryChange(item.id, idx, e.target.value)}
+                             className="w-full h-12 bg-white border border-slate-100 rounded-xl p-3 text-xs font-bold shadow-sm focus:ring-emerald-500/20 resize-none"
+                             placeholder="DESCREVA OS MOTIVOS..."
+                           />
+                         ) : (
                            <Input 
-                            type="date"
-                            value={entry.data}
-                            onChange={e => handleEntryChange(item.id, idx, "data", e.target.value)}
+                            placeholder="DESCREVA O MOTIVO..."
+                            value={entry.motivo}
+                            onChange={e => handleEntryChange(item.id, idx, e.target.value)}
                             className="h-12 bg-white border-slate-100 rounded-xl text-xs font-bold shadow-sm focus:ring-emerald-500/20"
-                          />
-                        </div>
-                        <div className="md:col-span-7 space-y-2">
-                           <Label className="uppercase text-[9px] font-black text-slate-400 ml-4">Motivo / Descrição</Label>
-                           {item.id === 'outros' ? (
-                             <textarea 
-                               value={entry.motivo}
-                               onChange={e => handleEntryChange(item.id, idx, "motivo", e.target.value)}
-                               className="w-full h-12 bg-white border border-slate-100 rounded-xl p-3 text-xs font-bold shadow-sm focus:ring-emerald-500/20 resize-none"
-                               placeholder="DESCREVA OS MOTIVOS..."
-                             />
-                           ) : (
-                             <Input 
-                              placeholder="DESCREVA O MOTIVO..."
-                              value={entry.motivo}
-                              onChange={e => handleEntryChange(item.id, idx, "motivo", e.target.value)}
-                              className="h-12 bg-white border-slate-100 rounded-xl text-xs font-bold shadow-sm focus:ring-emerald-500/20"
-                             />
-                           )}
-                        </div>
-                        <div className="md:col-span-1 flex justify-center pb-1">
-                           <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="icon" 
-                              disabled={checklist[item.id].entries.length <= 1}
-                              onClick={() => handleRemoveEntry(item.id, idx)}
-                              className="p-3 h-10 w-10 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
-                           >
-                              <Trash2 className="h-5 w-5" />
-                           </Button>
-                        </div>
+                           />
+                         )}
                       </div>
-                    ))}
-                    
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => handleAddEntry(item.id)}
-                      className="w-full h-12 border-dashed border-2 border-emerald-200 text-emerald-500 hover:bg-emerald-50 hover:border-emerald-300 font-black text-[10px] uppercase tracking-widest rounded-xl transition-all"
-                    >
-                      <Plus className="h-4 w-4 mr-2" /> Adicionar Detalhe
-                    </Button>
-                  </div>
-                )}
+                      <div className="md:col-span-1 flex justify-center pb-1">
+                         <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon" 
+                            disabled={checklist[item.id].entries.length <= 1}
+                            onClick={() => handleRemoveEntry(item.id, idx)}
+                            className="p-3 h-10 w-10 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
+                         >
+                            <Trash2 className="h-5 w-5" />
+                         </Button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => handleAddEntry(item.id)}
+                    className="w-full h-12 border-dashed border-2 border-emerald-200 text-emerald-500 hover:bg-emerald-50 hover:border-emerald-300 font-black text-[10px] uppercase tracking-widest rounded-xl transition-all"
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> Adicionar Detalhe
+                  </Button>
+                </div>
               </div>
             ))}
 
-            <div className="lg:col-span-2 p-6 bg-red-50/50 rounded-[2rem] border border-red-100 flex items-center justify-between mt-4">
-              <div className="flex items-center gap-4">
-                <AlertCircle className="h-6 w-6 text-red-500" />
-                <p className="text-xs font-black text-slate-700 uppercase">Faz uso de Anticoagulantes?</p>
+            <div className="lg:col-span-2 space-y-4">
+              <div className="p-6 bg-red-50/50 rounded-[2rem] border border-red-100 flex items-center justify-between mt-4">
+                <div className="flex items-center gap-4">
+                  <AlertCircle className="h-6 w-6 text-red-500" />
+                  <p className="text-xs font-black text-slate-700 uppercase">Faz uso de Anticoagulantes?</p>
+                </div>
+                <div className="flex bg-slate-200 p-1 rounded-2xl">
+                  <button 
+                    type="button"
+                    onClick={() => setFormData(p => ({ ...p, faz_uso_anticoagulantes: true }))}
+                    className={`px-6 py-2 rounded-xl text-[10px] font-black transition-all ${formData.faz_uso_anticoagulantes ? 'bg-red-500 text-white' : 'text-slate-500'}`}
+                  >
+                    SIM
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setFormData(p => ({ ...p, faz_uso_anticoagulantes: false }))}
+                    className={`px-6 py-2 rounded-xl text-[10px] font-black transition-all ${!formData.faz_uso_anticoagulantes ? 'bg-slate-400 text-white' : 'text-slate-500'}`}
+                  >
+                    NÃO
+                  </button>
+                </div>
               </div>
-              <div className="flex bg-slate-200 p-1 rounded-2xl">
-                <button 
-                  type="button"
-                  onClick={() => setFormData(p => ({ ...p, faz_uso_anticoagulantes: true }))}
-                  className={`px-6 py-2 rounded-xl text-[10px] font-black transition-all ${formData.faz_uso_anticoagulantes ? 'bg-red-500 text-white' : 'text-slate-500'}`}
-                >
-                  SIM
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setFormData(p => ({ ...p, faz_uso_anticoagulantes: false }))}
-                  className={`px-6 py-2 rounded-xl text-[10px] font-black transition-all ${!formData.faz_uso_anticoagulantes ? 'bg-slate-400 text-white' : 'text-slate-500'}`}
-                >
-                  NÃO
-                </button>
-              </div>
+
+              {formData.faz_uso_anticoagulantes && (
+                 <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <Label className="uppercase text-[9px] font-black text-slate-400 ml-5">Descrição do Uso de Anticoagulante</Label>
+                    <Input 
+                       placeholder="DESCREVA O USO (MEDICAMENTO, DOSAGEM...)"
+                       value={formData.faz_uso_anticoagulantes_desc}
+                       onChange={e => setFormData(p => ({ ...p, faz_uso_anticoagulantes_desc: e.target.value.toUpperCase() }))}
+                       className="h-14 font-bold bg-white border border-red-100 rounded-2xl shadow-sm mt-2"
+                    />
+                 </div>
+              )}
             </div>
 
             <div className="lg:col-span-2 space-y-2 mt-4">
