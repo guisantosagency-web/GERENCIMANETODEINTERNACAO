@@ -1,37 +1,44 @@
+
+> my-v0-project@0.1.0 build
+> next build
+
    Ôû▓ Next.js 15.3.6
    - Environments: .env.local
 
    Creating an optimized production build ...
-Failed to compile.
+ Ô£ô Compiled successfully in 31.0s
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/17) ...
+   Generating static pages (4/17) 
+   Generating static pages (8/17) 
+   Generating static pages (12/17) 
+ Ô£ô Generating static pages (17/17)
+   Finalizing page optimization ...
+   Collecting build traces ...
 
-./src/app/(authenticated)/triagem/page.tsx
-Error:   x Expression expected
-     ,-[C:\Users\guilherme\Documents\PROJETO - APP\GERENCIMANETODEINTERNACAO\src\app\(authenticated)\triagem\page.tsx:129:1]
- 126 |     </div>
- 127 |   )
- 128 | }
- 129 |       </div>
-     :        ^
- 130 |     </div>
- 131 |   )
- 132 | }
-     `----
-  x Unexpected token `/`. Expected jsx identifier
-     ,-[C:\Users\guilherme\Documents\PROJETO - APP\GERENCIMANETODEINTERNACAO\src\app\(authenticated)\triagem\page.tsx:130:1]
- 127 |   )
- 128 | }
- 129 |       </div>
- 130 |     </div>
-     :      ^
- 131 |   )
- 132 | }
-     `----
-
-Caused by:
-    Syntax Error
-
-Import trace for requested module:
-./src/app/(authenticated)/triagem/page.tsx
+Route (app)                                 Size  First Load JS
+Ôöî Ôùï /                                    4.72 kB         183 kB
+Ôö£ Ôùï /_not-found                            990 B         103 kB
+Ôö£ Ôùï /admin                               13.7 kB         252 kB
+Ôö£ ãÆ /api/migrate-exams                     141 B         102 kB
+Ôö£ Ôùï /dashboard                           4.32 kB         214 kB
+Ôö£ Ôùï /internacoes                         22.3 kB         255 kB
+Ôö£ Ôùï /internacoes/dashboard               4.37 kB         218 kB
+Ôö£ Ôùï /pacientes                           11.7 kB         184 kB
+Ôö£ Ôùï /portal                              2.09 kB         175 kB
+Ôö£ Ôùï /recepcao                            1.64 kB         107 kB
+Ôö£ Ôùï /recepcao/consulta                   10.2 kB         240 kB
+Ôö£ Ôùï /recepcao/exames                     27.6 kB         219 kB
+Ôö£ Ôùï /recepcao/retorno                    1.15 kB         103 kB
+Ôöö Ôùï /triagem                              151 kB         348 kB
++ First Load JS shared by all             102 kB
+  Ôö£ chunks/1684-0a1ebd65dd73428f.js      46.6 kB
+  Ôö£ chunks/4bd1b696-dc9caa60f5011f15.js  53.2 kB
+  Ôöö other shared chunks (total)          2.12 kB
 
 
-> Build failed because of webpack errors
+Ôùï  (Static)   prerendered as static content
+ãÆ  (Dynamic)  server-rendered on demand
+

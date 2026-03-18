@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Search, Save, User, FileText, Printer, CheckCircle2, ChevronRight, Hash, X, Activity, Droplet, Clock, CalendarDays, Key, Users } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Search, Save, User, FileText, Printer, CheckCircle2, ChevronRight, Hash, X, Activity, Droplet, Clock, CalendarDays, Key, Users, ArrowLeft } from "lucide-react"
 import { differenceInYears, parseISO } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
 import { generateAdmissaoHtml } from "@/components/print-admissao-template"
@@ -29,12 +30,22 @@ interface BooleanField {
 const emptyField = (): BooleanField => ({ checked: null, details: "" })
 
 export default function AdmissaoEnfermagemTab() {
-  const { logos } = useAuth()
+  const { patients, logos } = useAuth()
+  const [view, setView] = useState<"list" | "form">("list")
+  const [admissions, setAdmissions] = useState<any[]>([])
+
   const [isSaving, setIsSaving] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [searchResults, setSearchResults] = useState<MasterPatient[]>([])
-  const [showPatientResults, setShowPatientResults] = useState(false)
+  
+  // To handle the load of nursing admissions to see what's launched
+  useEffect(() => {
+    const fetchAdmissions = async () => {
+      const supabase = getSupabase()
+      const { data } = await supabase.from('nursing_admissions').select('id, patient_id, prontuario, patient_name, created_at')
+      if (data) setAdmissions(data)
+    }
+    fetchAdmissions()
+  }, [])
 
   const [formData, setFormData] = useState({
     patient_id: null as number | null,
@@ -127,20 +138,7 @@ export default function AdmissaoEnfermagemTab() {
     evolucao_enfermagem: ""
   })
 
-  useEffect(() => {
-    const fetchResults = async () => {
-      if (searchTerm.length < 3) {
-        setSearchResults([])
-        return
-      }
-      try {
-        const results = await searchMasterPatients(searchTerm)
-        setSearchResults(results)
-      } catch (e) {}
-    }
-    const t = setTimeout(fetchResults, 300)
-    return () => clearTimeout(t)
-  }, [searchTerm])
+  // Disabled search fetching because we use local context now
 
   useEffect(() => {
     if (formData.data_nascimento) {
@@ -153,23 +151,42 @@ export default function AdmissaoEnfermagemTab() {
     }
   }, [formData.data_nascimento])
 
-  const handleSelectPatient = (p: MasterPatient) => {
+  const handleRegistrar = (p: any) => {
     let sexo = "Masculino"
     if (p.sexo) {
       sexo = p.sexo.toLowerCase().startsWith('m') ? "Masculino" : "Feminino"
     }
-    
+    // reset form but keep structure
     setFormData(prev => ({
       ...prev,
-      patient_id: p.id as any,
-      patient_name: p.full_name,
-      social_name: p.nome_social || "",
+      patient_id: p.id,
+      patient_name: p.paciente || "",
       prontuario: p.prontuario || "",
-      data_nascimento: p.data_nascimento || "",
       sexo: sexo,
+      data_nascimento: p.dataNascimento || p.data_nascimento || "",
+      idade: p.idade || "",
+      hora_admissao: "",
+      peso: "",
+      altura: "",
+      jejum_inicio: ""
     }))
-    setSearchTerm(p.full_name)
-    setShowPatientResults(false)
+    setView("form")
+  }
+
+  const handleImprimir = async (p: any) => {
+    const obj = admissions.find(a => a.patient_id === p.id || a.prontuario === p.prontuario)
+    if (!obj) return
+    const supabase = getSupabase()
+    const { data } = await supabase.from('nursing_admissions').select('*').eq('id', obj.id).single()
+    if (data) {
+      const htmlContent = generateAdmissaoHtml(data, logos)
+      const printWindow = window.open("", "_blank")
+      if (printWindow) {
+        printWindow.document.write(htmlContent)
+        printWindow.document.close()
+        setTimeout(() => printWindow.print(), 500)
+      }
+    }
   }
 
   const updateField = (category: keyof typeof formData, item: string, fieldType: keyof BooleanField, value: any) => {
@@ -266,20 +283,8 @@ export default function AdmissaoEnfermagemTab() {
     }
   }
 
-  const doPrintAction = () => {
-    const htmlContent = generateAdmissaoHtml(formData, logos)
-    const printWindow = window.open("", "_blank")
-    if (printWindow) {
-      printWindow.document.write(htmlContent)
-      printWindow.document.close()
-      setTimeout(() => {
-        printWindow.print()
-      }, 500)
-    }
-  }
-
   const handlePrint = async () => {
-    doPrintAction()
+     // No op, used inside handleImprimir via the list now
   }
 
   // Helper renderer for modern UI table rows
@@ -390,77 +395,124 @@ export default function AdmissaoEnfermagemTab() {
     )
   }
 
-  return (
-    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500 pb-24">
-      
-      {/* Search & Actions Header */}
-      <div className="sticky top-4 z-40 bg-white/80 backdrop-blur-xl rounded-[2rem] p-4 shadow-xl border border-slate-100/50 flex flex-col md:flex-row gap-4 mb-8">
-        <div className="flex-1 relative">
-          <div className="relative group">
-            <Input 
-              placeholder="Localizar paciente (Nome, CPF ou SUS)..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value)
-                setShowPatientResults(true)
-                if(e.target.value !== formData.patient_name) setFormData(prev => ({...prev, patient_id: null}))
-              }}
-              onFocus={() => setShowPatientResults(true)}
-              className="h-14 pl-12 rounded-[1.5rem] bg-slate-50 border-transparent font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-inner text-sm"
-            />
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 h-5 w-5" />
-            
-            {showPatientResults && searchResults.length > 0 && (
-              <div className="absolute z-50 w-full mt-2 bg-white border border-slate-100 rounded-[1.5rem] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
-                <div className="max-h-60 overflow-y-auto p-2">
-                  {searchResults.map(p => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => handleSelectPatient(p)}
-                      className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-emerald-50 text-left group transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-[1rem] bg-emerald-100 text-emerald-600 flex justify-center items-center font-black">
-                          {p.full_name.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-black text-slate-800 uppercase text-xs leading-tight">{p.full_name}</p>
-                          <p className="text-[10px] text-slate-400 font-bold mt-1 tracking-wider">CPF: {p.cpf || "S/N"} • SUS: {p.sus || "S/N"}</p>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-emerald-300 group-hover:text-emerald-600" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+  if (view === "list") {
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24">
+        <div className="flex justify-between items-center bg-white/50 backdrop-blur-xl p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+           <div>
+             <h2 className="text-2xl font-black text-slate-800 tracking-tight">Pacientes Internados</h2>
+             <p className="text-sm font-bold tracking-widest text-slate-400 uppercase">Selecione para Admissão de Enfermagem</p>
+           </div>
         </div>
         
-        <div className="flex items-center gap-3 shrink-0">
-          <Button 
-            onClick={doPrintAction}
-            variant="outline" 
-            className="h-14 rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300 px-6 transition-all"
-          >
-            <Printer className="h-4 w-4 md:mr-2" /> 
-            <span className="hidden md:inline">Imprimir / PDF</span>
-          </Button>
-
-          <Button 
-            onClick={handleSubmit} 
-            disabled={isSaving || success || !formData.patient_name}
-            className="h-14 rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] bg-emerald-500 hover:bg-emerald-600 shadow-xl shadow-emerald-500/30 px-8 disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            {isSaving ? <Activity className="h-4 w-4 animate-spin md:mr-2" /> : 
-             success ? <CheckCircle2 className="h-4 w-4 md:mr-2" /> : 
-             <Save className="h-4 w-4 md:mr-2" />}
-            <span className="hidden md:inline">{success ? "Salvo com sucesso" : "Registrar Admissão"}</span>
-            <span className="md:hidden">{success ? "Salvo" : "Salvar"}</span>
-          </Button>
-        </div>
+        <Card className="rounded-[2rem] shadow-xl border-slate-100 overflow-hidden glass-card">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader className="bg-slate-50/50">
+                <TableRow>
+                  <TableHead className="font-bold py-4 pl-6">Data / Horário</TableHead>
+                  <TableHead className="font-bold py-4">Nome do Paciente</TableHead>
+                  <TableHead className="font-bold py-4">Prontuário</TableHead>
+                  <TableHead className="font-bold py-4">Status</TableHead>
+                  <TableHead className="font-bold py-4 text-right pr-6">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {patients.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-slate-500 font-bold">Nenhuma internação registrada no momento.</TableCell></TableRow>
+                ) : (
+                  patients.map(p => {
+                    const isLancado = admissions.some(a => a.patient_id === p.id || a.prontuario === p.prontuario)
+                    return (
+                      <TableRow key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                        <TableCell className="pl-6">
+                           <div className="flex flex-col">
+                             <span className="font-black text-slate-700">{p.data}</span>
+                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{p.horario}</span>
+                           </div>
+                        </TableCell>
+                        <TableCell>
+                           <div className="flex flex-col">
+                             <span className="font-black text-slate-800 uppercase text-xs">{p.paciente}</span>
+                             <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mt-1">CPF: {p.cpf || "S/N"} • SUS: {p.sus || "S/N"}</span>
+                           </div>
+                        </TableCell>
+                        <TableCell>
+                           <Badge variant="outline" className="font-mono text-xs">{p.prontuario || "S/N"}</Badge>
+                        </TableCell>
+                        <TableCell>
+                           {isLancado ? (
+                             <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none">Lançado</Badge>
+                           ) : (
+                             <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-100 border-none">Não Lançado</Badge>
+                           )}
+                        </TableCell>
+                        <TableCell className="text-right pr-6">
+                           {isLancado ? (
+                              <Button size="sm" variant="outline" onClick={() => handleImprimir(p)} className="h-8 rounded-[1rem] font-bold text-xs border-slate-200 text-slate-600 hover:bg-slate-50 gap-2">
+                                <Printer className="h-4 w-4" /> Imprimir / PDF
+                              </Button>
+                           ) : (
+                              <Button size="sm" onClick={() => handleRegistrar(p)} className="h-8 rounded-[1rem] font-black uppercase text-[10px] tracking-wider bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-500/20 gap-2">
+                                <FileText className="h-4 w-4" /> Registrar Admissão
+                              </Button>
+                           )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
+    )
+  }
+
+  if (view === "form") {
+    return (
+      <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500 pb-24">
+        
+        {/* Form Header with Back Button */}
+        <div className="sticky top-4 z-40 bg-white/80 backdrop-blur-xl rounded-[2rem] p-4 shadow-xl border border-slate-100/50 flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+          <div className="flex items-center gap-4 w-full">
+             <Button variant="ghost" onClick={() => setView("list")} className="rounded-xl h-12 w-12 p-0 border border-slate-200 hover:bg-slate-100 text-slate-500 shrink-0 shadow-sm">
+               <ArrowLeft className="h-5 w-5" />
+             </Button>
+             <div className="flex-1">
+                <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Nova Admissão de Enfermagem</p>
+                <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight line-clamp-1">{formData.patient_name || "Paciente Vazio"}</h2>
+             </div>
+             
+             <Button onClick={() => setView("list")} variant="outline" className="h-10 rounded-xl font-bold text-xs">
+               Cancelar
+             </Button>
+          </div>
+          
+          <div className="flex items-center gap-3 shrink-0">
+            <Button 
+              onClick={() => handleImprimir({ id: formData.patient_id, prontuario: formData.prontuario })}
+              variant="outline" 
+              className="h-14 rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300 px-6 transition-all"
+            >
+              <Printer className="h-4 w-4 md:mr-2" /> 
+              <span className="hidden md:inline">Imprimir / PDF</span>
+            </Button>
+
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isSaving || success || !formData.patient_name}
+              className="h-14 rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] bg-emerald-500 hover:bg-emerald-600 shadow-xl shadow-emerald-500/30 px-8 disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              {isSaving ? <Activity className="h-4 w-4 animate-spin md:mr-2" /> : 
+               success ? <CheckCircle2 className="h-4 w-4 md:mr-2" /> : 
+               <Save className="h-4 w-4 md:mr-2" />}
+              <span className="hidden md:inline">{success ? "Salvo com sucesso" : "Registrar Admissão"}</span>
+              <span className="md:hidden">{success ? "Salvo" : "Salvar"}</span>
+            </Button>
+          </div>
+        </div>
 
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Identificação Card */}
@@ -1098,5 +1150,6 @@ export default function AdmissaoEnfermagemTab() {
 
       </div>
     </div>
-  )
+    )
+  }
 }
