@@ -13,7 +13,7 @@ const FALLBACK_PROCEDURES = [
   "Ultrassom",
   "Ecocardiograma",
   "Raio X",
-  "Laboratório",
+  "Laboratoriais",
   "Eletrocardiograma"
 ]
 
@@ -22,7 +22,7 @@ const FALLBACK_TYPES: Record<string, string[]> = {
   "Ultrassom": ["Ultrassom Abdominal", "Ultrassom Pélvico", "Ultrassom Articulações", "Outros"],
   "Ecocardiograma": ["Transtorácico", "Transesofágico"],
   "Raio X": ["Tórax", "Membros", "Coluna", "Bacia"],
-  "Laboratório": ["Sangue", "Urina", "Fezes"],
+  "Laboratoriais": ["Sangue", "Urina", "Fezes", "Hemograma Completo", "Glicemia", "Colesterol", "Bioquímica", "Eletrolitos"],
   "Eletrocardiograma": ["Padrão"]
 }
 
@@ -96,6 +96,9 @@ export default function AgendamentoTab() {
     patient_name: "",
     cpf: "",
     sus: "",
+    chave_sisreg: "",
+    municipio: "",
+    estado: "",
   })
 
   const [exams, setExams] = useState<any[]>([{
@@ -230,6 +233,8 @@ export default function AgendamentoTab() {
       patient_name: patient.paciente,
       cpf: maskCPF(patient.cpf || ""),
       sus: patient.sus || "",
+      municipio: patient.cidade_origem || "",
+      estado: patient.estado || "",
     }))
     setShowDropdown(false)
   }
@@ -299,6 +304,9 @@ export default function AgendamentoTab() {
         patient_name: formData.patient_name.toUpperCase(),
         cpf: cleanCPF,
         sus: formData.sus,
+        chave_sisreg: formData.chave_sisreg,
+        municipio: formData.municipio,
+        estado: formData.estado,
         exam_date: exam.exam_date,
         exam_time: exam.exam_time,
         procedure_name: exam.procedure_name,
@@ -315,7 +323,7 @@ export default function AgendamentoTab() {
       if (exams[0]) loadDateAppointments(exams[0].exam_date)
       alert("Agendamentos e Cadastro processados com sucesso!")
       
-      setFormData({ patient_name: "", cpf: "", sus: "" })
+      setFormData({ patient_name: "", cpf: "", sus: "", chave_sisreg: "", municipio: "", estado: "" })
       setExams([{
         id: Math.random().toString(36).substr(2, 9),
         exam_date: format(new Date(), 'yyyy-MM-dd'),
@@ -505,6 +513,11 @@ export default function AgendamentoTab() {
                     <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">SUS</Label>
                     <Input required placeholder="000 0000 0000 0000" value={formData.sus} onChange={e => setFormData(prev => ({ ...prev, sus: e.target.value }))} className="pl-16 h-16 font-bold text-center text-lg bg-slate-50 border-none rounded-[1.5rem]" />
                     <ClipboardList className="absolute left-6 bottom-[1.2rem] h-6 w-6 text-emerald-500" />
+                  </div>
+                  <div className="space-y-3 relative">
+                    <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">CHAVE SISREG</Label>
+                    <Input placeholder="SI-00000-XX" value={formData.chave_sisreg} onChange={e => setFormData(prev => ({ ...prev, chave_sisreg: e.target.value.toUpperCase() }))} className="pl-16 h-16 font-bold text-center text-lg bg-slate-50 border-none rounded-[1.5rem] uppercase" />
+                    <FileText className="absolute left-6 bottom-[1.2rem] h-6 w-6 text-purple-500" />
                   </div>
                   {/* EXAMS LIST */}
                   <div className="md:col-span-2 space-y-6">

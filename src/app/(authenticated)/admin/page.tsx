@@ -516,9 +516,7 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="flow" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <DoctorSlotsManager />
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           <div className="space-y-8">
             <DoctorSlotsManager />
           </div>
@@ -559,10 +557,10 @@ export default function AdminPage() {
                   </Button>
                 </div>
 
-                <div className="rounded-2xl border border-border/50 overflow-hidden bg-white/50">
+                <div className="rounded-2xl border border-border/50 bg-white/50 overflow-auto max-h-[400px] custom-scrollbar">
                   <Table>
-                    <TableHeader>
-                      <TableRow className="bg-slate-50/50 hover:bg-slate-50/50 border-b border-border/10">
+                    <TableHeader className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm border-b border-border/10">
+                      <TableRow className="hover:bg-slate-50/50">
                         <TableHead className="font-black text-[10px] uppercase tracking-widest pl-6">Nome</TableHead>
                         <TableHead className="w-[100px] font-black text-[10px] uppercase tracking-widest text-right pr-6">Ações</TableHead>
                       </TableRow>

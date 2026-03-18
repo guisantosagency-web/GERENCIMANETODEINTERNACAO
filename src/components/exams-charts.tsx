@@ -43,7 +43,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null
 }
 
-export function ExamsCharts({ records }: { records: any[] }) {
+export function ExamsCharts({ records, onFilterChange }: { records: any[], onFilterChange?: (type: string, val: string | null) => void }) {
   const chartData = useMemo(() => {
     let totalPresentes = 0
     let totalFaltas = 0
@@ -52,23 +52,29 @@ export function ExamsCharts({ records }: { records: any[] }) {
     const monthlyBreakdown: Record<string, { month: string, presentes: number, faltas: number }> = {}
 
     records.forEach(r => {
-      totalPresentes += (r.presentes || 0)
-      totalFaltas += (r.faltas || 0)
+      // records are raw exam_appointments
+      const isPresent = r.status === 'presente'
+      const isFalta = r.status === 'falta'
+
+      if (isPresent) totalPresentes++
+      if (isFalta) totalFaltas++
 
       // Exam Breakdown
-      if (!examBreakdown[r.exame]) {
-        examBreakdown[r.exame] = { name: r.exame, presentes: 0, faltas: 0 }
+      if (!examBreakdown[r.procedure_name]) {
+        examBreakdown[r.procedure_name] = { name: r.procedure_name, presentes: 0, faltas: 0 }
       }
-      examBreakdown[r.exame].presentes += (r.presentes || 0)
-      examBreakdown[r.exame].faltas += (r.faltas || 0)
+      if (isPresent) examBreakdown[r.procedure_name].presentes++
+      if (isFalta) examBreakdown[r.procedure_name].faltas++
 
       // Monthly Breakdown
-      const month = r.date.substring(0, 7)
-      if (!monthlyBreakdown[month]) {
-        monthlyBreakdown[month] = { month, presentes: 0, faltas: 0 }
+      const month = r.exam_date?.substring(0, 7)
+      if (month) {
+        if (!monthlyBreakdown[month]) {
+          monthlyBreakdown[month] = { month, presentes: 0, faltas: 0 }
+        }
+        if (isPresent) monthlyBreakdown[month].presentes++
+        if (isFalta) monthlyBreakdown[month].faltas++
       }
-      monthlyBreakdown[month].presentes += (r.presentes || 0)
-      monthlyBreakdown[month].faltas += (r.faltas || 0)
     })
 
     const globalPie = [
@@ -112,7 +118,7 @@ export function ExamsCharts({ records }: { records: any[] }) {
                     animationDuration={1500}
                   >
                     {chartData.globalPie.map((entry: any, index: number) => (
-                      <Cell key={index} fill={entry.fill} className="hover:opacity-80 outline-none" />
+                      <Cell key={index} fill={entry.fill} onClick={() => onFilterChange?.('status', entry.name.toLowerCase())} className="hover:opacity-80 outline-none cursor-pointer" />
                     ))}
                   </Pie>
                   <Tooltip content={<CustomTooltip />} />
@@ -171,8 +177,8 @@ export function ExamsCharts({ records }: { records: any[] }) {
                     tickLine={false} 
                   />
                   <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 10 }} content={<CustomTooltip />} />
-                  <Bar dataKey="presentes" name="Presentes" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="faltas" name="Faltas" stackId="a" fill="#ef4444" radius={[0, 10, 10, 0]} />
+                  <Bar dataKey="presentes" name="Presentes" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} onClick={(data) => onFilterChange?.('procedure', data.name)} className="cursor-pointer" />
+                  <Bar dataKey="faltas" name="Faltas" stackId="a" fill="#ef4444" radius={[0, 10, 10, 0]} onClick={(data) => onFilterChange?.('procedure', data.name)} className="cursor-pointer" />
                 </BarChart>
               </ResponsiveContainer>
               {chartData.examData.length === 0 && (
@@ -202,8 +208,8 @@ export function ExamsCharts({ records }: { records: any[] }) {
                 <XAxis dataKey="month" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
                 <YAxis hide />
                 <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 10 }} content={<CustomTooltip />} />
-                <Bar dataKey="presentes" name="Presentes" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="faltas" name="Faltas" stackId="a" fill="#ef4444" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="presentes" name="Presentes" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} onClick={(data) => onFilterChange?.('month', data.month.substring(5,7))} className="cursor-pointer" />
+                <Bar dataKey="faltas" name="Faltas" stackId="a" fill="#ef4444" radius={[6, 6, 0, 0]} onClick={(data) => onFilterChange?.('month', data.month.substring(5,7))} className="cursor-pointer" />
               </BarChart>
             </ResponsiveContainer>
             {chartData.monthlyData.length === 0 && (

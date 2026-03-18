@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { createBrowserClient } from "@supabase/ssr"
 import { StatCard } from "@/components/stat-card"
-import { Activity, CalendarDays, BarChart3, Search, Calendar, Edit2, Trash2, CalendarX2, Users, Download, Filter, TrendingUp, Info, Loader2 } from "lucide-react"
+import { Activity, CalendarDays, BarChart3, Search, Calendar, Edit2, Trash2, CalendarX2, Users, Download, Filter, TrendingUp, Info, Loader2, MapPin, Layers } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { format, parseISO } from "date-fns"
@@ -15,105 +15,28 @@ const ExamsCharts = dynamic(() => import("@/components/exams-charts").then(m => 
   loading: () => <div className="h-[400px] w-full flex items-center justify-center animate-pulse bg-card/20 rounded-[2.5rem]">Carregando gráficos...</div>
 })
 
-interface TopFilterButtonsProps {
-  days: string[]
-  months: string[]
-  years: string[]
-  selectedDay: string | null
-  selectedMonth: string | null
-  selectedYear: string | null
-  onDayChange: (v: string | null) => void
-  onMonthChange: (v: string | null) => void
-  onYearChange: (v: string | null) => void
-}
-
 const MONTHS_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ]
 
-function ExamsFilterButtons({
-  days,
-  months,
-  years,
-  selectedDay,
-  selectedMonth,
-  selectedYear,
-  onDayChange,
-  onMonthChange,
-  onYearChange,
-}: TopFilterButtonsProps) {
-  return (
-    <div className="flex flex-wrap items-center gap-4">
-      {/* Dia Filter */}
-      <div className="relative group/filter flex flex-col gap-1.5">
-        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Dia</Label>
-        <div className="relative">
-          <select
-            value={selectedDay || ""}
-            onChange={(e) => onDayChange(e.target.value || null)}
-            className="appearance-none bg-white border border-slate-100 hover:border-blue-200 px-4 py-3 pl-10 pr-10 rounded-2xl text-xs font-black shadow-sm transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer w-40 uppercase"
-          >
-            <option value="">Todos</option>
-            {days.map((d) => <option key={d} value={d.padStart(2, '0')}>{d.padStart(2, '0')}</option>)}
-          </select>
-          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 transition-colors" />
-        </div>
-      </div>
-
-      {/* Mês Filter */}
-      <div className="relative group/filter flex flex-col gap-1.5">
-        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Mês</Label>
-        <div className="relative">
-          <select
-            value={selectedMonth || ""}
-            onChange={(e) => onMonthChange(e.target.value || null)}
-            className="appearance-none bg-white border border-slate-100 hover:border-blue-200 px-4 py-3 pl-10 pr-10 rounded-2xl text-xs font-black shadow-sm transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer w-48 uppercase"
-          >
-            <option value="">Todos</option>
-            {months.map((m) => <option key={m} value={m}>{MONTHS_NAMES[parseInt(m) - 1]}</option>)}
-          </select>
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-indigo-500 transition-colors" />
-        </div>
-      </div>
-
-      {/* Ano Filter */}
-      <div className="relative group/filter flex flex-col gap-1.5">
-        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Ano</Label>
-        <div className="relative">
-          <select
-            value={selectedYear || ""}
-            onChange={(e) => onYearChange(e.target.value || null)}
-            className="appearance-none bg-white border border-slate-100 hover:border-blue-200 px-4 py-3 pl-10 pr-10 rounded-2xl text-xs font-black shadow-sm transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer w-32 uppercase"
-          >
-            <option value="">Todos</option>
-            {years.map((y) => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-500 transition-colors" />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export type DailyExamRecord = {
-  id: string
-  exam_date: string
-  procedure_name: string
-  present_count: number
-  absent_count: number
-}
-
 export default function ExamesDashboardTab() {
   const { user } = useAuth()
   const [mounted, setMounted] = useState(false)
-  const [records, setRecords] = useState<DailyExamRecord[]>([])
+  
+  // Raw data from exam_appointments
+  const [appointments, setAppointments] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [realTimeStats, setRealTimeStats] = useState({ total: 0, presente: 0, falta: 0 })
 
+  // Filters State
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<string | null>(new Date().getMonth() + 1 + "")
   const [selectedYear, setSelectedYear] = useState<string | null>(new Date().getFullYear().toString())
+  const [selectedProcedure, setSelectedProcedure] = useState<string | null>("")
+  const [selectedExamType, setSelectedExamType] = useState<string | null>("")
+  const [selectedStatus, setSelectedStatus] = useState<string | null>("")
+  const [selectedMunicipio, setSelectedMunicipio] = useState<string | null>("")
+  const [selectedEstado, setSelectedEstado] = useState<string | null>("")
 
   const supabase = useMemo(
     () => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!),
@@ -123,78 +46,17 @@ export default function ExamesDashboardTab() {
   const loadData = async () => {
     setIsLoading(true)
     try {
-      // Fetch daily_exams for the log list
-      const { data: dailyData, error: dailyError } = await supabase.from("daily_exams").select("*").order('exam_date', { ascending: false })
-      if (!dailyError && dailyData) {
-        setRecords(dailyData)
-      }
-
-      // If daily_exams is empty or we want real-time stats for the summary cards, 
-      // we can also fetch from exam_appointments to ensure the dashboard "works" even without sync
-      const { data: appts, error: apptsError } = await supabase
+      const { data, error } = await supabase
         .from("exam_appointments")
-        .select("exam_date, status, procedure_name")
+        .select("*")
         .neq("status", "cancelado")
+        .order("exam_date", { ascending: false })
       
-      if (!apptsError && appts) {
-        const s = appts.reduce((acc, a) => {
-           const y = a.exam_date.substring(0,4)
-           const m = parseInt(a.exam_date.substring(5,7)).toString()
-           const d = a.exam_date.substring(8, 10)
-
-           if (selectedYear && y !== selectedYear) return acc
-           if (selectedMonth && m !== selectedMonth) return acc
-           if (selectedDay && d !== selectedDay.padStart(2, '0')) return acc
-
-           acc.total++
-           if (a.status === 'presente') acc.presente++
-           if (a.status === 'falta') acc.falta++
-           return acc
-        }, { total: 0, presente: 0, falta: 0 })
-        setRealTimeStats(s)
+      if (!error && data) {
+        setAppointments(data)
       }
     } catch (e) {
       console.error(e)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleSyncStats = async () => {
-    if (!confirm("Deseja reconstruir as estatísticas com base nos agendamentos reais? Isso pode levar alguns segundos.")) return
-    setIsLoading(true)
-    try {
-      // 1. Get all relevant appointments
-      const { data: appts } = await supabase.from("exam_appointments").select("exam_date, procedure_name, status").in("status", ["presente", "falta"])
-      
-      if (!appts) return
-
-      // 2. Aggregate
-      const agg: Record<string, { present: number, absent: number }> = {}
-      appts.forEach(a => {
-        const key = `${a.exam_date}|${a.procedure_name}`
-        if (!agg[key]) agg[key] = { present: 0, absent: 0 }
-        if (a.status === "presente") agg[key].present++
-        if (a.status === "falta") agg[key].absent++
-      })
-
-      // 3. Clear and Re-insert (or UPSERT)
-      // For safety, we'll do upsert by date/proc
-      for (const [key, val] of Object.entries(agg)) {
-        const [date, proc] = key.split("|")
-        await supabase.from("daily_exams").upsert({
-          exam_date: date,
-          procedure_name: proc,
-          present_count: val.present,
-          absent_count: val.absent
-        }, { onConflict: 'exam_date,procedure_name' })
-      }
-
-      alert("Sincronização concluída!")
-      loadData()
-    } catch (e) {
-      console.error(e)
-      alert("Erro na sincronização.")
     } finally {
       setIsLoading(false)
     }
@@ -203,40 +65,53 @@ export default function ExamesDashboardTab() {
   useEffect(() => {
     setMounted(true)
     loadData()
-  }, [selectedYear, selectedMonth, selectedDay])
+  }, [])
 
-  const availableDays = useMemo(() => Array.from({ length: 31 }, (_, i) => (i + 1).toString()), [])
-  const availableMonths = useMemo(() => Array.from({ length: 12 }, (_, i) => (i + 1).toString()), [])
-  const availableYears = useMemo(() => {
-    const years = new Set<string>()
-    records.forEach(r => years.add(r.exam_date.substring(0, 4)))
-    const currentYear = new Date().getFullYear().toString()
-    years.add(currentYear)
-    return Array.from(years).sort().reverse()
-  }, [records])
+  // Options Extractions
+  const availableYears = useMemo(() => Array.from(new Set([new Date().getFullYear().toString(), ...appointments.map(a => a.exam_date.substring(0, 4))])).sort().reverse(), [appointments])
+  const availableProcedures = useMemo(() => Array.from(new Set(appointments.map(a => a.procedure_name).filter(Boolean))).sort(), [appointments])
+  const availableExamTypes = useMemo(() => Array.from(new Set(appointments.map(a => a.exam_type).filter(Boolean))).sort(), [appointments])
+  const availableMunicipios = useMemo(() => Array.from(new Set(appointments.map(a => a.municipio).filter(Boolean))).sort(), [appointments])
+  const availableEstados = useMemo(() => Array.from(new Set(appointments.map(a => a.estado).filter(Boolean))).sort(), [appointments])
 
+  // Filtered Records List
   const filteredRecords = useMemo(() => {
-    return records.filter(r => {
-      const year = r.exam_date.substring(0, 4)
-      const month = parseInt(r.exam_date.substring(5, 7)).toString()
-      const day = r.exam_date.substring(8, 10)
+    return appointments.filter(r => {
+      const year = r.exam_date?.substring(0, 4)
+      const month = r.exam_date ? parseInt(r.exam_date.substring(5, 7)).toString() : ""
+      const day = r.exam_date?.substring(8, 10)
       
       if (selectedYear && year !== selectedYear) return false
       if (selectedMonth && month !== selectedMonth) return false
       if (selectedDay && day !== selectedDay.padStart(2, '0')) return false
+      if (selectedProcedure && r.procedure_name !== selectedProcedure) return false
+      if (selectedExamType && r.exam_type !== selectedExamType) return false
+      if (selectedStatus && r.status !== selectedStatus) return false
+      if (selectedMunicipio && r.municipio !== selectedMunicipio) return false
+      if (selectedEstado && r.estado !== selectedEstado) return false
       
       return true
     })
-  }, [records, selectedDay, selectedMonth, selectedYear])
+  }, [appointments, selectedDay, selectedMonth, selectedYear, selectedProcedure, selectedExamType, selectedStatus, selectedMunicipio, selectedEstado])
 
+  // Stats Logic
   const stats = useMemo(() => {
-    const total = realTimeStats.total
-    const presentes = realTimeStats.presente
-    const faltas = realTimeStats.falta
-    const rate = total > 0 ? ((presentes / total) * 100).toFixed(1) : "0"
+    let presentes = 0
+    let faltas = 0
+    let agendados = 0
 
-    return { presentes, faltas, total, rate }
-  }, [realTimeStats])
+    filteredRecords.forEach(a => {
+      if (a.status === 'presente') presentes++
+      if (a.status === 'falta') faltas++
+      if (a.status === 'agendado') agendados++
+    })
+
+    const total = presentes + faltas // Eficiência baseada nos que já tem desfecho
+    const rate = total > 0 ? ((presentes / total) * 100).toFixed(1) : "0"
+    const absenteeRate = total > 0 ? ((faltas / total) * 100).toFixed(1) : "0"
+
+    return { presentes, faltas, agendados, total, rate, absenteeRate }
+  }, [filteredRecords])
 
   if (!mounted) return null
 
@@ -247,7 +122,7 @@ export default function ExamesDashboardTab() {
       <div className="glass-card !bg-white/40 border-none rounded-[3rem] p-8 lg:p-10 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-20 -mt-20" />
         
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 relative z-10">
+        <div className="flex flex-col gap-8 relative z-10">
           <div>
              <div className="flex items-center gap-3 mb-2">
                 <div className="p-3 bg-blue-600 text-white rounded-2xl shadow-lg">
@@ -256,49 +131,99 @@ export default function ExamesDashboardTab() {
                 <h2 className="text-3xl font-black font-space uppercase tracking-tight text-slate-800">Indicadores de Desempenho</h2>
              </div>
              <p className="text-slate-400 font-bold ml-16 flex items-center gap-2 uppercase text-[10px] tracking-widest">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Dados em Tempo Real • {MONTHS_NAMES[parseInt(selectedMonth || "1") - 1]} / {selectedYear}
-                {user?.role === "admin" && (
-                   <button onClick={handleSyncStats} className="ml-4 flex items-center gap-1 text-blue-500 hover:text-blue-700 transition-colors uppercase font-black text-[9px]">
-                      <BarChart3 className="h-3 w-3" /> Sincronizar Base de Dados
-                   </button>
-                )}
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Dados Dinâmicos de Agendamentos e Exames
              </p>
           </div>
 
-          <ExamsFilterButtons
-            days={availableDays}
-            months={availableMonths}
-            years={availableYears}
-            selectedDay={selectedDay}
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            onDayChange={setSelectedDay}
-            onMonthChange={setSelectedMonth}
-            onYearChange={setSelectedYear}
-          />
+          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-4">
+             <div className="flex flex-col gap-1.5">
+               <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-2">Ano</Label>
+               <select value={selectedYear || ""} onChange={(e) => setSelectedYear(e.target.value || null)} className="h-10 bg-white border border-slate-100 rounded-xl text-xs font-black shadow-sm focus:ring-4 focus:ring-blue-500/10 px-3 uppercase">
+                 <option value="">Todos</option>
+                 {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+               </select>
+             </div>
+             <div className="flex flex-col gap-1.5">
+               <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-2">Mês</Label>
+               <select value={selectedMonth || ""} onChange={(e) => setSelectedMonth(e.target.value || null)} className="h-10 bg-white border border-slate-100 rounded-xl text-xs font-black shadow-sm focus:ring-4 focus:ring-blue-500/10 px-3 uppercase">
+                 <option value="">Todos</option>
+                 {MONTHS_NAMES.map((m, i) => <option key={i} value={(i+1).toString()}>{m}</option>)}
+               </select>
+             </div>
+             <div className="flex flex-col gap-1.5">
+               <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-2">Dia</Label>
+               <select value={selectedDay || ""} onChange={(e) => setSelectedDay(e.target.value || null)} className="h-10 bg-white border border-slate-100 rounded-xl text-xs font-black shadow-sm focus:ring-4 focus:ring-blue-500/10 px-3 uppercase">
+                 <option value="">Todos</option>
+                 {Array.from({length: 31}, (_,i) => <option key={i} value={(i+1).toString().padStart(2, '0')}>{(i+1).toString().padStart(2, '0')}</option>)}
+               </select>
+             </div>
+             <div className="flex flex-col gap-1.5">
+               <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-2">Status</Label>
+               <select value={selectedStatus || ""} onChange={(e) => setSelectedStatus(e.target.value)} className="h-10 bg-white border border-slate-100 rounded-xl text-xs font-black shadow-sm focus:ring-4 focus:ring-blue-500/10 px-3 uppercase">
+                 <option value="">Todos</option>
+                 <option value="agendado">Agendado</option>
+                 <option value="presente">Presente</option>
+                 <option value="falta">Falta</option>
+               </select>
+             </div>
+             <div className="flex flex-col gap-1.5 xl:col-span-2">
+               <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-2">Procedimento</Label>
+               <select value={selectedProcedure || ""} onChange={(e) => setSelectedProcedure(e.target.value)} className="h-10 bg-white border border-slate-100 rounded-xl text-xs font-black shadow-sm focus:ring-4 focus:ring-blue-500/10 px-3 uppercase">
+                 <option value="">Todos</option>
+                 {availableProcedures.map(p => <option key={p} value={p}>{p}</option>)}
+               </select>
+             </div>
+             <div className="flex flex-col gap-1.5 xl:col-span-2">
+               <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-2">Município</Label>
+               <select value={selectedMunicipio || ""} onChange={(e) => setSelectedMunicipio(e.target.value)} className="h-10 bg-white border border-slate-100 rounded-xl text-xs font-black shadow-sm focus:ring-4 focus:ring-blue-500/10 px-3 uppercase">
+                 <option value="">Todos</option>
+                 {availableMunicipios.map(m => <option key={m} value={m}>{m}</option>)}
+               </select>
+             </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
-           <StatCard title="Volume Total" value={stats.total} subtitle="Procedimentos Realizados" icon={BarChart3} variant="primary" className="!rounded-[2rem] shadow-premium h-full border-none bg-white/80" />
-           <StatCard title="Presença Confirmada" value={stats.presentes} subtitle="Pacientes Atendidos" icon={Users} variant="accent" className="!rounded-[2rem] shadow-premium h-full border-none bg-white/80" />
-           <StatCard title="Faltas / Ausências" value={stats.faltas} subtitle="Pacientes Não Compareceram" icon={CalendarX2} variant="warning" className="!rounded-[2rem] shadow-premium h-full border-none bg-white/80" />
-           
-           <div className="glass-card bg-emerald-600 rounded-[2.5rem] p-6 text-white shadow-emerald-500/20 shadow-2xl flex flex-col justify-between group transition-all hover:scale-[1.02]">
-              <div className="flex justify-between items-start">
-                 <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
-                    <Activity className="h-6 w-6" />
-                 </div>
-                 <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Eficiência</div>
-              </div>
-              <div>
-                <div className="text-4xl font-black font-space mb-1 group-hover:scale-110 transition-transform origin-left">{stats.rate}%</div>
-                <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Taxa de Conversão</div>
-              </div>
-              <div className="mt-3 w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
-                 <div className="bg-white h-full transition-all duration-1000" style={{ width: `${stats.rate}%` }} />
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mt-10">
+           <div className="lg:col-span-2">
+             <StatCard title="Agendados Pendentes" value={stats.agendados} subtitle="Aguardando Confirmação" icon={CalendarDays} variant="primary" className="!rounded-[2rem] shadow-premium h-full border-none bg-white/80" />
            </div>
+           <div className="lg:col-span-2">
+             <StatCard title="Presença Confirmada" value={stats.presentes} subtitle="Pacientes Atendidos" icon={Users} variant="accent" className="!rounded-[2rem] shadow-premium h-full border-none bg-white/80" />
+           </div>
+           <div className="lg:col-span-2">
+             <StatCard title="Faltas / Ausências" value={stats.faltas} subtitle="Pacientes Não Compareceram" icon={CalendarX2} variant="warning" className="!rounded-[2rem] shadow-premium h-full border-none bg-white/80" />
+           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* EFICIÊNCIA CARD */}
+        <div className="glass-card bg-emerald-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-emerald-500/10 flex flex-col justify-between group transition-all hover:scale-[1.01]">
+          <div className="flex justify-between items-start">
+              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
+                <Activity className="h-6 w-6" />
+              </div>
+              <div className="text-xs font-black uppercase tracking-[0.2em] opacity-80">Eficiência Positiva</div>
+          </div>
+          <div className="mt-8">
+            <div className="text-6xl font-black font-space mb-2 group-hover:translate-x-2 transition-transform">{stats.rate}%</div>
+            <div className="text-xs font-black uppercase tracking-widest opacity-80">Taxa de Conversão de Presença</div>
+          </div>
+        </div>
+
+        {/* ABSENTEÍSMO CARD */}
+        <div className="glass-card bg-rose-500 rounded-[2.5rem] p-8 text-white shadow-xl shadow-rose-500/10 flex flex-col justify-between group transition-all hover:scale-[1.01]">
+          <div className="flex justify-between items-start">
+              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
+                <AlertCircle className="h-6 w-6" />
+              </div>
+              <div className="text-xs font-black uppercase tracking-[0.2em] opacity-80">Absenteísmo</div>
+          </div>
+          <div className="mt-8">
+            <div className="text-6xl font-black font-space mb-2 group-hover:translate-x-2 transition-transform">{stats.absenteeRate}%</div>
+            <div className="text-xs font-black uppercase tracking-widest opacity-80">Taxa de Faltas</div>
+          </div>
         </div>
       </div>
 
@@ -307,89 +232,63 @@ export default function ExamesDashboardTab() {
            <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
            <p className="font-black text-xs uppercase tracking-[0.3em] text-blue-500/60">Sincronizando BI Dashboard...</p>
         </div>
-      ) : records.length === 0 ? (
+      ) : filteredRecords.length === 0 ? (
         <div className="h-80 flex flex-col items-center justify-center opacity-30 text-slate-400">
            <BarChart3 className="h-20 w-20 mb-6 stroke-[1px]" />
            <p className="text-xl font-black font-space tracking-widest uppercase">Base de Dados Vazia para este Filtro</p>
         </div>
       ) : (
         <div className="space-y-8 pb-10">
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-            {/* Visual Analytics */}
-            <div className="xl:col-span-8 flex flex-col gap-8">
-               <ExamsCharts records={filteredRecords} />
-            </div>
-
-            {/* Detailed Table Side-bar inspired by Anexo 2 */}
-            <div className="xl:col-span-4">
-               <div className="glass-card bg-white border-none rounded-[3rem] p-8 shadow-2xl h-full flex flex-col">
-                  <div className="flex items-center justify-between mb-8">
-                     <h3 className="text-lg font-black font-space uppercase tracking-tight flex items-center gap-3">
-                        <div className="p-2 bg-slate-100 rounded-xl"><Info className="h-5 w-5 text-slate-500" /></div>
-                        Logs de Realização
-                     </h3>
-                     <Button variant="ghost" size="icon" className="rounded-xl bg-slate-50 text-slate-400 hover:text-blue-500 transition-all">
-                        <Download className="h-4 w-4" />
-                     </Button>
-                                <div className="flex-1 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar space-y-4">
-                     {filteredRecords.map(r => (
-                       <div key={r.id} className="p-5 bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-[2rem] transition-all group relative overflow-hidden">
-                          <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <AdminDeleteButton recordId={r.id} onLoad={loadData} supabase={supabase} />
-                          </div>
-                          <div className="flex justify-between items-start mb-3">
-                             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">{format(parseISO(r.exam_date), 'dd MMM yyyy')}</div>
-                          </div>
-                          <h4 className="font-black text-slate-800 text-sm uppercase tracking-tight mb-4 flex items-center gap-2">
-                             <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                             {r.procedure_name}
-                          </h4>
-                          <div className="flex items-center gap-4">
-                             <div className="flex-1 bg-white p-3 rounded-2xl shadow-sm border border-slate-50">
-                                <div className="text-[9px] font-black uppercase text-emerald-500 mb-0.5 tracking-tighter">Presentes</div>
-                                <div className="text-xl font-black font-space text-slate-700 leading-none">{r.present_count}</div>
-                             </div>
-                             <div className="flex-1 bg-white p-3 rounded-2xl shadow-sm border border-slate-50">
-                                <div className="text-[9px] font-black uppercase text-red-500 mb-0.5 tracking-tighter">Faltas</div>
-                                <div className="text-xl font-black font-space text-slate-700 leading-none">{r.absent_count}</div>
-                             </div>
-                          </div>
-                       </div>
-                     ))}
-                  </div>
-      </div>
-
-                  <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between opacity-50">
-                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total de Registros na Fila</div>
-                     <div className="text-sm font-black text-slate-700">{filteredRecords.length}</div>
-                  </div>
-               </div>
-            </div>
-          </div>
+           {/* Active Filters Pills */}
+           {(selectedStatus || selectedProcedure || selectedMunicipio || selectedExamType) && (
+             <div className="flex flex-wrap items-center gap-2 px-1">
+               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Filtros ativos:</span>
+               {selectedStatus && (
+                 <button onClick={() => setSelectedStatus("")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-black uppercase tracking-widest hover:bg-rose-200 transition-all">
+                   Status: {selectedStatus} <span className="ml-1 opacity-70">✕</span>
+                 </button>
+               )}
+               {selectedProcedure && (
+                 <button onClick={() => setSelectedProcedure("")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest hover:bg-blue-200 transition-all">
+                   Proc: {selectedProcedure} <span className="ml-1 opacity-70">✕</span>
+                 </button>
+               )}
+               {selectedExamType && (
+                 <button onClick={() => setSelectedExamType("")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-widest hover:bg-purple-200 transition-all">
+                   Tipo: {selectedExamType} <span className="ml-1 opacity-70">✕</span>
+                 </button>
+               )}
+               {selectedMunicipio && (
+                 <button onClick={() => setSelectedMunicipio("")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-200 transition-all">
+                   Município: {selectedMunicipio} <span className="ml-1 opacity-70">✕</span>
+                 </button>
+               )}
+               <button onClick={() => { setSelectedStatus(""); setSelectedProcedure(""); setSelectedExamType(""); setSelectedMunicipio(""); setSelectedEstado("") }} className="px-3 py-1.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">
+                 Limpar Filtros
+               </button>
+             </div>
+           )}
+           <ExamsCharts
+             records={filteredRecords}
+             onFilterChange={(type, val) => {
+               if (type === 'status') setSelectedStatus(prev => prev === val ? "" : (val || ""))
+               if (type === 'procedure') setSelectedProcedure(prev => prev === val ? "" : (val || ""))
+               if (type === 'month') setSelectedMonth(prev => prev === val ? null : val)
+             }}
+           />
         </div>
       )}
     </div>
   )
 }
 
-function AdminDeleteButton({ recordId, onLoad, supabase }: { recordId: string, onLoad: () => void, supabase: any }) {
-  const { user } = useAuth()
-  if (user?.role !== "admin") return null
-
+// Emulate missing icon
+function AlertCircle({ className }: { className?: string }) {
   return (
-    <Button 
-      variant="ghost" 
-      size="icon" 
-      className="h-8 w-8 text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
-      onClick={async () => {
-        if (confirm("Deseja realmente excluir este registro de estatística?")) {
-           const { error } = await supabase.from("daily_exams").delete().eq("id", recordId)
-           if (error) alert("Erro ao excluir")
-           else onLoad()
-        }
-      }}
-    >
-      <Trash2 className="h-4 w-4" />
-    </Button>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
   )
 }
