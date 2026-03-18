@@ -117,12 +117,12 @@ export default function HistoricoTab() {
       <head>
         <title>Relatório de Atendimentos - Exames</title>
         <style>
-          @page { size: A4 landscape; margin: 10mm; }
+          @page { size: A4 portrait; margin: 10mm; }
           body { font-family: sans-serif; color: #000; line-height: 1.4; margin: 0; padding: 0; }
           h1 { font-size: 14pt; font-weight: 900; text-align: center; text-transform: uppercase; margin-bottom: 5mm; }
-          table { width: 100%; border-collapse: collapse; border: 1px solid #000; margin-bottom: 10mm; font-size: 8.5pt; }
-          th { background-color: #f0f0f0; border: 1px solid #000; padding: 2mm; text-transform: uppercase; font-weight: 800; text-align: left; }
-          td { border: 1px solid #000; padding: 2mm; text-transform: uppercase; }
+          table { width: 100%; border-collapse: collapse; border: 1px solid #000; margin-bottom: 10mm; font-size: 7.5pt; }
+          th { background-color: #f0f0f0; border: 1px solid #000; padding: 1.5mm; text-transform: uppercase; font-weight: 800; text-align: left; }
+          td { border: 1px solid #000; padding: 1.5mm; text-transform: uppercase; word-break: break-word; }
           .footer { margin-top: 15mm; border-top: 1px solid #000; padding-top: 5mm; text-align: center; font-size: 8pt; font-weight: bold; opacity: 0.5; }
         </style>
       </head>

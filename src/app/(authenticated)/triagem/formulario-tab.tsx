@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
+import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
 
 const CHECKLIST_ITEMS = [
   { id: "lab", label: "Exames de Laboratório de Análises Clínicas" },
@@ -97,18 +98,19 @@ export default function FormularioTab() {
     }
     setShowDropdown(true)
     try {
-      const { data } = await supabase.from("patients").select("*").ilike("paciente", `%${val}%`).limit(5)
-      setSearchResults(data || [])
+      const results = await searchMasterPatients(val)
+      setSearchResults(results)
     } catch (e) { }
   }
 
   const handleSelectPatient = (patient: any) => {
     setFormData(prev => ({
       ...prev,
-      patient_name: patient.paciente,
+      patient_name: patient.full_name || patient.paciente || patient.patient_name,
       cpf: maskCPF(patient.cpf || ""),
       sus: patient.sus || "",
       data_nascimento: patient.data_nascimento || "",
+      contato: patient.telefone || patient.contato || "",
     }))
     setShowDropdown(false)
   }
@@ -175,6 +177,16 @@ export default function FormularioTab() {
         throw new Error(error.message)
       }
 
+      // Sincroniza com o cadastro central de pacientes
+      await upsertMasterPatient({
+        full_name: formData.patient_name.toUpperCase(),
+        cpf: cleanCPF || undefined,
+        sus: formData.sus || undefined,
+        data_nascimento: formData.data_nascimento || undefined,
+        telefone: formData.contato || undefined,
+        origem_cadastro: 'triagem',
+      })
+
       toast.success("Triagem cadastrada com sucesso!")
       
       // Reset form
@@ -187,6 +199,7 @@ export default function FormularioTab() {
         tipagem_sanguinea: "",
         obs: "",
         faz_uso_anticoagulantes: false,
+        faz_uso_anticoagulantes_desc: "",
         nir_data: {
           procedencia: "",
           nome_contato: "",
@@ -239,8 +252,8 @@ export default function FormularioTab() {
                   {searchResults.map(p => (
                     <button key={p.id} type="button" onClick={() => handleSelectPatient(p)} className="w-full text-left px-8 py-4 hover:bg-emerald-50 transition-colors flex items-center justify-between">
                       <div>
-                        <p className="font-black text-slate-800 uppercase text-sm">{p.paciente}</p>
-                        <p className="text-[10px] text-slate-400">CPF: {maskCPF(p.cpf || "")}</p>
+                        <p className="font-black text-slate-800 uppercase text-sm">{p.full_name || p.paciente || p.patient_name}</p>
+                        <p className="text-[10px] text-slate-400">CPF: {maskCPF(p.cpf || "")} {p.municipio ? `• ${p.municipio}` : ''}</p>
                       </div>
                       <ChevronRight className="h-5 w-5 text-slate-300" />
                     </button>

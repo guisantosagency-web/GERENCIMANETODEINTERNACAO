@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { format, parseISO } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
+import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
 
 const FALLBACK_PROCEDURES = [
   "Tomografia",
@@ -222,18 +223,19 @@ export default function AgendamentoTab() {
     }
     setShowDropdown(true)
     try {
-      const { data } = await supabase.from("patients").select("*").ilike("paciente", `%${val}%`).limit(5)
-      setSearchResults(data || [])
+      // Busca no cadastro unificado de pacientes
+      const results = await searchMasterPatients(val)
+      setSearchResults(results)
     } catch (e) { }
   }
 
   const handleSelectPatient = (patient: any) => {
     setFormData(prev => ({
       ...prev,
-      patient_name: patient.paciente,
+      patient_name: patient.full_name || patient.paciente || patient.patient_name,
       cpf: maskCPF(patient.cpf || ""),
       sus: patient.sus || "",
-      municipio: patient.cidade_origem || "",
+      municipio: patient.municipio || patient.cidade_origem || "",
       estado: patient.estado || "",
     }))
     setShowDropdown(false)
@@ -318,6 +320,16 @@ export default function AgendamentoTab() {
       const { data, error } = await supabase.from("exam_appointments").insert(inserts).select()
       
       if (error) throw error
+
+      // Salva/atualiza o paciente no cadastro central
+      await upsertMasterPatient({
+        full_name: formData.patient_name.toUpperCase(),
+        cpf: cleanCPF || undefined,
+        sus: formData.sus || undefined,
+        estado: formData.estado || undefined,
+        municipio: formData.municipio || undefined,
+        origem_cadastro: 'exames',
+      })
       
       setLastSaved(data)
       if (exams[0]) loadDateAppointments(exams[0].exam_date)
@@ -491,8 +503,8 @@ export default function AgendamentoTab() {
                             searchResults.map(p => (
                               <button key={p.id} type="button" onClick={() => handleSelectPatient(p)} className="w-full text-left px-8 py-4 flex items-center justify-between hover:bg-blue-50 transition-colors">
                                 <div>
-                                  <p className="font-black text-slate-800 uppercase text-sm">{p.paciente}</p>
-                                  <p className="text-[10px] text-slate-400 uppercase">CPF: {maskCPF(p.cpf || "")}</p>
+                                  <p className="font-black text-slate-800 uppercase text-sm">{p.full_name || p.paciente}</p>
+                                  <p className="text-[10px] text-slate-400 uppercase">CPF: {maskCPF(p.cpf || "")} {p.municipio ? `• ${p.municipio}` : ''}</p>
                                 </div>
                                 <ChevronRight className="h-5 w-5 text-slate-300" />
                               </button>

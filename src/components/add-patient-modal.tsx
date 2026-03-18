@@ -22,6 +22,8 @@ import { fetchMunicipiosByEstado } from "@/lib/ibge"
 import { createBrowserClient } from "@supabase/ssr"
 import { format } from "date-fns"
 import { toast } from "sonner"
+import { PatientSearchInput } from "@/components/patient-search-input"
+import type { MasterPatient } from "@/lib/patient-search"
 
 interface AddPatientModalProps {
   onAdd: (patient: Omit<Patient, "id">) => Promise<{ success: boolean; message: string }>
@@ -45,10 +47,6 @@ export function AddPatientModal({ onAdd, nextOrdem }: AddPatientModalProps) {
   const { doctors, receptionists, checkProntuarioExists, generateNextProntuario, procedencias, addProcedencia } = useAuth()
   const [municipiosIBGE, setMunicipiosIBGE] = useState<string[]>([])
   const [isLoadingMunicipios, setIsLoadingMunicipios] = useState(false)
-  
-  const [searchTriage, setSearchTriage] = useState("")
-  const [isSearchingTriage, setIsSearchingTriage] = useState(false)
-  const [triageResults, setTriageResults] = useState<any[]>([])
   
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
 
@@ -125,53 +123,23 @@ export function AddPatientModal({ onAdd, nextOrdem }: AddPatientModalProps) {
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`
   }
 
-  const handleSearchTriage = async (term: string) => {
-    setSearchTriage(term)
-    if (term.length < 3) {
-      setTriageResults([])
-      return
-    }
-
-    setIsSearchingTriage(true)
-    try {
-      const { data, error } = await supabase
-        .from("surgery_triage")
-        .select("*")
-        .or(`patient_name.ilike.%${term}%,cpf.ilike.%${term}%`)
-        .limit(5)
-
-      if (!error && data) {
-        setTriageResults(data)
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsSearchingTriage(false)
-    }
-  }
-
-  const selectTriage = (record: any) => {
+  const selectMasterPatient = (p: MasterPatient) => {
     setFormData(prev => ({
       ...prev,
-      paciente: record.patient_name.toUpperCase(),
-      cpf: record.cpf || "",
-      sus: record.sus || "",
-      dataNascimento: record.data_nascimento ? format(new Date(record.data_nascimento), 'dd/MM/yyyy') : "",
-      idade: record.data_nascimento ? calculateAge(format(new Date(record.data_nascimento), 'dd/MM/yyyy')) : "",
-      telefone: record.contato || "",
-      procedimento: record.nir_data?.procedimento?.toUpperCase() || "",
-      procedencia: record.nir_data?.procedencia?.toUpperCase() || "",
+      paciente: p.full_name.toUpperCase(),
+      cpf: p.cpf || "",
+      sus: p.sus || "",
+      dataNascimento: p.data_nascimento
+        ? p.data_nascimento.split('-').reverse().join('/')
+        : "",
+      idade: p.data_nascimento
+        ? calculateAge(p.data_nascimento.split('-').reverse().join('/'))
+        : "",
+      telefone: p.telefone || "",
+      estado: p.estado || "MA",
+      cidadeOrigem: p.municipio || "",
     }))
-    
-    if (record.nir_data?.procedencia?.toUpperCase() === "RESIDÊNCIA" || record.nir_data?.procedencia?.toUpperCase() === "RESIDENCIA") {
-      setIsResidencia(true)
-    } else if (record.nir_data?.procedencia) {
-      setIsResidencia(false)
-    }
-
-    setTriageResults([])
-    setSearchTriage("")
-    toast.success("Dados importados da triagem!")
+    toast.success("✅ Dados importados da base de pacientes!")
   }
 
   const resetForm = () => {
@@ -291,64 +259,13 @@ export function AddPatientModal({ onAdd, nextOrdem }: AddPatientModalProps) {
             </Alert>
           )}
 
-          {/* New Triage Search Section - IMPROVED UI */}
-          <div className="p-6 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600">
-                  <Search className="h-4 w-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-black uppercase tracking-widest text-amber-700">Importar da Triagem</h3>
-                  <p className="text-[10px] text-amber-600 font-medium">Busque por pacientes já triados para agilizar o cadastro</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-400 group-focus-within:text-amber-600 transition-colors" />
-              <Input
-                placeholder="Buscar por nome ou CPF na triagem..."
-                value={searchTriage}
-                onChange={(e) => handleSearchTriage(e.target.value)}
-                className="pl-11 h-12 rounded-xl border-amber-200/50 bg-white/50 focus:bg-white focus:ring-amber-500/20 text-sm font-bold placeholder:text-amber-200"
-              />
-              {isSearchingTriage && (
-                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                   <div className="h-4 w-4 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
-                 </div>
-              )}
-            </div>
-
-            {triageResults.length > 0 && (
-              <div className="animate-in slide-in-from-top-2 space-y-2 pt-1">
-                {triageResults.map((record) => (
-                  <button
-                    key={record.id}
-                    onClick={() => selectTriage(record)}
-                    className="w-full flex items-center justify-between p-4 bg-white hover:bg-amber-50 rounded-2xl border border-amber-100/50 transition-all text-left group/item"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 group-hover/item:bg-amber-100">
-                        <User className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-amber-900 leading-tight">{record.patient_name}</p>
-                        <p className="text-[10px] font-bold text-amber-500 mt-1 flex items-center gap-2">
-                          <span>CPF: {record.cpf || '---'}</span>
-                          <span className="w-1 h-1 rounded-full bg-amber-300" />
-                          <span>Triagem: {format(new Date(record.created_at), 'dd/MM/yyyy')}</span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="h-8 px-3 rounded-lg bg-amber-500 text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-2 transform transition-transform group-hover/item:translate-x-1">
-                      Selecionar <CheckCircle className="h-3 w-3" />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Patient Search - busca em toda a base master_patients */}
+          <PatientSearchInput
+            onSelect={selectMasterPatient}
+            label="Importar da Base de Pacientes"
+            placeholder="Buscar por nome, CPF ou SUS na base unificada..."
+            color="amber"
+          />
 
           <form id="add-patient-form" onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-6">

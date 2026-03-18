@@ -13,7 +13,9 @@ import { ptBR } from "date-fns/locale"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge" // Added Badge import
+import { Badge } from "@/components/ui/badge"
+import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
+import type { MasterPatient } from "@/lib/patient-search"
 
 export function ConsultationForm() {
     const { doctors, receptionists, addConsultation, doctorSlots, consultations, patients } = useAuth()
@@ -31,16 +33,24 @@ export function ConsultationForm() {
 
     const [isSaving, setIsSaving] = useState(false)
     const [nameSearch, setNameSearch] = useState("")
+    const [searchResults, setSearchResults] = useState<MasterPatient[]>([])
     const [showPatientResults, setShowPatientResults] = useState(false)
 
-    // Filter patients for search results
-    const searchedPatients = useMemo(() => {
-        if (nameSearch.length < 2) return []
-        return patients.filter(p =>
-            p.paciente.toLowerCase().includes(nameSearch.toLowerCase()) ||
-            (p.cpf && p.cpf.includes(nameSearch))
-        ).slice(0, 5)
-    }, [patients, nameSearch])
+    useEffect(() => {
+        const fetchResults = async () => {
+            if (nameSearch.length < 3) {
+                setSearchResults([])
+                return
+            }
+            try {
+                const results = await searchMasterPatients(nameSearch)
+                setSearchResults(results)
+            } catch (e) {}
+        }
+        
+        const timeoutId = setTimeout(fetchResults, 300)
+        return () => clearTimeout(timeoutId)
+    }, [nameSearch])
 
     const handleSelectPatient = (p: any) => {
         setFormData({
@@ -89,6 +99,15 @@ export function ConsultationForm() {
             })
 
             if (result.success) {
+                // Upsert to master registry
+                await upsertMasterPatient({
+                    full_name: formData.patient_name.toUpperCase(),
+                    cpf: formData.cpf || undefined,
+                    sus: formData.sus_card || undefined,
+                    telefone: formData.phone || undefined,
+                    origem_cadastro: 'consulta'
+                })
+
                 alert(result.message)
                 setFormData({
                     patient_id: undefined,
@@ -165,13 +184,13 @@ export function ConsultationForm() {
                             </div>
 
                             {/* Search Results Dropdown */}
-                            {showPatientResults && searchedPatients.length > 0 && (
+                            {showPatientResults && searchResults.length > 0 && (
                                 <div className="absolute z-50 w-full mt-2 bg-card border border-border/50 rounded-2xl shadow-premium overflow-hidden animate-in fade-in slide-in-from-top-2">
                                     <div className="p-2 border-b border-border/10 bg-accent/10 px-4">
                                         <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Pacientes Encontrados</span>
                                     </div>
                                     <div className="max-h-60 overflow-y-auto">
-                                        {searchedPatients.map(p => (
+                                        {searchResults.map(p => (
                                             <button
                                                 key={p.id}
                                                 type="button"
@@ -183,8 +202,8 @@ export function ConsultationForm() {
                                                         <User className="h-4 w-4" />
                                                     </div>
                                                     <div>
-                                                        <p className="font-black text-foreground uppercase leading-none">{p.paciente}</p>
-                                                        <p className="text-[10px] text-muted-foreground font-bold mt-1">CPF: {p.cpf || "N/A"} | SUS: {p.sus || "N/A"}</p>
+                                                        <p className="font-black text-foreground uppercase leading-none">{p.full_name}</p>
+                                                        <p className="text-[10px] text-muted-foreground font-bold mt-1">CPF: {p.cpf || "N/A"} | SUS: {p.sus || "N/A"} {p.municipio ? `| ${p.municipio}` : ''}</p>
                                                     </div>
                                                 </div>
                                                 <Badge variant="outline" className="rounded-lg text-[9px] font-black uppercase tracking-tighter">Selecionar</Badge>

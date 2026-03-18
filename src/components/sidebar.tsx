@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { LayoutDashboard, Users, Settings, LogOut, Menu, X, Hospital, ChevronLeft, ChevronRight, Activity, ShieldCheck, ClipboardCheck, PhoneCall, Stethoscope, Search, UserRoundPlus } from "lucide-react"
+import { LayoutDashboard, Users, Settings, LogOut, Menu, X, Hospital, ChevronLeft, ChevronRight, Activity, ShieldCheck, ClipboardCheck, PhoneCall, Stethoscope, Search, UserRoundPlus, UserCircle2 } from "lucide-react"
 import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -15,6 +15,7 @@ const adminMenuItems = [
   { id: "internacoes", href: "/internacoes", label: "Internações", icon: Users, color: "text-primary", bg: "bg-primary/10" },
   { id: "triagem", href: "/triagem", label: "Triagem", icon: ClipboardCheck, color: "text-emerald-500", bg: "bg-emerald-500/10" },
   { id: "recepcao", href: "/recepcao", label: "Recepção", icon: PhoneCall, color: "text-purple-500", bg: "bg-purple-500/10" },
+  { id: "pacientes", href: "/pacientes", label: "Pacientes", icon: UserCircle2, color: "text-teal-500", bg: "bg-teal-500/10" },
   { id: "admin", href: "/admin", label: "Admin", icon: Settings, color: "text-amber-500", bg: "bg-amber-500/10" },
 ]
 
