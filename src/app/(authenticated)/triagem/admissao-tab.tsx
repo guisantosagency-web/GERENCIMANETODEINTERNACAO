@@ -33,6 +33,12 @@ export default function AdmissaoEnfermagemTab() {
   const { patients, logos } = useAuth()
   const [view, setView] = useState<"list" | "form">("list")
   const [admissions, setAdmissions] = useState<any[]>([])
+  const [currentAdmissionId, setCurrentAdmissionId] = useState<string | null>(null)
+
+  const [filterDate, setFilterDate] = useState<string>(
+    new Date().toISOString().split('T')[0]
+  )
+  const [filterStatus, setFilterStatus] = useState<"todos" | "lancado" | "nao_lancado">("nao_lancado")
 
   const [isSaving, setIsSaving] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -45,7 +51,7 @@ export default function AdmissaoEnfermagemTab() {
       if (data) setAdmissions(data)
     }
     fetchAdmissions()
-  }, [])
+  }, [view]) // reload when arriving at list 
 
   const [formData, setFormData] = useState({
     patient_id: null as number | null,
@@ -138,7 +144,22 @@ export default function AdmissaoEnfermagemTab() {
     evolucao_enfermagem: ""
   })
 
-  // Disabled search fetching because we use local context now
+  const filteredPatients = useMemo(() => {
+    return patients.filter(p => {
+      let dateMatch = true
+      if (filterDate) {
+        const formattedFilter = filterDate.split('-').reverse().join('/')
+        dateMatch = p.data === formattedFilter
+      }
+      
+      let statusMatch = true
+      const isLancado = admissions.some(a => String(a.patient_id) === String(p.id) || (a.prontuario && a.prontuario === p.prontuario))
+      if (filterStatus === "lancado") statusMatch = isLancado
+      if (filterStatus === "nao_lancado") statusMatch = !isLancado
+      
+      return dateMatch && statusMatch
+    })
+  }, [patients, filterDate, filterStatus, admissions])
 
   useEffect(() => {
     if (formData.data_nascimento) {
@@ -156,36 +177,92 @@ export default function AdmissaoEnfermagemTab() {
     if (p.sexo) {
       sexo = p.sexo.toLowerCase().startsWith('m') ? "Masculino" : "Feminino"
     }
+    
     // reset form but keep structure
-    setFormData(prev => ({
-      ...prev,
+    setFormData({
       patient_id: p.id,
       patient_name: p.paciente || "",
+      social_name: "",
       prontuario: p.prontuario || "",
       sexo: sexo,
       data_nascimento: p.dataNascimento || p.data_nascimento || "",
       idade: p.idade || "",
+      diagnostico_medico: "",
       hora_admissao: "",
       peso: "",
       altura: "",
-      jejum_inicio: ""
-    }))
+      jejum_status: "nao_se_aplica",
+      jejum_inicio: "",
+      comorbidades: { hipertensao: emptyField(), diabetes: emptyField(), doenca_renal: emptyField(), dialitico: emptyField(), cardiopata: emptyField(), doenca_respiratoria: emptyField(), doenca_hepatica: emptyField(), convulsoes: emptyField(), cancer: emptyField(), cateterismo: emptyField(), cirurgias: emptyField(), alergias: emptyField(), outras: emptyField() },
+      medicacoes_continuas: { anticoagulantes: emptyField(), outros: emptyField() },
+      historico_familiar: { hipertensao: emptyField(), diabetes: emptyField(), cardiopatia: emptyField(), cancer: emptyField(), outras: emptyField() },
+      habitos_vida: { tabagista: emptyField(), etilista: emptyField(), drogas: emptyField() },
+      dispositivos: { puncao_venosa: { checked: null, date: "", details: "", details2: "" }, sonda_vesical: emptyField(), sonda_gastrica: emptyField(), outros: emptyField() },
+      sinais_vitais: { pa: "", fc: "", fr: "", tax: "", gli: "", spo2: "" },
+      exame_fisico: { cabeca_pescoco: { cabeca: "", cabeca_obs: "", acuid_visual: "", acuid_auditiva: "", nariz_boca: "", nariz_boca_obs: "", protese: "" }, torax: { resp: "", o2_lmin: "", padrao: "", ausc_pulm: "", ra: "", ausc_card: "", outros: "" }, abdome: { inspecao: "", ausculta: "", percussao: "", palpacao: "", hernia: "", obs: "" }, geniturinario: { miccao: "", aspecto: "", lesoes: "", varizes: "", edema: "", perineo: "", emld: "", hemorroidas: "", obs: "" }, mmss_mmii: { mmss_dor: "", mmss_edema: "", mmii_dor: "", mmii_edema: "", hematoma_local: "", varizes: "Não", avp_local: "", cvc_local: "", outros: "" }, pele_anexos: { pele: "", cicatriz_local: "", coloracao: "", mucosas: "", hematoma_local: "", perfusao: "", obs: "" } },
+      escalas: { morse: { quedas: "0", diag_sec: "0", auxilio: "0", terapia: "0", marcha: "0", estado_mental: "0" }, braden: { percepcao: "0", umidade: "0", atividade: "0", mobilidade: "0", nutricao: "0", friccao: "0" } },
+      evolucao_enfermagem: ""
+    })
+    setCurrentAdmissionId(null)
     setView("form")
   }
 
-  const handleImprimir = async (p: any) => {
-    const obj = admissions.find(a => a.patient_id === p.id || a.prontuario === p.prontuario)
-    if (!obj) return
+  const handleEditar = async (p: any, obj: any) => {
+    const supabase = getSupabase()
+    const { data } = await supabase.from('nursing_admissions').select('*').eq('id', obj.id).single()
+    if (data) {
+      let sexo = "Masculino"
+      if (p.sexo) sexo = p.sexo.toLowerCase().startsWith('m') ? "Masculino" : "Feminino"
+        
+      setFormData({
+        patient_id: data.patient_id || p.id,
+        patient_name: data.patient_name || p.paciente || "",
+        social_name: data.social_name || "",
+        prontuario: data.prontuario || p.prontuario || "",
+        sexo: data.sexo || sexo,
+        data_nascimento: data.data_nascimento || p.dataNascimento || p.data_nascimento || "",
+        idade: p.idade || "",
+        diagnostico_medico: data.diagnostico_medico || "",
+        hora_admissao: data.hora_admissao || "",
+        peso: data.peso ? data.peso.toString() : "",
+        altura: data.altura ? data.altura.toString() : "",
+        jejum_status: data.jejum_status || "nao_se_aplica",
+        jejum_inicio: data.jejum_inicio || "",
+        comorbidades: data.comorbidades || { hipertensao: emptyField(), diabetes: emptyField(), doenca_renal: emptyField(), dialitico: emptyField(), cardiopata: emptyField(), doenca_respiratoria: emptyField(), doenca_hepatica: emptyField(), convulsoes: emptyField(), cancer: emptyField(), cateterismo: emptyField(), cirurgias: emptyField(), alergias: emptyField(), outras: emptyField() },
+        medicacoes_continuas: data.medicacoes_continuas || { anticoagulantes: emptyField(), outros: emptyField() },
+        historico_familiar: data.historico_familiar || { hipertensao: emptyField(), diabetes: emptyField(), cardiopatia: emptyField(), cancer: emptyField(), outras: emptyField() },
+        habitos_vida: data.habitos_vida || { tabagista: emptyField(), etilista: emptyField(), drogas: emptyField() },
+        dispositivos: data.dispositivos || { puncao_venosa: { checked: null, date: "", details: "", details2: "" }, sonda_vesical: emptyField(), sonda_gastrica: emptyField(), outros: emptyField() },
+        sinais_vitais: data.sinais_vitais || { pa: "", fc: "", fr: "", tax: "", gli: "", spo2: "" },
+        exame_fisico: data.exame_fisico || { cabeca_pescoco: { cabeca: "", cabeca_obs: "", acuid_visual: "", acuid_auditiva: "", nariz_boca: "", nariz_boca_obs: "", protese: "" }, torax: { resp: "", o2_lmin: "", padrao: "", ausc_pulm: "", ra: "", ausc_card: "", outros: "" }, abdome: { inspecao: "", ausculta: "", percussao: "", palpacao: "", hernia: "", obs: "" }, geniturinario: { miccao: "", aspecto: "", lesoes: "", varizes: "", edema: "", perineo: "", emld: "", hemorroidas: "", obs: "" }, mmss_mmii: { mmss_dor: "", mmss_edema: "", mmii_dor: "", mmii_edema: "", hematoma_local: "", varizes: "Não", avp_local: "", cvc_local: "", outros: "" }, pele_anexos: { pele: "", cicatriz_local: "", coloracao: "", mucosas: "", hematoma_local: "", perfusao: "", obs: "" } },
+        escalas: data.escalas || { morse: { quedas: "0", diag_sec: "0", auxilio: "0", terapia: "0", marcha: "0", estado_mental: "0" }, braden: { percepcao: "0", umidade: "0", atividade: "0", mobilidade: "0", nutricao: "0", friccao: "0" } },
+        evolucao_enfermagem: data.evolucao_enfermagem || ""
+      })
+      setCurrentAdmissionId(data.id)
+      setView("form")
+    }
+  }
+
+  const handleImprimir = async (p: any, obj: any) => {
+    const printWindow = window.open("", "_blank")
+    if (!printWindow) {
+      alert("Por favor libere os pop-ups para imprimir a página.")
+      return
+    }
+    
+    // Fallback loading message
+    printWindow.document.write("<html><body><h2>Gerando PDF, por favor aguarde...</h2></body></html>")
+    
     const supabase = getSupabase()
     const { data } = await supabase.from('nursing_admissions').select('*').eq('id', obj.id).single()
     if (data) {
       const htmlContent = generateAdmissaoHtml(data, logos)
-      const printWindow = window.open("", "_blank")
-      if (printWindow) {
-        printWindow.document.write(htmlContent)
-        printWindow.document.close()
-        setTimeout(() => printWindow.print(), 500)
-      }
+      printWindow.document.open()
+      printWindow.document.write(htmlContent)
+      printWindow.document.close()
+      setTimeout(() => printWindow.print(), 500)
+    } else {
+      printWindow.close()
     }
   }
 
@@ -270,9 +347,13 @@ export default function AdmissaoEnfermagemTab() {
         created_by: "Sistema"
       }
 
-      const { error } = await supabase.from('nursing_admissions').insert([admissionData])
-      
-      if (error) throw error
+      if (currentAdmissionId) {
+        const { error } = await supabase.from('nursing_admissions').update(admissionData).eq('id', currentAdmissionId)
+        if (error) throw error
+      } else {
+        const { error } = await supabase.from('nursing_admissions').insert([admissionData])
+        if (error) throw error
+      }
       
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
@@ -398,10 +479,30 @@ export default function AdmissaoEnfermagemTab() {
   if (view === "list") {
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24">
-        <div className="flex justify-between items-center bg-white/50 backdrop-blur-xl p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center bg-white/50 backdrop-blur-xl p-6 rounded-[2rem] border border-slate-100 shadow-sm gap-4">
            <div>
              <h2 className="text-2xl font-black text-slate-800 tracking-tight">Pacientes Internados</h2>
              <p className="text-sm font-bold tracking-widest text-slate-400 uppercase">Selecione para Admissão de Enfermagem</p>
+           </div>
+           
+           <div className="flex bg-white shadow-sm border border-border/40 p-1 pl-4 rounded-[1.5rem] items-center gap-3 w-full md:w-auto overflow-hidden text-sm">
+             <span className="font-bold text-slate-400 text-xs uppercase tracking-wider whitespace-nowrap">Filtros:</span>
+             <Input 
+               type="date" 
+               className="border-none bg-transparent shadow-none w-36 font-bold text-slate-600 focus-visible:ring-0 p-0" 
+               value={filterDate}
+               onChange={e => setFilterDate(e.target.value)}
+             />
+             <div className="w-[1px] h-6 bg-slate-200"></div>
+             <select 
+                className="bg-transparent border-none font-bold text-slate-600 focus:outline-none focus:ring-0 appearance-none pr-4 cursor-pointer"
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value as any)}
+             >
+                <option value="todos">Todos os Status</option>
+                <option value="nao_lancado">Não Lançados</option>
+                <option value="lancado">Lançados</option>
+             </select>
            </div>
         </div>
         
@@ -418,11 +519,12 @@ export default function AdmissaoEnfermagemTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {patients.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-slate-500 font-bold">Nenhuma internação registrada no momento.</TableCell></TableRow>
+                {filteredPatients.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-slate-500 font-bold">Nenhuma internação encontrada para este filtro.</TableCell></TableRow>
                 ) : (
-                  patients.map(p => {
-                    const isLancado = admissions.some(a => a.patient_id === p.id || a.prontuario === p.prontuario)
+                  filteredPatients.map(p => {
+                    const obj = admissions.find(a => String(a.patient_id) === String(p.id) || (a.prontuario && a.prontuario === p.prontuario))
+                    const isLancado = !!obj
                     return (
                       <TableRow key={p.id} className="hover:bg-slate-50/50 transition-colors">
                         <TableCell className="pl-6">
@@ -449,9 +551,14 @@ export default function AdmissaoEnfermagemTab() {
                         </TableCell>
                         <TableCell className="text-right pr-6">
                            {isLancado ? (
-                              <Button size="sm" variant="outline" onClick={() => handleImprimir(p)} className="h-8 rounded-[1rem] font-bold text-xs border-slate-200 text-slate-600 hover:bg-slate-50 gap-2">
-                                <Printer className="h-4 w-4" /> Imprimir / PDF
-                              </Button>
+                              <div className="flex items-center justify-end gap-2">
+                                <Button size="sm" variant="outline" onClick={() => handleEditar(p, obj)} className="h-8 rounded-[1rem] font-bold text-xs border-slate-200 text-slate-600 hover:bg-slate-50 gap-2">
+                                  Editar
+                                </Button>
+                                <Button size="sm" onClick={() => handleImprimir(p, obj)} className="h-8 rounded-[1rem] font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 gap-2">
+                                  <Printer className="h-4 w-4" /> PDF
+                                </Button>
+                              </div>
                            ) : (
                               <Button size="sm" onClick={() => handleRegistrar(p)} className="h-8 rounded-[1rem] font-black uppercase text-[10px] tracking-wider bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-500/20 gap-2">
                                 <FileText className="h-4 w-4" /> Registrar Admissão
@@ -492,9 +599,10 @@ export default function AdmissaoEnfermagemTab() {
           
           <div className="flex items-center gap-3 shrink-0">
             <Button 
-              onClick={() => handleImprimir({ id: formData.patient_id, prontuario: formData.prontuario })}
+              onClick={() => handleImprimir({ id: formData.patient_id, prontuario: formData.prontuario }, { id: currentAdmissionId })}
+              disabled={!currentAdmissionId}
               variant="outline" 
-              className="h-14 rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300 px-6 transition-all"
+              className="h-14 rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300 px-6 transition-all disabled:opacity-50"
             >
               <Printer className="h-4 w-4 md:mr-2" /> 
               <span className="hidden md:inline">Imprimir / PDF</span>
