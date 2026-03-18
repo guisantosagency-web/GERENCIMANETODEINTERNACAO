@@ -95,16 +95,16 @@ export default function ListaTab() {
     if (!printWindow) return
 
     const logoSection = `
-      <div style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 12px;">
-        <div style="border: 1.5px solid #000; border-radius: 8px; padding: 10px 15px; margin-bottom: 12px; display: flex; justify-content: center; align-items: center; gap: 40px; background-color: #fcfcfc; height: 95px; box-sizing: border-box;">
+      <div style="text-align: center; margin-bottom: 5px; border-bottom: 1.5px solid #000; padding-bottom: 5px;">
+        <div style="border: 1px solid #000; border-radius: 6px; padding: 5px; margin-bottom: 5px; display: flex; justify-content: center; align-items: center; gap: 20px; background-color: #fcfcfc; height: 60px; box-sizing: border-box;">
           ${logos.logo_hto ? `<img src="${logos.logo_hto}" style="height: 100%; width: auto; object-fit: contain;"/>` : ""}
           ${logos.logo_instituto ? `<img src="${logos.logo_instituto}" style="height: 85%; width: auto; object-fit: contain;"/>` : ""}
           ${logos.logo_maranhao ? `<img src="${logos.logo_maranhao}" style="height: 80%; width: auto; object-fit: contain;"/>` : ""}
           ${logos.logo_sus ? `<img src="${logos.logo_sus}" style="height: 80%; width: auto; object-fit: contain;"/>` : ""}
         </div>
-        <div style="line-height: 1.2;">
-          <h1 style="font-size: 13pt; margin: 0; text-transform: uppercase; font-weight: 900; color: #000;">Hospital de Traumatologia e Ortopedia - CAXIAS</h1>
-          <p style="margin: 2px 0 0 0; font-size: 13pt; font-weight: 700; color: #000;">Checklist Pré-Operatório - Triagem Cirúrgica</p>
+        <div style="line-height: 1.1;">
+          <h1 style="font-size: 11pt; margin: 0; text-transform: uppercase; font-weight: 900; color: #000;">Hospital de Traumatologia e Ortopedia - CAXIAS</h1>
+          <p style="margin: 2px 0 0 0; font-size: 10pt; font-weight: 700; color: #000;">Checklist Pré-Operatório - Triagem Cirúrgica</p>
         </div>
       </div>
     `
@@ -114,15 +114,15 @@ export default function ListaTab() {
       const entries = data.entries || [{ motivo: data.motivo || "" }]
       
       return `
-        <div style="margin-bottom: 8px; border: 1.5px solid #000; padding: 10px; border-radius: 6px; page-break-inside: avoid;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 5px;">
-            <div style="font-weight: 900; text-transform: uppercase; font-size: 9pt;">${item.label}</div>
-            <div style="font-weight: 700; font-size: 9pt;">
+        <div style="margin-bottom: 4px; border: 1px solid #000; padding: 4px 8px; border-radius: 4px; page-break-inside: avoid;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 2px; margin-bottom: 2px;">
+            <div style="font-weight: 900; text-transform: uppercase; font-size: 7.5pt;">${item.label}</div>
+            <div style="font-weight: 700; font-size: 7.5pt;">
               STATUS: [ ${data.sim ? 'X' : '&nbsp;&nbsp;'} ] SIM &nbsp;&nbsp; [ ${!data.sim ? 'X' : '&nbsp;&nbsp;'} ] NÃO
             </div>
           </div>
           ${entries.map((e: any) => e.motivo ? `
-            <div style="display: flex; gap: 20px; font-size: 8.5pt; margin-top: 4px;">
+            <div style="display: flex; gap: 10px; font-size: 7pt; margin-top: 2px;">
               <div style="flex: 1;"><span style="font-weight: 800;">DESCRIÇÃO:</span> ${e.motivo}</div>
             </div>
           ` : '').join('')}
@@ -131,25 +131,25 @@ export default function ListaTab() {
     }).join('')
 
     const nirContent = `
-      <div style="margin-top: 15px; border: 2px solid #000; border-radius: 8px; padding: 15px; page-break-inside: avoid;">
-        <div style="text-align: center; font-weight: 900; text-transform: uppercase; font-size: 11pt; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; letter-spacing: 1px;">
+      <div style="margin-top: 5px; border: 1px solid #000; border-radius: 6px; padding: 6px 10px; page-break-inside: avoid;">
+        <div style="text-align: center; font-weight: 900; text-transform: uppercase; font-size: 9pt; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 6px; letter-spacing: 1px;">
           Núcleo Interno de Regulação - NIR
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 9.5pt;">
-          <div style="grid-column: span 2; border-bottom: 1px solid #ccc; padding-bottom: 4px;"><span style="font-weight: 900; text-transform: uppercase;">Procedência:</span> ${record.nir_data?.procedencia || '________________'}</div>
-          <div style="border-bottom: 1px solid #ccc; padding-bottom: 4px;"><span style="font-weight: 900; text-transform: uppercase;">Contato:</span> ${record.nir_data?.nome_contato || '________________'}</div>
-          <div style="border-bottom: 1px solid #ccc; padding-bottom: 4px;"><span style="font-weight: 900; text-transform: uppercase;">Data Cirurgia:</span> ${record.nir_data?.data_cirurgia ? format(new Date(record.nir_data.data_cirurgia), 'dd/MM/yyyy') : '____/____/_______'}</div>
-          <div style="grid-column: span 2; border-bottom: 1px solid #ccc; padding-bottom: 4px;"><span style="font-weight: 900; text-transform: uppercase;">Procedimento:</span> ${record.nir_data?.procedimento || '________________'}</div>
-          <div style="border-bottom: 1px solid #ccc; padding-bottom: 4px;"><span style="font-weight: 900; text-transform: uppercase;">Cirurgião:</span> ${record.nir_data?.cirurgiao || '________________'}</div>
-          <div style="border-bottom: 1px solid #ccc; padding-bottom: 4px;"><span style="font-weight: 900; text-transform: uppercase;">OPME:</span> ${record.nir_data?.opme_nir || '________________'}</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 8pt;">
+          <div style="grid-column: span 2; border-bottom: 1px solid #eee; padding-bottom: 2px;"><span style="font-weight: 900; text-transform: uppercase;">Procedência:</span> ${record.nir_data?.procedencia || '________________'}</div>
+          <div style="border-bottom: 1px solid #eee; padding-bottom: 2px;"><span style="font-weight: 900; text-transform: uppercase;">Contato:</span> ${record.nir_data?.nome_contato || '________________'}</div>
+          <div style="border-bottom: 1px solid #eee; padding-bottom: 2px;"><span style="font-weight: 900; text-transform: uppercase;">Data Cirurgia:</span> ${record.nir_data?.data_cirurgia ? format(new Date(record.nir_data.data_cirurgia), 'dd/MM/yyyy') : '____/____/_______'}</div>
+          <div style="grid-column: span 2; border-bottom: 1px solid #eee; padding-bottom: 2px;"><span style="font-weight: 900; text-transform: uppercase;">Procedimento:</span> ${record.nir_data?.procedimento || '________________'}</div>
+          <div style="border-bottom: 1px solid #eee; padding-bottom: 2px;"><span style="font-weight: 900; text-transform: uppercase;">Cirurgião:</span> ${record.nir_data?.cirurgiao || '________________'}</div>
+          <div style="border-bottom: 1px solid #eee; padding-bottom: 2px;"><span style="font-weight: 900; text-transform: uppercase;">OPME:</span> ${record.nir_data?.opme_nir || '________________'}</div>
           
-          <div style="grid-column: span 2; margin-top: 10px; border-bottom: 1px solid #ccc; padding-bottom: 4px;">
+          <div style="grid-column: span 2; margin-top: 4px; border-bottom: 1px solid #eee; padding-bottom: 2px;">
             <span style="font-weight: 900; text-transform: uppercase;">Uso de Anticoagulante:</span> ${record.checklist_data?.faz_uso_anticoagulantes ? `SIM (${record.checklist_data.faz_uso_anticoagulantes_desc || 'SEM DESCRIÇÃO'})` : 'NÃO'}
           </div>
 
-          <div style="grid-column: span 2; border: 1.5px solid #000; padding: 10px; min-height: 80px; margin-top: 10px; border-radius: 4px;">
-            <span style="font-weight: 900; text-transform: uppercase; font-size: 8pt; font-style: italic;">Observações da Triagem/NIR:</span><br/>
-            <span style="font-size: 9pt;">${record.obs || 'NENHUMA OBSERVAÇÃO REGISTRADA.'}</span>
+          <div style="grid-column: span 2; border: 1px solid #ccc; padding: 6px; min-height: 35px; margin-top: 4px; border-radius: 4px;">
+            <span style="font-weight: 900; text-transform: uppercase; font-size: 7.5pt; font-style: italic;">Observações da Triagem/NIR:</span><br/>
+            <span style="font-size: 7.5pt;">${record.obs || 'NENHUMA OBSERVAÇÃO REGISTRADA.'}</span>
           </div>
         </div>
       </div>
@@ -161,16 +161,16 @@ export default function ListaTab() {
       <head>
         <title>Checklist de Triagem - ${record.patient_name}</title>
         <style>
-          @page { size: A4; margin: 8mm 10mm; }
-          body { font-family: 'Arial', sans-serif; font-size: 9pt; color: #000; line-height: 1.1; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
-          .header-info { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 8px; font-weight: 900; text-transform: uppercase; font-size: 10pt; }
-          .patient-box { margin-bottom: 15px; border: 2px solid #000; border-radius: 8px; padding: 12px; background-color: #f9f9f9; }
-          .row { display: flex; margin-bottom: 5px; }
-          .label { font-weight: 900; text-transform: uppercase; min-width: 100px; font-size: 8.5pt; }
-          .value { font-weight: 500; font-size: 9.5pt; border-bottom: 1px solid #eee; flex: 1; }
-          .footer-section { margin-top: 30px; display: flex; justify-content: space-between; gap: 40px; }
-          .sign-box { border-top: 1.5px solid #000; padding-top: 5px; width: 45%; text-align: center; font-weight: 900; text-transform: uppercase; font-size: 7.5pt; line-height: 1.3; }
-          .dev-credit { position: fixed; bottom: 5mm; right: 10mm; font-size: 7px; color: #777; font-weight: 700; }
+          @page { size: A4; margin: 4mm 6mm; }
+          body { font-family: 'Arial', sans-serif; font-size: 8pt; color: #000; line-height: 1.1; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
+          .header-info { display: flex; justify-content: space-between; margin-bottom: 6px; border-bottom: 1.5px solid #000; padding-bottom: 4px; font-weight: 900; text-transform: uppercase; font-size: 9pt; }
+          .patient-box { margin-bottom: 8px; border: 1.5px solid #000; border-radius: 6px; padding: 8px; background-color: #f9f9f9; }
+          .row { display: flex; margin-bottom: 3px; }
+          .label { font-weight: 900; text-transform: uppercase; min-width: 80px; font-size: 7.5pt; }
+          .value { font-weight: 500; font-size: 8.5pt; border-bottom: 1px solid #eee; flex: 1; }
+          .footer-section { margin-top: 12px; display: flex; justify-content: space-between; gap: 40px; }
+          .sign-box { border-top: 1px solid #000; padding-top: 4px; width: 45%; text-align: center; font-weight: 900; text-transform: uppercase; font-size: 7pt; line-height: 1.2; }
+          .dev-credit { position: fixed; bottom: 3mm; right: 6mm; font-size: 6px; color: #999; font-weight: 700; }
         </style>
       </head>
       <body>
