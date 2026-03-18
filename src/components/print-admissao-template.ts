@@ -57,12 +57,12 @@ export function generateAdmissaoHtml(formData: any, logos: any) {
         .logo { max-height: 80px; max-width: 150px; object-fit: contain; }
         .title { text-align: center; font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; }
         
-        .section-title { background: #f0f0f0; text-align: center; font-weight: bold; font-size: 11px; text-transform: uppercase; padding: 4px; border: 1px solid #000; border-bottom: none; }
-        .grid-box { border: 1px solid #000; display: table; width: 100%; margin-bottom: 15px; border-collapse: collapse; }
+        .section-title { background: #f0f0f0; text-align: left; font-weight: bold; font-size: 11px; text-transform: uppercase; padding: 4px; border: 1px solid #000; border-bottom: none; page-break-after: avoid; }
+        .grid-box { border: 1px solid #000; display: table; width: 100%; margin-bottom: 15px; border-collapse: collapse; page-break-inside: avoid; }
         .grid-row { display: table-row; }
         .grid-cell { display: table-cell; border: 1px solid #000; padding: 4px; vertical-align: middle; }
         
-        table { border-collapse: collapse; width: 100%; font-size: 11px; margin-bottom: 15px; }
+        table { border-collapse: collapse; width: 100%; font-size: 11px; margin-bottom: 15px; page-break-inside: avoid; }
         th, td { border: 1px solid #000; padding: 4px; }
         th { background: #f8f8f8; font-weight: bold; text-align: center; text-transform: uppercase;}
       </style>
@@ -216,7 +216,206 @@ export function generateAdmissaoHtml(formData: any, logos: any) {
             <div class="grid-cell" style="width: 16%;"><strong>TAX:</strong> ${formData.sinais_vitais?.tax || ""}</div>
             <div class="grid-cell" style="width: 16%;"><strong>GLI:</strong> ${formData.sinais_vitais?.gli || ""}</div>
             <div class="grid-cell" style="width: 20%;"><strong>SPO2:</strong> ${formData.sinais_vitais?.spo2 || ""}</div>
-          </div>
+          <div class="section-title" style="text-align: center;">Exame Físico Específico</div>
+        
+        <table style="margin-bottom: 0; border-bottom: none;">
+          <tbody>
+            <tr>
+              <td style="width: 20%; font-weight: bold; vertical-align: top; background: #f9f9f9;">CABEÇA E PESCOÇO:</td>
+              <td style="width: 80%;">
+                Cabeça: ( ${formData.exame_fisico?.cabeca_pescoco?.cabeca === 'Inalterada' ? 'X' : ' '} ) Inalterada 
+                ( ${formData.exame_fisico?.cabeca_pescoco?.cabeca === 'Alterada' ? 'X' : ' '} ) Alterada Quais: ${formData.exame_fisico?.cabeca_pescoco?.cabeca_obs || '_________________'} <br>
+                Acuidade visual: ( ${formData.exame_fisico?.cabeca_pescoco?.acuid_visual === 'Preservada' ? 'X' : ' '} ) Preservada ( ${formData.exame_fisico?.cabeca_pescoco?.acuid_visual === 'Diminuída' ? 'X' : ' '} ) Diminuída<br>
+                Acuidade auditiva: ( ${formData.exame_fisico?.cabeca_pescoco?.acuid_auditiva === 'Preservada' ? 'X' : ' '} ) Preservada ( ${formData.exame_fisico?.cabeca_pescoco?.acuid_auditiva === 'Diminuída' ? 'X' : ' '} ) Diminuída<br>
+                Nariz e boca: ( ${formData.exame_fisico?.cabeca_pescoco?.nariz_boca === 'Inalterado' ? 'X' : ' '} ) Inalterado ( ${formData.exame_fisico?.cabeca_pescoco?.nariz_boca === 'Alterações' ? 'X' : ' '} ) Alterações Quais: ${formData.exame_fisico?.cabeca_pescoco?.nariz_boca_obs || '_________________'}<br>
+                Prótese dentária: ( ${formData.exame_fisico?.cabeca_pescoco?.protese === 'Sim' ? 'X' : ' '} ) Sim ( ${formData.exame_fisico?.cabeca_pescoco?.protese === 'Não' ? 'X' : ' '} ) Não
+              </td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; vertical-align: top; background: #f9f9f9;">TÓRAX:</td>
+              <td>
+                Respiratório: ( ${formData.exame_fisico?.torax?.resp === 'Ar ambiente' ? 'X' : ' '} ) Ar ambiente 
+                ( ${formData.exame_fisico?.torax?.resp === 'CNO2' ? 'X' : ' '} ) CNO2 ${formData.exame_fisico?.torax?.o2_lmin || '___'} L/min 
+                ( ${formData.exame_fisico?.torax?.resp === 'Macronebulização' ? 'X' : ' '} ) Macronebulização 
+                ( ${formData.exame_fisico?.torax?.resp === 'TQT' ? 'X' : ' '} ) TQT<br>
+                ( ${formData.exame_fisico?.torax?.padrao === 'Eupneico' ? 'X' : ' '} ) Eupneico 
+                ( ${formData.exame_fisico?.torax?.padrao === 'Taquipneico' ? 'X' : ' '} ) Taquipneico 
+                ( ${formData.exame_fisico?.torax?.padrao === 'Bradipneico' ? 'X' : ' '} ) Bradipneico 
+                ( ${formData.exame_fisico?.torax?.padrao === 'Dispneico' ? 'X' : ' '} ) Dispneico<br>
+                Ausculta Pulmonar: ( ${formData.exame_fisico?.torax?.ausc_pulm === 'MV+' ? 'X' : ' '} ) MV+ 
+                ( ${formData.exame_fisico?.torax?.ausc_pulm === 'MV diminuídos' ? 'X' : ' '} ) MV diminuídos 
+                ( ${formData.exame_fisico?.torax?.ausc_pulm === 'Sem RA' ? 'X' : ' '} ) Sem RA<br>
+                ( ${formData.exame_fisico?.torax?.ausc_pulm === 'Com RA' ? 'X' : ' '} ) Com RA: 
+                ( ${formData.exame_fisico?.torax?.ra === 'Roncos' ? 'X' : ' '} ) Roncos 
+                ( ${formData.exame_fisico?.torax?.ra === 'Sibilos' ? 'X' : ' '} ) Sibilos 
+                ( ${formData.exame_fisico?.torax?.ra === 'Estertores' ? 'X' : ' '} ) Estertores<br>
+                Ausculta Cardíaca: ( ${formData.exame_fisico?.torax?.ausc_card === 'BRNF 2T' ? 'X' : ' '} ) BRNF 2T 
+                ( ${formData.exame_fisico?.torax?.ausc_card === 'Sem sopro' ? 'X' : ' '} ) Sem sopro 
+                ( ${formData.exame_fisico?.torax?.ausc_card === 'Com sopro' ? 'X' : ' '} ) Com sopro<br>
+                Outros: ${formData.exame_fisico?.torax?.outros || '________________________________________________'}
+              </td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; vertical-align: top; background: #f9f9f9;">ABDOME:</td>
+              <td>
+                Inspeção: ( ${formData.exame_fisico?.abdome?.inspecao === 'Plano' ? 'X' : ' '} ) Plano 
+                ( ${formData.exame_fisico?.abdome?.inspecao === 'Escavado' ? 'X' : ' '} ) Escavado 
+                ( ${formData.exame_fisico?.abdome?.inspecao === 'Globoso' ? 'X' : ' '} ) Globoso 
+                ( ${formData.exame_fisico?.abdome?.inspecao === 'Distendido' ? 'X' : ' '} ) Distendido<br>
+                Ausculta: ( ${formData.exame_fisico?.abdome?.ausculta === 'RHA+' ? 'X' : ' '} ) RHA+ 
+                ( ${formData.exame_fisico?.abdome?.ausculta === 'RHA diminuídos' ? 'X' : ' '} ) RHA diminuídos 
+                ( ${formData.exame_fisico?.abdome?.ausculta === 'Ausência' ? 'X' : ' '} ) Ausência de sons<br>
+                Palpação: ( ${formData.exame_fisico?.abdome?.palpacao === 'Flácido' ? 'X' : ' '} ) Flácido 
+                ( ${formData.exame_fisico?.abdome?.palpacao === 'Indolor' ? 'X' : ' '} ) Indolor 
+                ( ${formData.exame_fisico?.abdome?.palpacao === 'Doloroso' ? 'X' : ' '} ) Doloroso a palpação<br>
+                Obs.: ${formData.exame_fisico?.abdome?.obs || '____________________________________________________'}
+              </td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; vertical-align: top; background: #f9f9f9;">APARELHO GENITURINÁRIO / ÂNUS E RETO:</td>
+              <td>
+                Micção: ( ${formData.exame_fisico?.geniturinario?.miccao === 'Espontânea' ? 'X' : ' '} ) Espontânea 
+                ( ${formData.exame_fisico?.geniturinario?.miccao === 'Disúria' ? 'X' : ' '} ) Disúria 
+                ( ${formData.exame_fisico?.geniturinario?.miccao === 'Oligúria' ? 'X' : ' '} ) Oligúria 
+                ( ${formData.exame_fisico?.geniturinario?.miccao === 'Anúria' ? 'X' : ' '} ) Anúria<br>
+                ( ${formData.exame_fisico?.geniturinario?.miccao === 'Polaciúria' ? 'X' : ' '} ) Polaciúria 
+                ( ${formData.exame_fisico?.geniturinario?.miccao === 'Perda' ? 'X' : ' '} ) Perda Urinária 
+                ( ${formData.exame_fisico?.geniturinario?.miccao === 'SVD' ? 'X' : ' '} ) SVD<br>
+                Aspecto: ( ${formData.exame_fisico?.geniturinario?.aspecto === 'Inalterado' ? 'X' : ' '} ) Inalterado 
+                ( ${formData.exame_fisico?.geniturinario?.aspecto === 'Hematúria' ? 'X' : ' '} ) Hematúria 
+                ( ${formData.exame_fisico?.geniturinario?.aspecto === 'Piúria' ? 'X' : ' '} ) Piúria<br>
+                Obs (Lesões/Edema/Local): ${formData.exame_fisico?.geniturinario?.obs || '______________________________________'}
+              </td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; vertical-align: top; background: #f9f9f9;">MMSS e MMII:</td>
+              <td>
+                MMSS: ( ${formData.exame_fisico?.mmss_mmii?.mmss_dor === 'Sim' ? 'X' : ' '} ) Dor 
+                ( ${formData.exame_fisico?.mmss_mmii?.mmss_edema !== '' ? 'X' : ' '} ) Edema: ${formData.exame_fisico?.mmss_mmii?.mmss_edema || '______'}/4+<br>
+                MMII: ( ${formData.exame_fisico?.mmss_mmii?.mmii_dor === 'Sim' ? 'X' : ' '} ) Dor 
+                ( ${formData.exame_fisico?.mmss_mmii?.mmii_edema !== '' ? 'X' : ' '} ) Edema: ${formData.exame_fisico?.mmss_mmii?.mmii_edema || '______'}/4+<br>
+                AVP/Local: ${formData.exame_fisico?.mmss_mmii?.avp_local || '___________________'} | 
+                CVC/Local: ${formData.exame_fisico?.mmss_mmii?.cvc_local || '___________________'}
+              </td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; vertical-align: top; background: #f9f9f9;">PELE E ANEXOS:</td>
+              <td>
+                Pele: ( ${formData.exame_fisico?.pele_anexos?.pele === 'Íntegra' ? 'X' : ' '} ) Íntegra 
+                ( ${formData.exame_fisico?.pele_anexos?.pele !== 'Íntegra' && formData.exame_fisico?.pele_anexos?.pele !== '' ? 'X' : ' '} ) Cicatriz/Local: ${formData.exame_fisico?.pele_anexos?.cicatriz_local || '_________________'}<br>
+                Coloração: ( ${formData.exame_fisico?.pele_anexos?.coloracao === 'Normocorado' ? 'X' : ' '} ) Normocorado 
+                ( ${formData.exame_fisico?.pele_anexos?.coloracao === 'Palidez' ? 'X' : ' '} ) Palidez 
+                ( ${formData.exame_fisico?.pele_anexos?.coloracao === 'Icterícia' ? 'X' : ' '} ) Icterícia 
+                ( ${formData.exame_fisico?.pele_anexos?.coloracao === 'Cianose' ? 'X' : ' '} ) Cianose<br>
+                Mucosas: ( ${formData.exame_fisico?.pele_anexos?.mucosas === 'Normocoradas' ? 'X' : ' '} ) Normocoradas 
+                ( ${formData.exame_fisico?.pele_anexos?.mucosas === 'Hipocoradas' ? 'X' : ' '} ) Hipocoradas<br>
+                Perfusão Periférica: ( ${formData.exame_fisico?.pele_anexos?.perfusao === 'Boa' ? 'X' : ' '} ) Boa 
+                ( ${formData.exame_fisico?.pele_anexos?.perfusao === 'Ruim' ? 'X' : ' '} ) Ruim 
+                ( ${formData.exame_fisico?.pele_anexos?.perfusao === 'Regular' ? 'X' : ' '} ) Regular
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- ESCALAS -->
+        <div class="section-title" style="text-align: center; border-top: 1px solid #000; margin-top: 15px;">ESCALAS</div>
+        <div class="section-title" style="text-align: center; background: #e0e0e0;">ESCALA DE MORSE FALL</div>
+        <table>
+          <tbody>
+            <tr>
+              <td><strong>Histórico de Quedas</strong></td>
+              <td style="width: 50px; text-align: center;">${formData.escalas?.morse?.quedas || '0'}</td>
+            </tr>
+            <tr>
+              <td><strong>Diagnóstico Secundário</strong></td>
+              <td style="width: 50px; text-align: center;">${formData.escalas?.morse?.diag_sec || '0'}</td>
+            </tr>
+            <tr>
+              <td><strong>Auxílio na Deambulação</strong></td>
+              <td style="width: 50px; text-align: center;">${formData.escalas?.morse?.auxilio || '0'}</td>
+            </tr>
+            <tr>
+              <td><strong>Terapia Endovenosa/D. End Sinalizado/Heparinizado</strong></td>
+              <td style="width: 50px; text-align: center;">${formData.escalas?.morse?.terapia || '0'}</td>
+            </tr>
+            <tr>
+              <td><strong>Marcha</strong></td>
+              <td style="width: 50px; text-align: center;">${formData.escalas?.morse?.marcha || '0'}</td>
+            </tr>
+            <tr>
+              <td><strong>Estado Mental</strong></td>
+              <td style="width: 50px; text-align: center;">${formData.escalas?.morse?.estado_mental || '0'}</td>
+            </tr>
+            <tr>
+              <td style="text-align: right;"><strong>TOTAL:</strong></td>
+              <td style="text-align: center; font-weight: bold; font-size: 14px;">
+                ${(parseInt(formData.escalas?.morse?.quedas||'0') + parseInt(formData.escalas?.morse?.diag_sec||'0') + parseInt(formData.escalas?.morse?.auxilio||'0') + parseInt(formData.escalas?.morse?.terapia||'0') + parseInt(formData.escalas?.morse?.marcha||'0') + parseInt(formData.escalas?.morse?.estado_mental||'0'))}
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2" style="font-size: 10px; text-align: center;">( ) Sem risco: 0-24 &nbsp; ( ) Baixo risco: 25-44 &nbsp; ( ) Alto risco: ≥ 45</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="section-title" style="text-align: center; background: #e0e0e0;">ESCALA DE BRADEN</div>
+        <table>
+          <tbody>
+            <tr>
+              <td style="width: 25%; font-weight: bold;">Percepção Sensorial</td>
+              <td style="width: 65%;">1. Limitado | 2. Muito Lim | 3. Leve Lim | 4. Nenhuma Limitação</td>
+              <td style="width: 10%; text-align: center;">${formData.escalas?.braden?.percepcao || '0'}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Umidade</td>
+              <td>1. Comp molhado | 2. Muito molhado | 3. Ocasional | 4. Raramente</td>
+              <td style="text-align: center;">${formData.escalas?.braden?.umidade || '0'}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Atividade</td>
+              <td>1. Acamado | 2. Cadeira | 3. Anda ocasional | 4. Anda frequente</td>
+              <td style="text-align: center;">${formData.escalas?.braden?.atividade || '0'}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Mobilidade</td>
+              <td>1. Total imóvel | 2. Bastante lim | 3. Leve lim | 4. Sem limitação</td>
+              <td style="text-align: center;">${formData.escalas?.braden?.mobilidade || '0'}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Nutrição</td>
+              <td>1. Muito pobre | 2. Inadequada | 3. Adequada | 4. Excelente</td>
+              <td style="text-align: center;">${formData.escalas?.braden?.nutricao || '0'}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Fricção e Cisalhamento</td>
+              <td>1. Problema | 2. Problema potencial | 3. Nenhum problema</td>
+              <td style="text-align: center;">${formData.escalas?.braden?.friccao || '0'}</td>
+            </tr>
+            <tr>
+              <td colspan="2" style="text-align: right;"><strong>TOTAL:</strong></td>
+              <td style="text-align: center; font-weight: bold; font-size: 14px;">
+                ${(parseInt(formData.escalas?.braden?.percepcao||'0') + parseInt(formData.escalas?.braden?.umidade||'0') + parseInt(formData.escalas?.braden?.atividade||'0') + parseInt(formData.escalas?.braden?.mobilidade||'0') + parseInt(formData.escalas?.braden?.nutricao||'0') + parseInt(formData.escalas?.braden?.friccao||'0'))}
+              </td>
+            </tr>
+             <tr>
+              <td colspan="3" style="font-size: 10px; text-align: center;">( ) Risco ≤ 12: Alto Risco &nbsp; ( ) Risco 13 a 14: Moderado &nbsp; ( ) Risco 15 a 18: Leve &nbsp; ( ) Risco ≥ 19: Sem Risco</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- EVOLUÇÃO -->
+        <div class="section-title" style="text-align: center; background: #e0e0e0; margin-top: 15px;">EVOLUÇÃO DE ENFERMAGEM</div>
+        <div style="min-height: 250px; font-size: 11px; line-height: 1.6; border: 1px solid #000; padding: 10px; margin-bottom: 40px; background-image: repeating-linear-gradient(transparent, transparent 19px, #ccc 20px);">
+          ${formData.evolucao_enfermagem ? formData.evolucao_enfermagem.replace(/\\n/g, '<br>') : ''}
+        </div>
+
+        <div style="display: flex; justify-content: space-around; margin-top: 80px;">
+           <div style="text-align: center; border-top: 1px solid #000; width: 40%; padding-top: 5px;">
+              Enfermeiro<br>Assinatura e carimbo
+           </div>
+           <div style="text-align: center; border-top: 1px solid #000; width: 40%; padding-top: 5px;">
+              Técnico de Enfermagem<br>Assinatura e carimbo
+           </div>
         </div>
 
       </div>

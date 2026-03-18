@@ -106,7 +106,25 @@ export default function AdmissaoEnfermagemTab() {
       tax: "",
       gli: "",
       spo2: "",
-    }
+    },
+
+    // Exame Físico Detalhado
+    exame_fisico: {
+      cabeca_pescoco: { cabeca: "", cabeca_obs: "", acuid_visual: "", acuid_auditiva: "", nariz_boca: "", nariz_boca_obs: "", protese: "" },
+      torax: { resp: "", o2_lmin: "", padrao: "", ausc_pulm: "", ra: "", ausc_card: "", outros: "" },
+      abdome: { inspecao: "", ausculta: "", percussao: "", palpacao: "", hernia: "", obs: "" },
+      geniturinario: { miccao: "", aspecto: "", lesoes: "", varizes: "", edema: "", perineo: "", emld: "", hemorroidas: "", obs: "" },
+      mmss_mmii: { mmss_dor: "", mmss_edema: "", mmii_dor: "", mmii_edema: "", hematoma_local: "", varizes: "Não", avp_local: "", cvc_local: "", outros: "" },
+      pele_anexos: { pele: "", cicatriz_local: "", coloracao: "", mucosas: "", hematoma_local: "", perfusao: "", obs: "" }
+    },
+
+    // Escalas
+    escalas: {
+       morse: { quedas: "0", diag_sec: "0", auxilio: "0", terapia: "0", marcha: "0", estado_mental: "0" },
+       braden: { percepcao: "0", umidade: "0", atividade: "0", mobilidade: "0", nutricao: "0", friccao: "0" }
+    },
+
+    evolucao_enfermagem: ""
   })
 
   useEffect(() => {
@@ -177,6 +195,32 @@ export default function AdmissaoEnfermagemTab() {
     }))
   }
 
+  const updateExame = (section: keyof typeof formData.exame_fisico, field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      exame_fisico: {
+        ...prev.exame_fisico,
+        [section]: {
+          ...prev.exame_fisico[section],
+          [field]: value
+        }
+      }
+    }))
+  }
+
+  const updateEscala = (escala: "morse" | "braden", field: string, value: string) => {
+    setFormData(prev => {
+      const newEscalas = {
+        ...prev.escalas,
+        [escala]: {
+          ...prev.escalas[escala],
+          [field]: value
+        }
+      }
+      return { ...prev, escalas: newEscalas }
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSaving(true)
@@ -203,6 +247,9 @@ export default function AdmissaoEnfermagemTab() {
         habitos_vida: formData.habitos_vida,
         dispositivos: formData.dispositivos,
         sinais_vitais: formData.sinais_vitais,
+        exame_fisico: formData.exame_fisico,
+        escalas: formData.escalas,
+        evolucao_enfermagem: formData.evolucao_enfermagem,
         created_by: "Sistema"
       }
 
@@ -655,6 +702,396 @@ export default function AdmissaoEnfermagemTab() {
                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">SPO2</label>
                  <Input value={formData.sinais_vitais.spo2} onChange={e => updateVital("spo2", e.target.value)} placeholder="98%" className="text-center font-space font-bold text-lg h-14 bg-emerald-50 text-emerald-700 border-none shadow-inner" />
                </div>
+             </div>
+          </CardContent>
+        </Card>
+
+        {/* Exame Físico Detalhado */}
+        <Card className="rounded-[2rem] border-slate-100 shadow-lg overflow-hidden glass-card">
+          <div className="bg-slate-50/50 px-8 py-5 border-b border-border/40 flex items-center gap-3">
+             <div className="p-2 rounded-xl bg-slate-500/10 text-slate-600">
+               <Activity className="h-5 w-5" />
+             </div>
+             <div>
+               <h3 className="font-space font-bold tracking-tight text-lg text-slate-800">Exame Físico Específico</h3>
+               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Avaliação por sistemas</p>
+             </div>
+          </div>
+          <CardContent className="p-8 space-y-8">
+            {/* Cabeça e Pescoço */}
+            <div className="space-y-4">
+              <h4 className="font-bold text-slate-700 border-b pb-2">Cabeça e Pescoço</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Cabeça</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-50 mt-1" value={formData.exame_fisico.cabeca_pescoco.cabeca} onChange={e => updateExame("cabeca_pescoco", "cabeca", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="Inalterada">Inalterada</option>
+                     <option value="Alterada">Alterações (Descrever)</option>
+                   </select>
+                   {formData.exame_fisico.cabeca_pescoco.cabeca === "Alterada" && (
+                     <Input className="mt-2" placeholder="Quais alterações?" value={formData.exame_fisico.cabeca_pescoco.cabeca_obs} onChange={e => updateExame("cabeca_pescoco", "cabeca_obs", e.target.value)} />
+                   )}
+                 </div>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Acuidade Visual</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.cabeca_pescoco.acuid_visual} onChange={e => updateExame("cabeca_pescoco", "acuid_visual", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="Preservada">Preservada</option>
+                     <option value="Diminuída">Diminuída</option>
+                   </select>
+                 </div>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Acuidade Auditiva</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.cabeca_pescoco.acuid_auditiva} onChange={e => updateExame("cabeca_pescoco", "acuid_auditiva", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="Preservada">Preservada</option>
+                     <option value="Diminuída">Diminuída</option>
+                   </select>
+                 </div>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Nariz e Boca</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.cabeca_pescoco.nariz_boca} onChange={e => updateExame("cabeca_pescoco", "nariz_boca", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="Inalterado">Inalterado</option>
+                     <option value="Alterações">Alterações</option>
+                   </select>
+                   {formData.exame_fisico.cabeca_pescoco.nariz_boca === "Alterações" && (
+                     <Input className="mt-2" placeholder="Quais alterações?" value={formData.exame_fisico.cabeca_pescoco.nariz_boca_obs} onChange={e => updateExame("cabeca_pescoco", "nariz_boca_obs", e.target.value)} />
+                   )}
+                 </div>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Prótese Dentária</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.cabeca_pescoco.protese} onChange={e => updateExame("cabeca_pescoco", "protese", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="Sim">Sim</option>
+                     <option value="Não">Não</option>
+                   </select>
+                 </div>
+              </div>
+            </div>
+
+            {/* Tórax */}
+            <div className="space-y-4">
+              <h4 className="font-bold text-slate-700 border-b pb-2">Tórax</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Respiratório (Suporte)</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.torax.resp} onChange={e => updateExame("torax", "resp", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="Ar ambiente">Ar ambiente</option>
+                     <option value="CNO2">Cateter Nasal O2</option>
+                     <option value="Macronebulização">Macronebulização</option>
+                     <option value="TQT">TQT</option>
+                   </select>
+                   {formData.exame_fisico.torax.resp === "CNO2" && (
+                     <Input className="mt-2" placeholder="Quantos L/min?" value={formData.exame_fisico.torax.o2_lmin} onChange={e => updateExame("torax", "o2_lmin", e.target.value)} />
+                   )}
+                 </div>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Padrão Respiratório</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.torax.padrao} onChange={e => updateExame("torax", "padrao", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="Eupneico">Eupneico</option>
+                     <option value="Taquipneico">Taquipneico</option>
+                     <option value="Bradipneico">Bradipneico</option>
+                     <option value="Dispneico">Dispneico</option>
+                   </select>
+                 </div>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Ausculta Pulmonar</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.torax.ausc_pulm} onChange={e => updateExame("torax", "ausc_pulm", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="MV+">MV+</option>
+                     <option value="MV diminuídos">MV diminuídos</option>
+                     <option value="Sem RA">Sem RA</option>
+                     <option value="Com RA">Com RA</option>
+                   </select>
+                   {formData.exame_fisico.torax.ausc_pulm === "Com RA" && (
+                     <div className="mt-2 flex gap-4">
+                       <label className="flex items-center gap-1 text-sm"><input type="radio" name="ra_tipo" value="Roncos" onChange={e => updateExame("torax", "ra", e.target.value)} checked={formData.exame_fisico.torax.ra === "Roncos"}/> Roncos</label>
+                       <label className="flex items-center gap-1 text-sm"><input type="radio" name="ra_tipo" value="Sibilos" onChange={e => updateExame("torax", "ra", e.target.value)} checked={formData.exame_fisico.torax.ra === "Sibilos"}/> Sibilos</label>
+                       <label className="flex items-center gap-1 text-sm"><input type="radio" name="ra_tipo" value="Estertores" onChange={e => updateExame("torax", "ra", e.target.value)} checked={formData.exame_fisico.torax.ra === "Estertores"}/> Estertores</label>
+                     </div>
+                   )}
+                 </div>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Ausculta Cardíaca</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.torax.ausc_card} onChange={e => updateExame("torax", "ausc_card", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="BRNF 2T">BRNF 2T</option>
+                     <option value="Sem sopro">Sem sopro</option>
+                     <option value="Com sopro">Com sopro</option>
+                   </select>
+                 </div>
+                 <div className="md:col-span-2">
+                   <Label className="text-xs font-bold text-slate-500">Outros relacionados ao Tórax</Label>
+                   <Input className="mt-1" value={formData.exame_fisico.torax.outros} onChange={e => updateExame("torax", "outros", e.target.value)} />
+                 </div>
+              </div>
+            </div>
+
+            {/* Abdome, Aparelho Geniturinario, MMSS/MMII, Pele */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <h4 className="font-bold text-slate-700 border-b pb-2">Abdome</h4>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Inspeção</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.abdome.inspecao} onChange={e => updateExame("abdome", "inspecao", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="Plano">Plano</option><option value="Escavado">Escavado</option><option value="Globoso">Globoso</option><option value="Distendido">Distendido</option>
+                   </select>
+                 </div>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Ausculta</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.abdome.ausculta} onChange={e => updateExame("abdome", "ausculta", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="RHA+">RHA+</option><option value="RHA diminuídos">RHA diminuídos</option><option value="Ausência">Ausência de sons</option>
+                   </select>
+                 </div>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Palpação</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.abdome.palpacao} onChange={e => updateExame("abdome", "palpacao", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="Flácido">Flácido</option><option value="Indolor">Indolor</option><option value="Doloroso">Doloroso a palpação</option>
+                   </select>
+                 </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-bold text-slate-700 border-b pb-2">Aparelho Geniturinário</h4>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Micção</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.geniturinario.miccao} onChange={e => updateExame("geniturinario", "miccao", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="Espontânea">Espontânea</option><option value="Disúria">Disúria</option><option value="Polaciúria">Polaciúria</option><option value="Perda">Perda Urinária</option><option value="SVD">SVD</option>
+                   </select>
+                 </div>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Aspecto da Urina</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.geniturinario.aspecto} onChange={e => updateExame("geniturinario", "aspecto", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="Inalterado">Inalterado</option><option value="Hematúria">Hematúria</option><option value="Piúria">Piúria</option>
+                   </select>
+                 </div>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Períneo / Lesões</Label>
+                   <Input className="mt-1" placeholder="Varizes vulvares, edema, íntegro, hemorroidas..." value={formData.exame_fisico.geniturinario.obs} onChange={e => updateExame("geniturinario", "obs", e.target.value)} />
+                 </div>
+              </div>
+            </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <h4 className="font-bold text-slate-700 border-b pb-2">Membros (MMSS e MMII)</h4>
+                 <div className="grid grid-cols-2 gap-2">
+                   <div>
+                     <Label className="text-xs font-bold text-slate-500">MMSS (Dor)</Label>
+                     <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.mmss_mmii.mmss_dor} onChange={e => updateExame("mmss_mmii", "mmss_dor", e.target.value)}>
+                       <option value="">Selecione...</option>
+                       <option value="Não">Não</option><option value="Sim">Sim</option>
+                     </select>
+                   </div>
+                   <div>
+                     <Label className="text-xs font-bold text-slate-500">MMSS (Edema)</Label>
+                     <Input className="mt-1" placeholder="Ex: 2/4+" value={formData.exame_fisico.mmss_mmii.mmss_edema} onChange={e => updateExame("mmss_mmii", "mmss_edema", e.target.value)} />
+                   </div>
+                 </div>
+                 <div className="grid grid-cols-2 gap-2">
+                   <div>
+                     <Label className="text-xs font-bold text-slate-500">MMII (Dor)</Label>
+                     <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.mmss_mmii.mmii_dor} onChange={e => updateExame("mmss_mmii", "mmii_dor", e.target.value)}>
+                       <option value="">Selecione...</option>
+                       <option value="Não">Não</option><option value="Sim">Sim</option>
+                     </select>
+                   </div>
+                   <div>
+                     <Label className="text-xs font-bold text-slate-500">MMII (Edema)</Label>
+                     <Input className="mt-1" placeholder="Ex: 2/4+" value={formData.exame_fisico.mmss_mmii.mmii_edema} onChange={e => updateExame("mmss_mmii", "mmii_edema", e.target.value)} />
+                   </div>
+                 </div>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Acessos</Label>
+                   <Input className="mt-1 mb-2" placeholder="Local do AVP" value={formData.exame_fisico.mmss_mmii.avp_local} onChange={e => updateExame("mmss_mmii", "avp_local", e.target.value)} />
+                   <Input className="mt-1" placeholder="Local do CVC" value={formData.exame_fisico.mmss_mmii.cvc_local} onChange={e => updateExame("mmss_mmii", "cvc_local", e.target.value)} />
+                 </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-bold text-slate-700 border-b pb-2">Pele e Anexos</h4>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Pele</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.pele_anexos.pele} onChange={e => updateExame("pele_anexos", "pele", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="Íntegra">Íntegra</option><option value="Cicatriz">Cicatriz (Detalhar)</option><option value="Lesão">Lesão</option>
+                   </select>
+                   {formData.exame_fisico.pele_anexos.pele !== "Íntegra" && formData.exame_fisico.pele_anexos.pele !== "" && (
+                     <Input className="mt-2" placeholder="Localização..." value={formData.exame_fisico.pele_anexos.cicatriz_local} onChange={e => updateExame("pele_anexos", "cicatriz_local", e.target.value)} />
+                   )}
+                 </div>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Coloração / Mucosas</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1 mb-2" value={formData.exame_fisico.pele_anexos.coloracao} onChange={e => updateExame("pele_anexos", "coloracao", e.target.value)}>
+                     <option value="">Selecione (Coloração)...</option>
+                     <option value="Normocorado">Normocorado</option><option value="Palidez">Palidez</option><option value="Icterícia">Icterícia</option><option value="Cianose">Cianose</option>
+                   </select>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.pele_anexos.mucosas} onChange={e => updateExame("pele_anexos", "mucosas", e.target.value)}>
+                     <option value="">Selecione (Mucosas)...</option>
+                     <option value="Normocoradas">Normocoradas</option><option value="Hipocoradas">Hipocoradas</option>
+                   </select>
+                 </div>
+                 <div>
+                   <Label className="text-xs font-bold text-slate-500">Perfusão Periférica</Label>
+                   <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" value={formData.exame_fisico.pele_anexos.perfusao} onChange={e => updateExame("pele_anexos", "perfusao", e.target.value)}>
+                     <option value="">Selecione...</option>
+                     <option value="Boa">Boa</option><option value="Regular">Regular</option><option value="Ruim">Ruim</option>
+                   </select>
+                 </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Escalas & Evolução */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+           <Card className="rounded-[2rem] border-slate-100 shadow-lg overflow-hidden glass-card">
+              <div className="bg-orange-50/50 px-8 py-5 border-b border-orange-100/50 flex flex-col gap-1">
+                 <h3 className="font-space font-bold tracking-tight text-lg text-slate-800">Escala de Morse Fall</h3>
+                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Risco de Quedas</p>
+              </div>
+              <CardContent className="p-6 space-y-4">
+                 <div>
+                   <Label className="text-xs">Histórico de Quedas</Label>
+                   <select className="flex h-10 w-full rounded-md border bg-slate-50 text-sm mt-1" value={formData.escalas.morse.quedas} onChange={e => updateEscala("morse", "quedas", e.target.value)}>
+                     <option value="0">Não (0)</option><option value="20">Sim (20)</option>
+                   </select>
+                 </div>
+                 <div>
+                   <Label className="text-xs">Diagnóstico Secundário</Label>
+                   <select className="flex h-10 w-full rounded-md border bg-slate-50 text-sm mt-1" value={formData.escalas.morse.diag_sec} onChange={e => updateEscala("morse", "diag_sec", e.target.value)}>
+                     <option value="0">Não (0)</option><option value="15">Sim (15)</option>
+                   </select>
+                 </div>
+                 <div>
+                   <Label className="text-xs">Auxílio na Deambulação</Label>
+                   <select className="flex h-10 w-full rounded-md border bg-slate-50 text-sm mt-1" value={formData.escalas.morse.auxilio} onChange={e => updateEscala("morse", "auxilio", e.target.value)}>
+                     <option value="0">Nenhum/Acamado/Auxiliado (0)</option><option value="15">Muletas/Bengala/Andador (15)</option><option value="30">Mobiliário/Parede (30)</option>
+                   </select>
+                 </div>
+                 <div>
+                   <Label className="text-xs">Terapia Endovenosa (Sinalizado/Heparinizado)</Label>
+                   <select className="flex h-10 w-full rounded-md border bg-slate-50 text-sm mt-1" value={formData.escalas.morse.terapia} onChange={e => updateEscala("morse", "terapia", e.target.value)}>
+                     <option value="0">Não (0)</option><option value="20">Sim (20)</option>
+                   </select>
+                 </div>
+                 <div>
+                   <Label className="text-xs">Marcha</Label>
+                   <select className="flex h-10 w-full rounded-md border bg-slate-50 text-sm mt-1" value={formData.escalas.morse.marcha} onChange={e => updateEscala("morse", "marcha", e.target.value)}>
+                     <option value="0">Normal/Sem Deambulação/Cadeira de Rodas (0)</option><option value="15">Fraca (15)</option><option value="20">Comprometida/Cambaleante (20)</option>
+                   </select>
+                 </div>
+                 <div>
+                   <Label className="text-xs">Estado Mental</Label>
+                   <select className="flex h-10 w-full rounded-md border bg-slate-50 text-sm mt-1" value={formData.escalas.morse.estado_mental} onChange={e => updateEscala("morse", "estado_mental", e.target.value)}>
+                     <option value="0">Orientado (0)</option><option value="15">Superestima capacidade/ Esquece limitações (15)</option>
+                   </select>
+                 </div>
+                 
+                 <div className="pt-4 border-t flex justify-between items-center bg-orange-50 p-3 rounded-xl">
+                   <span className="font-bold text-sm text-slate-700">Total:</span>
+                   <span className="font-black text-lg text-orange-600">
+                     {parseInt(formData.escalas.morse.quedas) + parseInt(formData.escalas.morse.diag_sec) + parseInt(formData.escalas.morse.auxilio) + parseInt(formData.escalas.morse.terapia) + parseInt(formData.escalas.morse.marcha) + parseInt(formData.escalas.morse.estado_mental)} pts
+                   </span>
+                 </div>
+              </CardContent>
+           </Card>
+
+           <div className="flex flex-col gap-8">
+             <Card className="rounded-[2rem] border-slate-100 shadow-lg overflow-hidden glass-card h-full">
+                <div className="bg-indigo-50/50 px-8 py-5 border-b border-indigo-100/50 flex flex-col gap-1">
+                   <h3 className="font-space font-bold tracking-tight text-lg text-slate-800">Escala de Braden</h3>
+                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Risco de Lesão</p>
+                </div>
+                <CardContent className="p-6 space-y-4">
+                   <div className="grid grid-cols-2 gap-4">
+                     <div>
+                       <Label className="text-[10px] uppercase font-bold text-slate-400">Percepção</Label>
+                       <select className="flex h-8 w-full rounded-md border bg-slate-50 text-xs mt-1" value={formData.escalas.braden.percepcao} onChange={e => updateEscala("braden", "percepcao", e.target.value)}>
+                         <option value="0">Sel...</option><option value="1">1. Limitado</option><option value="2">2. Muito lim</option><option value="3">3. Leve lim</option><option value="4">4. Sem limitação</option>
+                       </select>
+                     </div>
+                     <div>
+                       <Label className="text-[10px] uppercase font-bold text-slate-400">Umidade</Label>
+                       <select className="flex h-8 w-full rounded-md border bg-slate-50 text-xs mt-1" value={formData.escalas.braden.umidade} onChange={e => updateEscala("braden", "umidade", e.target.value)}>
+                         <option value="0">Sel...</option><option value="1">1. Comp molhado</option><option value="2">2. Muito molhado</option><option value="3">3. Ocasional</option><option value="4">4. Raramente</option>
+                       </select>
+                     </div>
+                     <div>
+                       <Label className="text-[10px] uppercase font-bold text-slate-400">Atividade</Label>
+                       <select className="flex h-8 w-full rounded-md border bg-slate-50 text-xs mt-1" value={formData.escalas.braden.atividade} onChange={e => updateEscala("braden", "atividade", e.target.value)}>
+                         <option value="0">Sel...</option><option value="1">1. Acamado</option><option value="2">2. Cadeira</option><option value="3">3. Anda ocas</option><option value="4">4. Anda freq</option>
+                       </select>
+                     </div>
+                     <div>
+                       <Label className="text-[10px] uppercase font-bold text-slate-400">Mobilidade</Label>
+                       <select className="flex h-8 w-full rounded-md border bg-slate-50 text-xs mt-1" value={formData.escalas.braden.mobilidade} onChange={e => updateEscala("braden", "mobilidade", e.target.value)}>
+                         <option value="0">Sel...</option><option value="1">1. Tot Imóvel</option><option value="2">2. Bast lim</option><option value="3">3. Leve lim</option><option value="4">4. Sem limites</option>
+                       </select>
+                     </div>
+                     <div>
+                       <Label className="text-[10px] uppercase font-bold text-slate-400">Nutrição</Label>
+                       <select className="flex h-8 w-full rounded-md border bg-slate-50 text-xs mt-1" value={formData.escalas.braden.nutricao} onChange={e => updateEscala("braden", "nutricao", e.target.value)}>
+                         <option value="0">Sel...</option><option value="1">1. Muito pobre</option><option value="2">2. Inadequada</option><option value="3">3. Adequada</option><option value="4">4. Excelente</option>
+                       </select>
+                     </div>
+                     <div>
+                       <Label className="text-[10px] uppercase font-bold text-slate-400">Fricção</Label>
+                       <select className="flex h-8 w-full rounded-md border bg-slate-50 text-xs mt-1" value={formData.escalas.braden.friccao} onChange={e => updateEscala("braden", "friccao", e.target.value)}>
+                         <option value="0">Sel...</option><option value="1">1. Problema</option><option value="2">2. Potencial</option><option value="3">3. Nenhum prob</option>
+                       </select>
+                     </div>
+                   </div>
+
+                   <div className="pt-4 mt-2 border-t flex justify-between items-center bg-indigo-50 p-3 rounded-xl">
+                     <span className="font-bold text-sm text-slate-700">Total:</span>
+                     <span className="font-black text-lg text-indigo-600">
+                       {parseInt(formData.escalas.braden.percepcao) + parseInt(formData.escalas.braden.umidade) + parseInt(formData.escalas.braden.atividade) + parseInt(formData.escalas.braden.mobilidade) + parseInt(formData.escalas.braden.nutricao) + parseInt(formData.escalas.braden.friccao)} pts
+                     </span>
+                   </div>
+                </CardContent>
+             </Card>
+           </div>
+        </div>
+
+        <Card className="rounded-[2rem] border-slate-100 shadow-xl overflow-hidden glass-card">
+          <div className="bg-slate-800 text-white px-8 py-5 flex items-center gap-3">
+             <div className="p-2 rounded-xl bg-white/10">
+               <FileText className="h-5 w-5" />
+             </div>
+             <div>
+               <h3 className="font-space font-bold tracking-tight text-lg">Evolução de Enfermagem</h3>
+               <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Resumo descritivo da admissão</p>
+             </div>
+          </div>
+          <CardContent className="p-8">
+             <textarea 
+               className="w-full min-h-[300px] p-4 text-sm resize-y rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-inner"
+               placeholder="Escreva a evolução livremente aqui..."
+               value={formData.evolucao_enfermagem}
+               onChange={e => setFormData({...formData, evolucao_enfermagem: e.target.value})}
+             />
+
+             <div className="flex flex-col sm:flex-row justify-end mt-8 gap-4 pt-4 border-t border-border/40">
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={isSaving || success || !formData.patient_name}
+                  className="h-14 rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] bg-emerald-500 hover:bg-emerald-600 shadow-xl shadow-emerald-500/30 px-8 disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  {isSaving ? <Activity className="h-4 w-4 mr-2 animate-spin" /> : 
+                  success ? <CheckCircle2 className="h-4 w-4 mr-2" /> : 
+                  <Save className="h-4 w-4 mr-2" />}
+                  {success ? "Salvo com sucesso!" : "Registrar Admissão de Enfermagem Completa"}
+                </Button>
              </div>
           </CardContent>
         </Card>
