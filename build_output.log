@@ -1,0 +1,37 @@
+   Ôû▓ Next.js 15.3.6
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+Failed to compile.
+
+./src/app/(authenticated)/triagem/page.tsx
+Error:   x Expression expected
+     ,-[C:\Users\guilherme\Documents\PROJETO - APP\GERENCIMANETODEINTERNACAO\src\app\(authenticated)\triagem\page.tsx:129:1]
+ 126 |     </div>
+ 127 |   )
+ 128 | }
+ 129 |       </div>
+     :        ^
+ 130 |     </div>
+ 131 |   )
+ 132 | }
+     `----
+  x Unexpected token `/`. Expected jsx identifier
+     ,-[C:\Users\guilherme\Documents\PROJETO - APP\GERENCIMANETODEINTERNACAO\src\app\(authenticated)\triagem\page.tsx:130:1]
+ 127 |   )
+ 128 | }
+ 129 |       </div>
+ 130 |     </div>
+     :      ^
+ 131 |   )
+ 132 | }
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/(authenticated)/triagem/page.tsx
+
+
+> Build failed because of webpack errors

@@ -5,10 +5,10 @@ import { createBrowserClient } from "@supabase/ssr"
 import { searchMasterPatients, type MasterPatient } from "@/lib/patient-search"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Search, Save, User, FileText, Printer, CheckCircle2, ChevronRight, Hash, X, Activity, Droplet, Clock, CalendarDays, Key } from "lucide-react"
+import { Search, Save, User, FileText, Printer, CheckCircle2, ChevronRight, Hash, X, Activity, Droplet, Clock, CalendarDays, Key, Users } from "lucide-react"
 import { differenceInYears, parseISO } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
 import { generateAdmissaoHtml } from "@/components/print-admissao-template"
@@ -457,9 +457,7 @@ export default function AdmissaoEnfermagemTab() {
               </div>
                <div className="space-y-2 text-sm font-semibold">
                 <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Idade Automática</label>
-                <div className="relative">
-                  <Input value={formData.idade ? \`\${formData.idade} anos\` : ""} readOnly placeholder="--" className="bg-slate-100 border-none font-black shadow-none h-12 rounded-xl text-slate-600 cursor-not-allowed" />
-                </div>
+                <Input value={formData.idade ? `${formData.idade} anos` : ""} readOnly placeholder="--" className="bg-slate-100 border-none font-black shadow-none h-12 rounded-xl text-slate-600 cursor-not-allowed" />
               </div>
                <div className="space-y-2 text-sm font-semibold">
                 <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Hora da Admissão</label>
@@ -495,7 +493,7 @@ export default function AdmissaoEnfermagemTab() {
                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-3 block">Estado de Jejum</label>
                <div className="flex flex-wrap items-center gap-4 bg-slate-50 p-4 rounded-2xl shadow-inner">
                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <div className={\`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all \${formData.jejum_status === 'sim' ? 'border-amber-500 bg-amber-50 border-[6px]' : 'border-slate-300 bg-white group-hover:border-slate-400'}\`} />
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${formData.jejum_status === 'sim' ? 'border-amber-500 bg-amber-50 border-[6px]' : 'border-slate-300 bg-white group-hover:border-slate-400'}`} />
                     <input type="radio" value="sim" className="hidden" checked={formData.jejum_status === 'sim'} onChange={e => setFormData({...formData, jejum_status: e.target.value})} />
                     <span className="text-sm font-bold text-slate-600">Sim, a partir das:</span>
                   </label>
@@ -503,13 +501,13 @@ export default function AdmissaoEnfermagemTab() {
                   <span className="text-xs font-bold text-slate-400 uppercase mr-4">Horas</span>
 
                   <label className="flex items-center gap-2 cursor-pointer group mr-4">
-                    <div className={\`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all \${formData.jejum_status === 'nao' ? 'border-emerald-500 bg-emerald-50 border-[6px]' : 'border-slate-300 bg-white group-hover:border-slate-400'}\`} />
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${formData.jejum_status === 'nao' ? 'border-emerald-500 bg-emerald-50 border-[6px]' : 'border-slate-300 bg-white group-hover:border-slate-400'}`} />
                     <input type="radio" value="nao" className="hidden" checked={formData.jejum_status === 'nao'} onChange={e => setFormData({...formData, jejum_status: e.target.value})} />
                     <span className="text-sm font-bold text-slate-600">Alimentado (Não)</span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer group">
-                    <div className={\`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all \${formData.jejum_status === 'nao_se_aplica' ? 'border-slate-500 bg-slate-100 border-[6px]' : 'border-slate-300 bg-white group-hover:border-slate-400'}\`} />
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${formData.jejum_status === 'nao_se_aplica' ? 'border-slate-500 bg-slate-100 border-[6px]' : 'border-slate-300 bg-white group-hover:border-slate-400'}`} />
                     <input type="radio" value="nao_se_aplica" className="hidden" checked={formData.jejum_status === 'nao_se_aplica'} onChange={e => setFormData({...formData, jejum_status: e.target.value})} />
                     <span className="text-sm font-bold text-slate-600">Não se aplica</span>
                   </label>

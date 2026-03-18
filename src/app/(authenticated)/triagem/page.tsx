@@ -126,7 +126,3 @@ export default function TriagemPage() {
     </div>
   )
 }
-      </div>
-    </div>
-  )
-}
