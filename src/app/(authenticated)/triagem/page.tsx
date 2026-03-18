@@ -4,6 +4,7 @@ import { useState } from "react"
 import { ClipboardCheck, ListFilter, LayoutDashboard, FormInput } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import FormularioTab from "./formulario-tab"
+import AdmissaoEnfermagemTab from "./admissao-tab"
 import ListaTab from "./lista-tab"
 import DashboardTab from "./dashboard-tab"
 
@@ -36,27 +37,37 @@ export default function TriagemPage() {
             <TabsList className="bg-white/50 backdrop-blur-xl p-2 rounded-[2.5rem] border border-slate-200 h-20 shadow-lg">
               <TabsTrigger 
                 value="formulario" 
-                className="rounded-[2rem] px-10 h-16 data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-xl transition-all font-black uppercase text-xs tracking-widest gap-3"
+                className="rounded-[2rem] px-10 h-16 data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-xl transition-all font-black uppercase text-xs tracking-widest gap-2"
               >
-                <FormInput className="h-5 w-5" /> Novo Atendimento
+                <ClipboardCheck className="h-4 w-4" /> Checklist
+              </TabsTrigger>
+              <TabsTrigger 
+                value="admissao" 
+                className="rounded-[2rem] px-10 h-16 data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-xl transition-all font-black uppercase text-xs tracking-widest gap-2"
+              >
+                <FormInput className="h-4 w-4" /> Admissão
               </TabsTrigger>
               <TabsTrigger 
                 value="lista" 
-                className="rounded-[2rem] px-10 h-16 data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-xl transition-all font-black uppercase text-xs tracking-widest gap-3"
+                className="rounded-[2rem] px-10 h-16 data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-xl transition-all font-black uppercase text-xs tracking-widest gap-2"
               >
-                <ListFilter className="h-5 w-5" /> Lista de Pacientes
+                <ListFilter className="h-4 w-4" /> Lista
               </TabsTrigger>
               <TabsTrigger 
                 value="dashboard" 
-                className="rounded-[2rem] px-10 h-16 data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-xl transition-all font-black uppercase text-xs tracking-widest gap-3"
+                className="rounded-[2rem] px-10 h-16 data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-xl transition-all font-black uppercase text-xs tracking-widest gap-2"
               >
-                <LayoutDashboard className="h-5 w-5" /> Dashboard
+                <LayoutDashboard className="h-4 w-4" /> Dashboard
               </TabsTrigger>
             </TabsList>
           </div>
 
           <TabsContent value="formulario" className="mt-0 focus-visible:outline-none">
             <FormularioTab />
+          </TabsContent>
+
+          <TabsContent value="admissao" className="mt-0 focus-visible:outline-none">
+            <AdmissaoEnfermagemTab />
           </TabsContent>
 
           <TabsContent value="lista" className="mt-0 focus-visible:outline-none">
