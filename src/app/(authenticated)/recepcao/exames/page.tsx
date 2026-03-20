@@ -21,7 +21,6 @@ export default function ExamesHubPage() {
     { id: "agendamento", label: "Agendamentos", icon: CalendarDays, adminOnly: false },
     { id: "chegada", label: "Recepção / Chegada", icon: List, adminOnly: false },
     { id: "fila", label: "Fila de Atendimento", icon: Play, adminOnly: false },
-    { id: "resultados", label: "Entrega de Resultados", icon: CheckCircle2, adminOnly: false },
     { id: "historico", label: "Historico", icon: List, adminOnly: false },
   ]
 
@@ -66,7 +65,6 @@ export default function ExamesHubPage() {
         {activeTab === "agendamento" && <AgendamentoTab />}
         { activeTab === "chegada" && <ChegadaTab />}
         { activeTab === "fila" && <FilaTab />}
-        { activeTab === "resultados" && <ResultadosTab />}
         { activeTab === "historico" && <HistoricoTab />}
       </div>
     </div>

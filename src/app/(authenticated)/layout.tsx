@@ -10,8 +10,8 @@ import { Footer } from "@/components/footer"
 import { SidebarProvider, useSidebar } from "@/lib/sidebar-context"
 import { cn } from "@/lib/utils"
 
-const adminRoutes = ["/dashboard", "/internacoes", "/admin", "/triagem", "/recepcao", "/portal", "/pacientes"]
-const userRoutes = ["/internacoes", "/triagem", "/recepcao", "/portal"]
+const adminRoutes = ["/dashboard", "/internacoes", "/admin", "/triagem", "/recepcao", "/portal", "/pacientes", "/resultados"]
+const userRoutes = ["/internacoes", "/triagem", "/recepcao", "/portal", "/resultados"]
 
 function AuthenticatedLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
