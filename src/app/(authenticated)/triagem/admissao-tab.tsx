@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Save, User, FileText, Printer, CheckCircle2, ChevronRight, Hash, X, Activity, Droplet, Clock, CalendarDays, Key, Users, ArrowLeft } from "lucide-react"
+import { Search, Save, User, FileText, Printer, CheckCircle2, ChevronRight, Hash, X, Activity, Droplet, Clock, CalendarDays, Key, Users, ArrowLeft, Trash2 } from "lucide-react"
 import { differenceInYears, parseISO } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
 import { generateAdmissaoHtml } from "@/components/print-admissao-template"
@@ -263,6 +263,26 @@ export default function AdmissaoEnfermagemTab() {
       setTimeout(() => printWindow.print(), 500)
     } else {
       printWindow.close()
+    }
+  }
+
+  const handleExcluir = async (obj: any) => {
+    if (!window.confirm("Tem certeza que deseja excluir esta ficha de admissão? Esta ação não pode ser desfeita.")) {
+      return
+    }
+
+    try {
+      const supabase = getSupabase()
+      const { error } = await supabase.from('nursing_admissions').delete().eq('id', obj.id)
+      if (error) throw error
+      
+      // Refresh the list
+      const { data } = await supabase.from('nursing_admissions').select('id, patient_id, prontuario, patient_name, created_at')
+      if (data) setAdmissions(data)
+      
+      alert("Ficha excluída com sucesso!")
+    } catch (err: any) {
+      alert("Erro ao excluir: " + err.message)
     }
   }
 
@@ -557,6 +577,9 @@ export default function AdmissaoEnfermagemTab() {
                                 </Button>
                                 <Button size="sm" onClick={() => handleImprimir(p, obj)} className="h-8 rounded-[1rem] font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 gap-2">
                                   <Printer className="h-4 w-4" /> PDF
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => handleExcluir(obj)} className="h-8 w-8 p-0 rounded-full text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
                            ) : (

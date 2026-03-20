@@ -20,16 +20,16 @@ export function generateAdmissaoHtml(formData: any, logos: any) {
     const isNao = renderCheck(dataKey.checked, 'nao')
     const isSim = renderCheck(dataKey.checked, 'sim')
     let details = ""
-    
+
     // Dispositivos might have date/details/details2
-    if(dataKey.date || dataKey.details || dataKey.details2) {
-       const parts = []
-       if(dataKey.date) parts.push(`Data: ${dataKey.date}`)
-       if(dataKey.details) parts.push(`${dataKey.details}`)
-       if(dataKey.details2) parts.push(`Disp: ${dataKey.details2}`)
-       details = parts.join(" | ")
+    if (dataKey.date || dataKey.details || dataKey.details2) {
+      const parts = []
+      if (dataKey.date) parts.push(`Data: ${dataKey.date}`)
+      if (dataKey.details) parts.push(`${dataKey.details}`)
+      if (dataKey.details2) parts.push(`Disp: ${dataKey.details2}`)
+      details = parts.join(" | ")
     } else {
-       details = dataKey.details || ""
+      details = dataKey.details || ""
     }
 
     return `
@@ -62,7 +62,8 @@ export function generateAdmissaoHtml(formData: any, logos: any) {
         .grid-row { display: table-row; }
         .grid-cell { display: table-cell; border: 1px solid #000; padding: 4px; vertical-align: middle; }
         
-        table { border-collapse: collapse; width: 100%; font-size: 11px; margin-bottom: 15px; page-break-inside: avoid; }
+        table { border-collapse: collapse; width: 100%; font-size: 11px; margin-bottom: 15px; page-break-inside: auto; break-inside: auto; }
+        tr { page-break-inside: avoid; break-inside: avoid; }
         th, td { border: 1px solid #000; padding: 4px; }
         th { background: #f8f8f8; font-weight: bold; text-align: center; text-transform: uppercase;}
       </style>
@@ -207,8 +208,8 @@ export function generateAdmissaoHtml(formData: any, logos: any) {
           </tbody>
         </table>
 
-        <div class="section-title">Exame Físico Geral / Sinais Vitais</div>
-        <div class="grid-box" style="margin-bottom: 0;">
+        <div class="section-title">Sinais Vitais</div>
+        <div class="grid-box" style="margin-bottom: 15px;">
           <div class="grid-row">
             <div class="grid-cell" style="width: 16%;"><strong>PA:</strong> ${formData.sinais_vitais?.pa || ""}</div>
             <div class="grid-cell" style="width: 16%;"><strong>FC:</strong> ${formData.sinais_vitais?.fc || ""}</div>
@@ -216,8 +217,10 @@ export function generateAdmissaoHtml(formData: any, logos: any) {
             <div class="grid-cell" style="width: 16%;"><strong>TAX:</strong> ${formData.sinais_vitais?.tax || ""}</div>
             <div class="grid-cell" style="width: 16%;"><strong>GLI:</strong> ${formData.sinais_vitais?.gli || ""}</div>
             <div class="grid-cell" style="width: 20%;"><strong>SPO2:</strong> ${formData.sinais_vitais?.spo2 || ""}</div>
-          <div class="section-title" style="text-align: center;">Exame Físico Específico</div>
-        
+          </div>
+        </div>
+
+        <div class="section-title" style="text-align: center;">Exame Físico Geral</div>
         <table style="margin-bottom: 0; border-bottom: none;">
           <tbody>
             <tr>
@@ -349,7 +352,7 @@ export function generateAdmissaoHtml(formData: any, logos: any) {
             <tr>
               <td style="text-align: right;"><strong>TOTAL:</strong></td>
               <td style="text-align: center; font-weight: bold; font-size: 14px;">
-                ${(parseInt(formData.escalas?.morse?.quedas||'0') + parseInt(formData.escalas?.morse?.diag_sec||'0') + parseInt(formData.escalas?.morse?.auxilio||'0') + parseInt(formData.escalas?.morse?.terapia||'0') + parseInt(formData.escalas?.morse?.marcha||'0') + parseInt(formData.escalas?.morse?.estado_mental||'0'))}
+                ${(parseInt(formData.escalas?.morse?.quedas || '0') + parseInt(formData.escalas?.morse?.diag_sec || '0') + parseInt(formData.escalas?.morse?.auxilio || '0') + parseInt(formData.escalas?.morse?.terapia || '0') + parseInt(formData.escalas?.morse?.marcha || '0') + parseInt(formData.escalas?.morse?.estado_mental || '0'))}
               </td>
             </tr>
             <tr>
@@ -394,7 +397,7 @@ export function generateAdmissaoHtml(formData: any, logos: any) {
             <tr>
               <td colspan="2" style="text-align: right;"><strong>TOTAL:</strong></td>
               <td style="text-align: center; font-weight: bold; font-size: 14px;">
-                ${(parseInt(formData.escalas?.braden?.percepcao||'0') + parseInt(formData.escalas?.braden?.umidade||'0') + parseInt(formData.escalas?.braden?.atividade||'0') + parseInt(formData.escalas?.braden?.mobilidade||'0') + parseInt(formData.escalas?.braden?.nutricao||'0') + parseInt(formData.escalas?.braden?.friccao||'0'))}
+                ${(parseInt(formData.escalas?.braden?.percepcao || '0') + parseInt(formData.escalas?.braden?.umidade || '0') + parseInt(formData.escalas?.braden?.atividade || '0') + parseInt(formData.escalas?.braden?.mobilidade || '0') + parseInt(formData.escalas?.braden?.nutricao || '0') + parseInt(formData.escalas?.braden?.friccao || '0'))}
               </td>
             </tr>
              <tr>
