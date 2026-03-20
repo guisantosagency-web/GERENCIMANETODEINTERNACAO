@@ -11,7 +11,8 @@ const FALLBACK_SLOT_PROCEDURES = [
   "Ultrassom",
   "Ecocardiograma",
   "Tomografia",
-  "Tomografia com Contraste e Angiotomografia"
+  "Tomografia com Contraste e Angiotomografia",
+  "Laboratoriais"
 ]
 
 export default function VagasTab() {

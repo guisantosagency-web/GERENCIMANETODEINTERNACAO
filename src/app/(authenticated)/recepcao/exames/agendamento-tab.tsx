@@ -33,46 +33,122 @@ const HumanModel = ({ procedure }: { procedure: string }) => {
   const isChest = procedure === "Ecocardiograma" || procedure === "Eletrocardiograma" || procedure === "Raio X"
   const isAbdomen = procedure === "Ultrassom"
   const isLimbs = procedure === "Raio X" || procedure === "Ultrassom"
+  const isLaboratorial = procedure === "Laboratoriais"
 
   return (
-    <div className="relative w-full h-[450px] flex items-center justify-center bg-gradient-to-b from-slate-50 to-white rounded-[3rem] border border-slate-200/50 shadow-inner overflow-hidden group [perspective:1000px]">
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-      <div className="relative transition-all duration-1000 ease-out group-hover:[transform:rotateY(15deg)] transform-gpu h-full w-full flex items-center justify-center">
-        <svg viewBox="0 0 200 500" className="h-[90%] w-auto filter drop-shadow-[0_20px_40px_rgba(0,0,0,0.1)] transition-all duration-700">
+    <div className="relative w-full h-[450px] flex items-center justify-center bg-gradient-to-b from-slate-50 to-white rounded-[3rem] border border-slate-200/50 shadow-inner overflow-hidden group [perspective:1200px]">
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#64748b 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+      
+      {/* Scanning Line Animation */}
+      <div className="absolute inset-x-0 w-full h-[2px] bg-gradient-to-r from-transparent via-blue-500 to-transparent z-10 animate-scan pointer-events-none shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+
+      <div className="relative transition-all duration-1000 ease-out group-hover:[transform:rotateY(10deg)_rotateX(5deg)] transform-gpu h-full w-full flex items-center justify-center">
+        <svg viewBox="0 0 200 500" className="h-[90%] w-auto filter drop-shadow-[0_25px_50px_rgba(0,0,0,0.15)] transition-all duration-700">
           <defs>
-            <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="5" result="blur" />
+            <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style={{ stopColor: '#f1f5f9' }} />
+              <stop offset="50%" style={{ stopColor: '#e2e8f0' }} />
+              <stop offset="100%" style={{ stopColor: '#f1f5f9' }} />
+            </linearGradient>
+            <linearGradient id="activeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style={{ stopColor: '#3b82f6' }} />
+              <stop offset="50%" style={{ stopColor: '#60a5fa' }} />
+              <stop offset="100%" style={{ stopColor: '#3b82f6' }} />
+            </linearGradient>
+            <filter id="neonGlow" x="-25%" y="-25%" width="150%" height="150%">
+              <feGaussianBlur stdDeviation="6" result="blur" />
               <feComposite in="SourceGraphic" in2="blur" operator="over" />
             </filter>
           </defs>
+
+          {/* Sombra de Profundidade */}
+          <ellipse cx="100" cy="485" rx="50" ry="10" className="fill-slate-200/40" />
+
+          {/* Cabeça */}
           <g className={`transition-all duration-700 ${isHead ? 'scale-110 origin-center' : ''}`}>
-            <circle cx="100" cy="60" r="35" className={`transition-all duration-500 ${isHead ? 'fill-blue-500' : 'fill-slate-200'}`} style={{ filter: isHead ? 'url(#neonGlow)' : 'none' }} />
-            {isHead && <circle cx="100" cy="60" r="15" className="fill-white/30 animate-pulse" />}
+            <circle cx="100" cy="60" r="35" 
+              className={`transition-all duration-500 ${isHead ? 'fill-[url(#activeGradient)]' : isLaboratorial ? 'fill-blue-100' : 'fill-[url(#bodyGradient)]'}`} 
+              style={{ filter: isHead ? 'url(#neonGlow)' : 'none' }} 
+            />
+            {isHead && <circle cx="100" cy="60" r="15" className="fill-white/40 animate-pulse" />}
           </g>
-          <path d="M65 110 L135 110 Q145 250 135 320 L65 320 Q55 250 65 110 Z" className={`transition-all duration-500 ${isChest ? 'fill-blue-400' : isAbdomen ? 'fill-blue-300' : 'fill-slate-200'}`} style={{ filter: (isChest || isAbdomen) ? 'url(#neonGlow)' : 'none' }} />
+
+          {/* Tronco / Abdome */}
+          <path 
+            d="M65 110 L135 110 Q145 250 135 320 L65 320 Q55 250 65 110 Z" 
+            className={`transition-all duration-500 ${
+              isChest ? 'fill-blue-400' : 
+              isAbdomen ? 'fill-blue-300' : 
+              isLaboratorial ? 'fill-blue-100 animate-pulse' : 
+              'fill-[url(#bodyGradient)]'
+            }`} 
+            style={{ filter: (isChest || isAbdomen) ? 'url(#neonGlow)' : 'none' }} 
+          />
+
+          {/* Coração (Específico para Cardios) */}
           {(procedure === "Ecocardiograma" || procedure === "Eletrocardiograma") && (
             <g transform="translate(105, 160) scale(0.6)">
-              <path d="M0 -30 Q20 -50 40 -30 T0 30 T-40 -30 Q-20 -50 0 -30" fill="#ef4444" className="animate-ping opacity-20" />
+              <path d="M0 -30 Q20 -50 40 -30 T0 30 T-40 -30 Q-20 -50 0 -30" fill="#ef4444" className="animate-ping opacity-30" />
               <path d="M0 -30 Q20 -50 40 -30 T0 30 T-40 -30 Q-20 -50 0 -30" fill="#ef4444" className="animate-bounce" />
             </g>
           )}
+
+          {/* Braços e Pernas */}
           <g className="transition-all duration-500">
-            <path d="M65 110 L35 270 L55 275 L75 120 Z" className={`transition-all duration-500 ${isLimbs ? 'fill-blue-200' : 'fill-slate-200'}`} />
-            <path d="M135 110 L165 270 L145 275 L125 120 Z" className={`transition-all duration-500 ${isLimbs ? 'fill-blue-200' : 'fill-slate-200'}`} />
-            <path d="M70 320 L55 480 L85 480 L95 320 Z" className={`transition-all duration-500 ${isLimbs ? 'fill-blue-200' : 'fill-slate-200'}`} />
-            <path d="M130 320 L145 480 L115 480 L105 320 Z" className={`transition-all duration-500 ${isLimbs ? 'fill-blue-200' : 'fill-slate-200'}`} />
+            {/* Braço Esquerdo */}
+            <path d="M65 110 L35 270 L55 275 L75 120 Z" 
+              className={`transition-all duration-500 ${isLimbs ? 'fill-blue-200' : isLaboratorial ? 'fill-blue-100' : 'fill-[url(#bodyGradient)]'}`} 
+            />
+            {/* Braço Direito */}
+            <path d="M135 110 L165 270 L145 275 L125 120 Z" 
+              className={`transition-all duration-500 ${isLimbs ? 'fill-blue-200' : isLaboratorial ? 'fill-blue-100' : 'fill-[url(#bodyGradient)]'}`} 
+            />
+            {/* Perna Esquerda */}
+            <path d="M70 320 L55 480 L85 480 L95 320 Z" 
+              className={`transition-all duration-500 ${isLimbs ? 'fill-blue-200' : isLaboratorial ? 'fill-blue-100' : 'fill-[url(#bodyGradient)]'}`} 
+            />
+            {/* Perna Direita */}
+            <path d="M130 320 L145 480 L115 480 L105 320 Z" 
+              className={`transition-all duration-500 ${isLimbs ? 'fill-blue-200' : isLaboratorial ? 'fill-blue-100' : 'fill-[url(#bodyGradient)]'}`} 
+            />
           </g>
+
+          {/* Sistema Circulatório (Para Laboratoriais) */}
+          {isLaboratorial && (
+            <g className="animate-pulse" style={{ opacity: 0.6 }}>
+              <path d="M100 110 L100 320 M70 150 L40 250 M130 150 L160 250 M80 320 L65 450 M120 320 L135 450" 
+                fill="none" stroke="#2563eb" strokeWidth="3" strokeLinecap="round" className="animate-pulse"
+              />
+            </g>
+          )}
         </svg>
       </div>
+
       <div className="absolute top-8 left-8 flex flex-col gap-2">
-        <div className="bg-white/80 backdrop-blur-xl p-3 border border-slate-100 rounded-2xl shadow-xl">
-          <div className="flex items-center gap-2 mb-1">
-            <div className={`w-2 h-2 rounded-full animate-pulse ${procedure ? 'bg-blue-500' : 'bg-slate-300'}`} />
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Scanner Ativo</span>
+        <div className="bg-white/90 backdrop-blur-2xl p-4 border border-slate-100 rounded-3xl shadow-2xl flex items-center gap-4 group-hover:scale-105 transition-transform duration-500">
+          <div className="relative">
+            <div className={`w-3 h-3 rounded-full ${procedure ? 'bg-blue-500' : 'bg-slate-300'}`} />
+            <div className={`absolute inset-0 rounded-full animate-ping ${procedure ? 'bg-blue-500/50' : 'bg-slate-300/50'}`} />
           </div>
-          <p className="text-sm font-black text-slate-800 uppercase tracking-tight">{procedure || "Selecione Exame"}</p>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-1">Scanner Ativo</p>
+            <p className="text-sm font-black text-slate-800 uppercase tracking-tight">{procedure || "Aguardando"}</p>
+          </div>
         </div>
       </div>
+
+      {/* Estilos customizados para a animação de scan */}
+      <style jsx>{`
+        @keyframes scan {
+          0% { top: 10%; opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { top: 90%; opacity: 0; }
+        }
+        .animate-scan {
+          animation: scan 3s linear infinite;
+        }
+      `}</style>
     </div>
   )
 }
