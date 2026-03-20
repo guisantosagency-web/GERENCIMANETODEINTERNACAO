@@ -1,0 +1,42 @@
+src/app/(authenticated)/admin/page.tsx:                  <p className="text-xs font-medium text-muted-foreground">Médicos</p>
+src/app/(authenticated)/admin/page.tsx:                <CardDescription className="mt-1 ml-12">Médicos cadastrados no sistema</CardDescription>
+src/app/(authenticated)/admin/page.tsx:                      <TableHead className="font-black text-[10px] uppercase tracking-widest pl-8">Nome do Médico</TableHead>
+src/app/(authenticated)/pacientes/page.tsx:                                {p.procedimento || "NÃO INFORMADO"} • <span className="opacity-70">{p.medico || "S/ MÉDICO"}</span>
+src/app/(authenticated)/triagem/admissao-tab.tsx:                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 text-red-500">Diagnóstico Médico</label>
+src/app/(authenticated)/triagem/formulario-tab.tsx:              <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Médico / Cirurgião</Label>
+src/components/add-doctor-modal.tsx:      console.error("Erro ao cadastrar médico:", error)
+src/components/add-doctor-modal.tsx:          Novo Médico
+src/components/add-doctor-modal.tsx:            Cadastrar Novo Médico
+src/components/add-doctor-modal.tsx:              placeholder="DR. NOME DO MÉDICO"
+src/components/add-doctor-modal.tsx:              {isSubmitting ? "Cadastrando..." : "Cadastrar Médico"}
+src/components/add-patient-modal.tsx:                    <Label className="font-bold text-xs">MÉDICO RESPONSÁVEL *</Label>
+src/components/add-patient-modal.tsx:                          <CommandInput placeholder="Buscar médico..." className="h-12" />
+src/components/add-patient-modal.tsx:                            <CommandEmpty>Nenhum médico cadastrado.</CommandEmpty>
+src/components/consultation-control-board.tsx:                                                    Nenhum paciente agendado para este médico nesta data.
+src/components/consultation-form.tsx:                                Médico Solicitado *
+src/components/doctor-slots-manager.tsx:                    Defina a quantidade de vagas por médico por dia (Segunda a Sábado)
+src/components/doctor-slots-manager.tsx:                        <Label>Médico</Label>
+src/components/doctor-slots-manager.tsx:                                <SelectValue placeholder="Selecione o médico" />
+src/components/doctor-slots-manager.tsx:                                            <p className="font-bold text-sm truncate max-w-[150px]">{doctor?.name || "Médico Excluído"}</p>
+src/components/edit-doctor-modal.tsx:    setSuccessMessage("Médico atualizado com sucesso!")
+src/components/edit-doctor-modal.tsx:            Editar Médico
+src/components/edit-doctor-modal.tsx:            <Label htmlFor="edit-doctor-name">Nome do Médico</Label>
+src/components/edit-patient-modal.tsx:              <Label htmlFor="medico">Médico</Label>
+src/components/edit-patient-modal.tsx:                  <SelectValue placeholder="Selecione o médico">{formData.medico || "Selecione o médico"}</SelectValue>
+src/components/export-csv-modal.tsx:      "Médico",
+src/components/export-csv-modal.tsx:              SUS, Nascimento, Idade, Procedência, Destino, Prontuário, Médico, Procedimento, Recepcionista,{" "}
+src/components/export-pdf-modal.tsx:                <th style="width: 10%">Médico</th>
+src/components/ficha-internacao-modal.tsx:            <div class="col"><span class="label">Médico Responsável:</span> <span class="value">${patient.medico}</span></div>
+src/components/ficha-internacao-modal.tsx:            AUTORIZA O CORPO CLÍNICO DESTA INSTITUIÇÃO PRATICAR TODOS OS ATOS MÉDICOS, TÉCNICOS, TAIS COMO: ATENDIMENTOS, EXAMES, CIRÚRGICOS, MEDICAÇÕES E OUTROS, TUDO QUE SE FIZER NECESSÁRIO PARA ADEQUADO TRATAMENTO HOSPITALAR.
+src/components/ficha-internacao-modal.tsx:                ASSINATURA DO MÉDICO(A)
+src/components/ficha-internacao-modal.tsx:              <div className="flex justify-between border-b border-blue-100 pb-1"><span className="text-muted-foreground font-semibold uppercase text-[10px]">Médico:</span><span className="font-bold uppercase">{patient.medico}</span></div>
+src/components/import-csv-modal.tsx:    // 11: Destino, 12: Prontuário, 13: Médico, 14: Procedimento, 15: Recepcionista, 16: Estado, 17: Telefone
+src/components/patient-table.tsx:                Dossiê Médico Completo
+src/components/patient-table.tsx:                  { label: "Médico Resp.", value: selectedPatient.medico },
+src/components/print-admissao-template.ts:            <div class="grid-cell" colspan="3"><strong>DIAGNÓSTICO MÉDICO:</strong> ${formData.diagnostico_medico || ""}</div>
+src/lib/auth-context.tsx:        // Encontrar o slot do médico para o dia
+src/lib/auth-context.tsx:          return { success: false, message: `As vagas para este médico/dia já estão lotadas! (${scheduledCount}/${slot.max_slots})` }
+src/scripts/001_create_tables.sql:-- Criar tabela de médicos
+src/scripts/001_create_tables.sql:-- Inserir médicos padrão
+src/scripts/013_add_doctor_to_triage.sql:-- ADICIONAR CAMPO MÉDICO À TABELA DE TRIAGEM
+src/scripts/013_add_doctor_to_triage.sql:COMMENT ON COLUMN surgery_triage.medico IS 'Nome do médico ou cirurgião responsável';

@@ -52,6 +52,24 @@ export default function FormularioTab() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
+  const [doctorsList, setDoctorsList] = useState<any[]>([])
+
+  const loadDoctors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("doctors")
+        .select("name")
+        .order("name")
+      if (error) throw error
+      if (data) setDoctorsList(data)
+    } catch (err) {
+      console.error("Erro ao carregar médicos:", err)
+    }
+  }
+
+  useEffect(() => {
+    loadDoctors()
+  }, [])
 
   const [formData, setFormData] = useState({
     patient_name: "",
@@ -352,13 +370,19 @@ export default function FormularioTab() {
 
             <div className="md:col-span-3 space-y-2 relative">
               <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">Médico / Cirurgião</Label>
-              <Input 
-                placeholder="DR(A). ..." 
-                value={formData.medico}
-                onChange={e => setFormData(p => ({ ...p, medico: e.target.value }))}
-                className="pl-14 h-14 font-bold bg-slate-50 border-none rounded-2xl shadow-inner uppercase"
-              />
-              <Stethoscope className="absolute left-6 bottom-[1rem] h-5 w-5 text-emerald-500" />
+              <div className="relative">
+                <select 
+                  value={formData.medico}
+                  onChange={e => setFormData(p => ({ ...p, medico: e.target.value }))}
+                  className="w-full h-14 bg-slate-50 border-none rounded-2xl px-14 font-bold appearance-none cursor-pointer shadow-inner uppercase text-sm"
+                >
+                  <option value="">Selecione o Médico...</option>
+                  {doctorsList.map((doc, idx) => (
+                    <option key={idx} value={doc.name}>{doc.name}</option>
+                  ))}
+                </select>
+                <Stethoscope className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-500" />
+              </div>
             </div>
           </div>
         </div>
