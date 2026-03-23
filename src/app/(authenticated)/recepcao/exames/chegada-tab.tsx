@@ -140,10 +140,17 @@ export default function ChegadaTab() {
         const raioXGroups: Record<string, any> = {}
 
         appData.forEach(app => {
-          const isRaioX = app.procedure_name.toUpperCase().includes("RAIO X") || app.exam_type.toUpperCase().includes("RAIO X")
+          const procUpper = app.procedure_name.toUpperCase()
+          const typeUpper = app.exam_type.toUpperCase()
+          
+          const isGroupable = procUpper.includes("RAIO X") || typeUpper.includes("RAIO X") || 
+                             procUpper.includes("TOMOGRAFIA") || typeUpper.includes("TOMOGRAFIA") ||
+                             procUpper.includes("ULTRASSOM") || typeUpper.includes("ULTRASSOM") ||
+                             procUpper.includes("USG") || typeUpper.includes("USG")
+
           const patientKey = `${app.patient_name}-${app.exam_date}-${app.cpf || app.sus}`
 
-          if (isRaioX) {
+          if (isGroupable) {
             if (!raioXGroups[patientKey]) {
               raioXGroups[patientKey] = {
                 ...app,
@@ -157,8 +164,14 @@ export default function ChegadaTab() {
               if (!raioXGroups[patientKey].all_procedures.includes(app.procedure_name)) {
                 raioXGroups[patientKey].all_procedures.push(app.procedure_name)
               }
-              // Opcional: atualizar procedure_name para mostrar que são múltiplos
-              raioXGroups[patientKey].procedure_name = `Raio X (${raioXGroups[patientKey].all_procedures.length} exames)`
+              
+              // Determinar o prefixo do rótulo baseado no tipo
+              let prefix = "Exames"
+              if (procUpper.includes("RAIO X")) prefix = "Raio X"
+              else if (procUpper.includes("TOMOGRAFIA")) prefix = "Tomografia"
+              else if (procUpper.includes("ULTRASSOM") || procUpper.includes("USG")) prefix = "Ultrassom"
+
+              raioXGroups[patientKey].procedure_name = `${prefix} (${raioXGroups[patientKey].all_procedures.length} exames)`
             }
           } else {
             grouped.push({ ...app, ids: [app.id], isGrouped: false })
