@@ -19,11 +19,21 @@ import {
   XCircle,
   Plus,
   Trash2,
-  Stethoscope
+  Stethoscope,
+  PartyPopper,
+  ArrowRight
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
 import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
@@ -53,6 +63,7 @@ export default function FormularioTab() {
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [doctorsList, setDoctorsList] = useState<any[]>([])
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   const loadDoctors = async () => {
     try {
@@ -208,6 +219,7 @@ export default function FormularioTab() {
       })
 
       toast.success("Triagem cadastrada com sucesso!")
+      setShowSuccessModal(true)
       
       // Reset form
       setFormData({
@@ -532,6 +544,38 @@ export default function FormularioTab() {
           </Button>
         </div>
       </form>
+
+      {/* Success Modal */}
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="max-w-md bg-white border-none rounded-[3rem] p-0 overflow-hidden shadow-2xl">
+          <div className="bg-emerald-500 h-32 flex items-center justify-center relative">
+            <div className="absolute -bottom-10 h-20 w-20 bg-white rounded-3xl shadow-xl flex items-center justify-center animate-bounce">
+              <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+            </div>
+            {/* Decorative background elements */}
+            <div className="absolute top-0 right-0 p-4 opacity-20 capitalize text-white font-black text-6xl tracking-tighter select-none">
+              OK
+            </div>
+          </div>
+          
+          <div className="p-10 pt-16 text-center space-y-4">
+            <h2 className="text-3xl font-black font-space text-slate-800 uppercase tracking-tight">Registro Concluído!</h2>
+            <p className="text-slate-500 font-medium px-4">
+              O atendimento de <span className="text-emerald-600 font-black italic">CHECKLIST CIRÚRGICO</span> foi registrado e salvo com sucesso em nossa base de dados.
+            </p>
+          </div>
+
+          <div className="p-10 bg-slate-50 flex items-center justify-center">
+            <Button 
+                onClick={() => setShowSuccessModal(false)}
+                className="h-14 px-8 bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-emerald-500/20 gap-3 group"
+            >
+                Entendido
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
