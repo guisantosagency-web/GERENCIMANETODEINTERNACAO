@@ -158,6 +158,10 @@ export default function AdmissaoEnfermagemTab() {
       if (filterStatus === "nao_lancado") statusMatch = !isLancado
       
       return dateMatch && statusMatch
+    }).sort((a, b) => {
+      const timeA = a.horario || ""
+      const timeB = b.horario || ""
+      return timeA.localeCompare(timeB)
     })
   }, [patients, filterDate, filterStatus, admissions])
 
