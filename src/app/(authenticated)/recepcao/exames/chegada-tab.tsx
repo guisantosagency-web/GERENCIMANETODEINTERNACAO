@@ -133,7 +133,40 @@ export default function ChegadaTab() {
       if (orgData) setOrigins(orgData)
 
       const { data: appData } = await supabase.from("exam_appointments").select("*").eq("status", "agendado").order("exam_date").order("exam_time")
-      if (appData) setAppointments(appData)
+      
+      if (appData) {
+        // Lógica de Agrupamento para RAIO X
+        const grouped: any[] = []
+        const raioXGroups: Record<string, any> = {}
+
+        appData.forEach(app => {
+          const isRaioX = app.procedure_name.toUpperCase().includes("RAIO X") || app.exam_type.toUpperCase().includes("RAIO X")
+          const patientKey = `${app.patient_name}-${app.exam_date}-${app.cpf || app.sus}`
+
+          if (isRaioX) {
+            if (!raioXGroups[patientKey]) {
+              raioXGroups[patientKey] = {
+                ...app,
+                ids: [app.id],
+                all_procedures: [app.procedure_name],
+                isGrouped: true
+              }
+              grouped.push(raioXGroups[patientKey])
+            } else {
+              raioXGroups[patientKey].ids.push(app.id)
+              if (!raioXGroups[patientKey].all_procedures.includes(app.procedure_name)) {
+                raioXGroups[patientKey].all_procedures.push(app.procedure_name)
+              }
+              // Opcional: atualizar procedure_name para mostrar que são múltiplos
+              raioXGroups[patientKey].procedure_name = `Raio X (${raioXGroups[patientKey].all_procedures.length} exames)`
+            }
+          } else {
+            grouped.push({ ...app, ids: [app.id], isGrouped: false })
+          }
+        })
+
+        setAppointments(grouped)
+      }
     } finally {
        setIsLoading(false)
     }
@@ -143,12 +176,28 @@ export default function ChegadaTab() {
     loadData()
   }, [])
 
-  const handleSelectAppt = (appt: any) => {
+  const handleSelectAppt = async (appt: any) => {
     setSelectedAppt(appt)
+    
+    let birthDate = ""
+    
+    // Buscar data de nascimento se o paciente já existir na base
+    if (appt.cpf || appt.sus) {
+      const { data: masterPatient } = await supabase
+        .from("master_patients")
+        .select("data_nascimento")
+        .or(`cpf.eq.${appt.cpf},sus.eq.${appt.sus}`)
+        .maybeSingle()
+      
+      if (masterPatient?.data_nascimento) {
+        birthDate = masterPatient.data_nascimento
+      }
+    }
+
     setFormData({
       origin_id: origins[0]?.id || "",
       new_origin_name: "",
-      birth_date: "",
+      birth_date: birthDate,
       state: "MA",
       city: "São Luís",
       access_key: "",
@@ -187,7 +236,7 @@ export default function ChegadaTab() {
         access_key: formData.access_key,
         priority: formData.priority,
         receptionist_name: formData.receptionist_name
-      }).eq("id", selectedAppt.id)
+      }).in("id", selectedAppt.ids || [selectedAppt.id])
 
       if (error) throw error
 
@@ -341,10 +390,13 @@ export default function ChegadaTab() {
                               </div>
                               <div className="space-y-1">
                                  <h4 className="font-black text-lg text-slate-800 uppercase tracking-tight">{a.patient_name}</h4>
-                                 <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                                    <span className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-emerald-500" /> {a.exam_time} • {format(new Date(a.exam_date + 'T00:00:00'), 'dd/MM/yyyy')}</span>
-                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md font-black">{a.procedure_name}</span>
-                                 </div>
+                                  <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                     <span className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-emerald-500" /> {a.exam_time} • {format(new Date(a.exam_date + "T00:00:00"), "dd/MM/yyyy")}</span>
+                                     <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md font-black">{a.procedure_name}</span>
+                                     {a.isGrouped && (
+                                       <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-md font-black italic">Agrupado</span>
+                                     )}
+                                  </div>
                               </div>
                            </div>
 
@@ -367,10 +419,10 @@ export default function ChegadaTab() {
                                    variant="ghost" 
                                    size="icon" 
                                    onClick={async () => {
-                                      if(confirm("Excluir agendamento permanentemente?")) {
-                                        await supabase.from("exam_appointments").delete().eq("id", a.id)
-                                        loadData()
-                                      }
+                                       if(confirm("Excluir agendamento(s) permanentemente?")) {
+                                         await supabase.from("exam_appointments").delete().in("id", a.ids)
+                                         loadData()
+                                       }
                                    }}
                                    className="h-14 w-14 rounded-2xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all border border-slate-100"
                                 >
