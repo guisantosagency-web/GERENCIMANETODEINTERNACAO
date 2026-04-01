@@ -32,6 +32,7 @@ export function ExportCSVModal({
 }: ExportCSVModalProps) {
   const [open, setOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [isExportingFull, setIsExportingFull] = useState(false)
 
   const hasFilters = selectedCity || selectedDestination || selectedMonth || selectedYear
 
@@ -144,6 +145,105 @@ export function ExportCSVModal({
     }, 500)
   }
 
+  const exportFullCSV = () => {
+    setIsExportingFull(true)
+
+    const headers = [
+      "ID",
+      "Ordem",
+      "Data",
+      "Horário",
+      "Paciente",
+      "CPF",
+      "RG",
+      "Data Nascimento",
+      "Idade",
+      "Sexo",
+      "Estado Civil",
+      "Mãe",
+      "Pai",
+      "Telefone",
+      "CEP",
+      "Endereço",
+      "Bairro",
+      "Cidade Origem",
+      "Estado",
+      "Município Nascimento",
+      "Leito",
+      "SUS",
+      "Procedência",
+      "Residência",
+      "Destino",
+      "Prontuário",
+      "Médico",
+      "Procedimento",
+      "Recepcionista"
+    ]
+
+    const csvContent = [
+      headers.join(";"),
+      ...[...filteredPatients]
+        .sort((a, b) => (Number(a.ordem) || 0) - (Number(b.ordem) || 0))
+        .map((p) =>
+          [
+            p.id,
+            p.ordem || "",
+            p.data || "",
+            p.horario || "",
+            p.paciente || "",
+            p.cpf || "",
+            p.rg || "",
+            p.dataNascimento || "",
+            p.idade || "",
+            p.sexo || "",
+            p.estadoCivil || "",
+            p.mae || "",
+            p.pai || "",
+            p.telefone || "",
+            p.cep || "",
+            p.endereco || "",
+            p.bairro || "",
+            p.cidadeOrigem || "",
+            p.estado || "MA",
+            p.municipioNascimento || "",
+            p.leito || "",
+            p.sus || "",
+            p.procedencia || "",
+            p.isResidencia ? "Sim" : "Não",
+            p.destino || "",
+            p.prontuario || "",
+            p.medico || "",
+            p.procedimento || "",
+            p.recepcionista || ""
+          ].join(";"),
+        ),
+    ].join("\n")
+
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
+    link.href = URL.createObjectURL(blob)
+
+    const filterParts = []
+    if (selectedMonth) filterParts.push(selectedMonth.toLowerCase())
+    if (selectedYear) filterParts.push(selectedYear)
+    if (selectedCity) filterParts.push(selectedCity.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase())
+    if (selectedDestination) filterParts.push(selectedDestination.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase())
+
+    const fileName =
+      filterParts.length > 0
+        ? `dados_gerais_pacientes_${filterParts.join("_")}_${new Date().toISOString().split("T")[0]}.csv`
+        : `dados_gerais_pacientes_completo_${new Date().toISOString().split("T")[0]}.csv`
+
+    link.download = fileName
+    link.click()
+
+    setTimeout(() => {
+      setIsExportingFull(false)
+      setOpen(false)
+    }, 500)
+  }
+
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -228,27 +328,48 @@ export function ExportCSVModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancelar
-          </Button>
+        <div className="flex justify-between w-full mt-4">
           <Button
-            onClick={exportToCSV}
-            disabled={filteredPatients.length === 0 || isExporting}
-            className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+            onClick={exportFullCSV}
+            disabled={filteredPatients.length === 0 || isExportingFull}
+            variant="outline"
+            className="gap-2 border-emerald-200 hover:border-emerald-500 hover:text-emerald-600"
           >
-            {isExporting ? (
+            {isExportingFull ? (
               <>
-                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Exportando...
+                <div className="h-4 w-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                Gerando...
               </>
             ) : (
               <>
-                <Download className="h-4 w-4" />
-                Baixar CSV
+                <FileSpreadsheet className="h-4 w-4" />
+                DadosPacienteGeral
               </>
             )}
           </Button>
+
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={exportToCSV}
+              disabled={filteredPatients.length === 0 || isExporting}
+              className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+            >
+              {isExporting ? (
+                <>
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Exportando...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Baixar CSV
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
