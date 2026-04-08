@@ -1,14 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { CalendarDays, List, Play, CheckCircle2, ChevronRight, BarChart2 } from "lucide-react"
+import { CalendarDays, List, Play, CheckCircle2, ChevronRight, BarChart2, Globe } from "lucide-react"
 import ExamesDashboardTab from "./dashboard-tab"
 import VagasTab from "./vagas-tab"
 import AgendamentoTab from "./agendamento-tab"
 import ChegadaTab from "./chegada-tab"
 import FilaTab from "./fila-tab"
 import HistoricoTab from "./historico-tab"
-import ResultadosTab from "./resultados-tab"
+import SisregTab from "./sisreg-tab"
 import { useAuth } from "@/lib/auth-context"
 
 export default function ExamesHubPage() {
@@ -18,6 +18,7 @@ export default function ExamesHubPage() {
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: BarChart2, adminOnly: false },
     { id: "vagas", label: "Config. Vagas", icon: CheckCircle2, adminOnly: false },
+    { id: "sisreg", label: "Pacientes SISREG", icon: Globe, adminOnly: false },
     { id: "agendamento", label: "Agendamentos", icon: CalendarDays, adminOnly: false },
     { id: "chegada", label: "Recepção / Chegada", icon: List, adminOnly: false },
     { id: "fila", label: "Fila de Atendimento", icon: Play, adminOnly: false },
@@ -62,6 +63,7 @@ export default function ExamesHubPage() {
       <div className="pt-2 animate-in fade-in zoom-in-95 duration-500">
         {activeTab === "dashboard" && <ExamesDashboardTab />}
         {activeTab === "vagas" && <VagasTab />}
+        {activeTab === "sisreg" && <SisregTab />}
         {activeTab === "agendamento" && <AgendamentoTab />}
         { activeTab === "chegada" && <ChegadaTab />}
         { activeTab === "fila" && <FilaTab />}
