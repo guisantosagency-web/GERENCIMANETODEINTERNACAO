@@ -17,7 +17,7 @@ export default function ExamesHubPage() {
 
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: BarChart2, adminOnly: false },
-    { id: "vagas", label: "Config. Vagas", icon: CheckCircle2, adminOnly: true },
+    { id: "vagas", label: "Config. Vagas", icon: CheckCircle2, adminOnly: false },
     { id: "agendamento", label: "Agendamentos", icon: CalendarDays, adminOnly: false },
     { id: "chegada", label: "Recepção / Chegada", icon: List, adminOnly: false },
     { id: "fila", label: "Fila de Atendimento", icon: Play, adminOnly: false },

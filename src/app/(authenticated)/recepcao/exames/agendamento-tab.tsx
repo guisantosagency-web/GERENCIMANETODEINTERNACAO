@@ -10,7 +10,9 @@ import { useAuth } from "@/lib/auth-context"
 import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
 
 const FALLBACK_PROCEDURES = [
-  "Tomografia",
+  "Tomografia sem Contraste",
+  "Tomografia com Contraste",
+  "Angiotomografia",
   "Ultrassom",
   "Ecocardiograma",
   "Raio X",
@@ -19,20 +21,22 @@ const FALLBACK_PROCEDURES = [
 ]
 
 const FALLBACK_TYPES: Record<string, string[]> = {
-  "Tomografia": ["Tomografia com Contraste", "Angiotomografia", "Tomografia sem Contraste"],
-  "Ultrassom": ["Ultrassom Abdominal", "Ultrassom Pélvico", "Ultrassom Articulações", "Outros"],
+  "Tomografia sem Contraste": ["Crânio", "Abdome Total", "Tórax", "Coluna Cervical", "Coluna Lombar", "Outros"],
+  "Tomografia com Contraste": ["Crânio com Contraste", "Abdome com Contraste", "Tórax com Contraste", "Outros"],
+  "Angiotomografia": ["Cerebral", "Abdominal", "Membros", "Aorta"],
+  "Ultrassom": ["Abdominal Total", "Pélvico", "Articulações", "Transvaginal", "Outros"],
   "Ecocardiograma": ["Transtorácico", "Transesofágico"],
   "Raio X": ["Tórax", "Membros", "Coluna", "Bacia"],
-  "Laboratoriais": ["Sangue", "Urina", "Fezes", "Hemograma Completo", "Glicemia", "Colesterol", "Bioquímica", "Eletrolitos"],
+  "Laboratoriais": ["Sangue", "Urina", "Fezes", "Hemograma", "Bioquímica"],
   "Eletrocardiograma": ["Padrão"]
 }
 
 // PREMIUM 3D HUMAN MODEL
 const HumanModel = ({ procedure }: { procedure: string }) => {
-  const isHead = procedure === "Tomografia"
+  const isHead = procedure.includes("Tomografia") || procedure.includes("Angiotomografia")
   const isChest = procedure === "Ecocardiograma" || procedure === "Eletrocardiograma" || procedure === "Raio X"
-  const isAbdomen = procedure === "Ultrassom"
-  const isLimbs = procedure === "Raio X" || procedure === "Ultrassom"
+  const isAbdomen = procedure.includes("Ultrassom") || procedure.includes("Abdome")
+  const isLimbs = procedure === "Raio X" || procedure.includes("Membros")
   const isLaboratorial = procedure === "Laboratoriais"
 
   return (
@@ -507,16 +511,32 @@ export default function AgendamentoTab() {
         <div class="instructions">
           <h2>Orientações Importantes:</h2>
           <ul>
-            ${data.procedure_name === "Tomografia" ? `
-              <li>PACIENTE EM JEJUM DE 6 HORAS</li>
-              <li>TRAZER EXAMES DE UREIA E CREATININA RECENTE (MÁXIMO 30 DIAS)</li>
-              <li>NÃO FAZER USO DE METFORMINA NO DIA DO EXAME</li>
-              <li>TRAZER SOLICITAÇÃO MÉDICA E DOCUMENTOS ORIGINAIS</li>
-            ` : `
-              <li>TRAZER REQUISIÇÃO DO EXAME</li>
-              <li>DOCUMENTO COM FOTO (RG/CPF) E CARTÃO DO SUS</li>
-              <li>CHEGAR COM 20 MINUTOS DE ANTECEDÊNCIA</li>
-            `}
+            ${(() => {
+              const procedures = Array.isArray(data) ? data : [data]
+              const allInstructions = new Set<string>()
+              
+              procedures.forEach(p => {
+                const name = p.procedure_name.toUpperCase()
+                if (name.includes("TOMOGRAFIA") || name.includes("ANGIOTOMOGRAFIA")) {
+                  allInstructions.add("PACIENTE EM JEJUM DE 6 HORAS")
+                  allInstructions.add("TRAZER EXAMES DE UREIA E CREATININA RECENTE (MÁXIMO 30 DIAS)")
+                  allInstructions.add("NÃO FAZER USO DE METFORMINA NO DIA DO EXAME")
+                  allInstructions.add("TRAZER SOLICITAÇÃO MÉDICA E DOCUMENTOS ORIGINAIS")
+                } else if (name.includes("ULTRASSOM") || name.includes("USG")) {
+                  if (name.includes("ABDOMINAL")) {
+                    allInstructions.add("JEJUM DE 6 HORAS E BEXIGA CHEIA")
+                  } else {
+                    allInstructions.add("TRAZER REQUISIÇÃO DO EXAME")
+                  }
+                } else {
+                  allInstructions.add("TRAZER REQUISIÇÃO DO EXAME")
+                  allInstructions.add("DOCUMENTO COM FOTO (RG/CPF) E CARTÃO DO SUS")
+                  allInstructions.add("CHEGAR COM 20 MINUTOS DE ANTECEDÊNCIA")
+                }
+              })
+              
+              return Array.from(allInstructions).map(instr => `<li>${instr}</li>`).join('')
+            })()}
           </ul>
         </div>
         <div class="footer">DESENVOLVIDO POR GUILHERME SANTOS - AVERO AGENCY</div>

@@ -10,13 +10,15 @@ import { format } from "date-fns"
 const FALLBACK_SLOT_PROCEDURES = [
   "Ultrassom",
   "Ecocardiograma",
-  "Tomografia",
-  "Tomografia com Contraste e Angiotomografia",
+  "Tomografia sem Contraste",
+  "Tomografia com Contraste",
+  "Angiotomografia",
   "Laboratoriais"
 ]
 
 export default function VagasTab() {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [selectedDates, setSelectedDates] = useState<string[]>([format(new Date(), 'yyyy-MM-dd')])
   const [slots, setSlots] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   
@@ -30,8 +32,10 @@ export default function VagasTab() {
     const { data } = await supabase.from("exam_procedures_list").select("name")
     if (data && data.length > 0) {
       const names = data.map((p: any) => p.name)
-      setDynamicProcedures(names)
-      setNewProcedure(names[0])
+      // Garantir que os novos tipos estejam na lista se não vierem do banco
+      const merged = Array.from(new Set([...names, ...FALLBACK_SLOT_PROCEDURES]))
+      setDynamicProcedures(merged)
+      setNewProcedure(merged[0])
     }
   }
 
@@ -59,21 +63,27 @@ export default function VagasTab() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newTotalSlots) return
+    if (!newTotalSlots || selectedDates.length === 0) return
 
+    setIsLoading(true)
     try {
-      const { error } = await supabase.from("exam_slots").upsert({
-        exam_date: date,
+      const inserts = selectedDates.map(d => ({
+        exam_date: d,
         procedure_name: newProcedure,
         total_slots: parseInt(newTotalSlots)
-      }, { onConflict: "exam_date,procedure_name" })
+      }))
+
+      const { error } = await supabase.from("exam_slots").upsert(inserts, { onConflict: "exam_date,procedure_name" })
 
       if (error) throw error
       setNewTotalSlots("")
+      alert(`Vagas salvas para ${selectedDates.length} dia(s).`)
       loadSlots()
     } catch (e) {
       console.error(e)
       alert("Erro ao salvar vagas.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -87,60 +97,103 @@ export default function VagasTab() {
     }
   }
 
+  const toggleDate = (d: string) => {
+    if (selectedDates.includes(d)) {
+      if (selectedDates.length > 1) {
+        setSelectedDates(selectedDates.filter(date => date !== d))
+      }
+    } else {
+      setSelectedDates([...selectedDates, d].sort())
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div className="glass-card !bg-card/40 border-none rounded-[2.5rem] p-8 max-w-4xl mx-auto shadow-sm">
+      <div className="glass-card !bg-card/40 border-none rounded-[2.5rem] p-8 max-w-5xl mx-auto shadow-sm">
         <h2 className="text-2xl font-black font-space uppercase tracking-tight mb-6 flex items-center gap-3">
           <div className="p-3 bg-amber-500/10 text-amber-500 rounded-xl"><Calendar className="h-6 w-6" /></div>
-          Limites de Vagas Diárias
+          Gestão de Vagas por Período
         </h2>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-10">
            {/* Formulário */}
-           <form onSubmit={handleSave} className="space-y-4 bg-muted/20 p-6 rounded-3xl border border-border/20">
-             <div className="space-y-2">
-               <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Data Base</Label>
-               <Input type="date" value={date} onChange={e => setDate(e.target.value)} required className="font-bold bg-background h-12" />
+           <form onSubmit={handleSave} className="space-y-6 bg-muted/20 p-8 rounded-[2rem] border border-border/20">
+             <div className="space-y-4">
+               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">Selecionar Datas Aplicáveis</Label>
+               
+               <div className="flex gap-2">
+                 <Input type="date" value={date} onChange={e => {
+                   setDate(e.target.value)
+                   // Se não houver datas selecionadas ou se quiser adicionar a nova data à lista
+                 }} className="font-bold bg-background h-12 rounded-xl" />
+                 <Button type="button" onClick={() => toggleDate(date)} className="h-12 rounded-xl bg-slate-800 text-white font-bold gap-2">
+                    <Plus className="h-4 w-4" /> Adicionar
+                 </Button>
+               </div>
+
+               <div className="flex flex-wrap gap-2 min-h-[48px] p-4 bg-background/50 rounded-2xl border border-dashed border-border/50">
+                  {selectedDates.length === 0 && <p className="text-[10px] text-muted-foreground font-bold italic">Nenhuma data selecionada</p>}
+                  {selectedDates.map(d => (
+                    <div key={d} className="bg-amber-500 text-white px-3 py-1.5 rounded-lg text-xs font-black flex items-center gap-2 animate-in zoom-in duration-300">
+                      {format(new Date(d + 'T00:00:00'), 'dd/MM')}
+                      <button type="button" onClick={() => toggleDate(d)} className="hover:scale-110 transition-transform"><Trash2 className="h-3 w-3" /></button>
+                    </div>
+                  ))}
+               </div>
              </div>
-             <div className="space-y-2 relative">
-               <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Procedimento</Label>
-               <select 
-                  value={newProcedure} 
-                  onChange={e => setNewProcedure(e.target.value)}
-                  className="w-full appearance-none h-12 bg-background border border-border px-4 rounded-xl text-sm font-bold shadow-sm"
-               >
-                 {dynamicProcedures.map((p: any) => <option key={p} value={p}>{p}</option>)}
-               </select>
+
+             <div className="space-y-4">
+                <div className="space-y-2 relative">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">Procedimento Alvo</Label>
+                  <select 
+                      value={newProcedure} 
+                      onChange={e => setNewProcedure(e.target.value)}
+                      className="w-full appearance-none h-14 bg-background border border-border px-5 rounded-2xl text-sm font-black shadow-sm focus:ring-2 focus:ring-amber-500/20"
+                  >
+                    {dynamicProcedures.map((p: any) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">Vagas (Por Dia Selecionado)</Label>
+                  <Input type="number" min="0" value={newTotalSlots} onChange={e => setNewTotalSlots(e.target.value)} required placeholder="Ex: 20" className="font-black bg-background text-xl h-14 rounded-2xl text-center" />
+                </div>
              </div>
-             <div className="space-y-2">
-               <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Quantidade de Vagas</Label>
-               <Input type="number" min="0" value={newTotalSlots} onChange={e => setNewTotalSlots(e.target.value)} required placeholder="Ex: 20" className="font-bold bg-background text-lg h-12" />
-             </div>
-             <Button type="submit" className="w-full rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold h-12 mt-4 gap-2">
-                <Save className="h-4 w-4" /> Salvar Vagas
+
+             <Button type="submit" disabled={isLoading} className="w-full rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black text-sm uppercase tracking-widest h-16 mt-4 gap-3 shadow-lg shadow-amber-500/20 active:scale-95 transition-all">
+                {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : <><Save className="h-5 w-5" /> Aplicar Vagas em Lote</>}
              </Button>
            </form>
 
-           {/* Lista do Dia */}
-           <div>
-              <h3 className="text-sm font-bold uppercase tracking-widest mb-4 text-muted-foreground">Configurado em: {format(new Date(date + 'T00:00:00'), 'dd/MM/yyyy')}</h3>
+           {/* Lista do Dia Selecionado */}
+           <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground">Configurado para: <span className="text-amber-600">{format(new Date(date + 'T00:00:00'), 'dd/MM/yyyy')}</span></h3>
+              </div>
               
               <div className="space-y-3">
                 {isLoading ? (
-                  <div className="h-20 animate-pulse bg-muted rounded-2xl" />
+                  <div className="space-y-3">
+                    <div className="h-20 animate-pulse bg-muted rounded-2xl" />
+                    <div className="h-20 animate-pulse bg-muted rounded-2xl" />
+                  </div>
                 ) : slots.length === 0 ? (
-                  <div className="p-8 text-center bg-muted/20 rounded-3xl border border-dashed border-border/50">
-                    <p className="text-sm font-bold text-muted-foreground">Nenhuma restrição de vaga para este dia.</p>
+                  <div className="p-10 text-center bg-muted/10 rounded-[2.5rem] border border-dashed border-border/50">
+                    <Search className="h-10 w-10 text-muted-foreground/20 mx-auto mb-4" />
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Nenhuma restrição encontrada para este dia.</p>
                   </div>
                 ) : (
                   slots.map(s => (
-                    <div key={s.id} className="flex justify-between items-center p-4 bg-background rounded-2xl border border-border/50 shadow-sm group">
+                    <div key={s.id} className="flex justify-between items-center p-6 bg-background rounded-3xl border border-border/50 shadow-sm group hover:border-amber-500/20 transition-all">
                        <div>
-                         <p className="font-black text-sm">{s.procedure_name}</p>
-                         <p className="text-xs text-muted-foreground font-bold mt-1 uppercase tracking-widest">Limite: <span className="text-amber-500">{s.total_slots}</span> vagas</p>
+                         <p className="font-black text-slate-800 uppercase tracking-tight">{s.procedure_name}</p>
+                         <div className="flex items-center gap-3 mt-1.5">
+                            <span className="px-2.5 py-1 bg-amber-500/10 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest">{s.total_slots} vagas</span>
+                            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Limite Diário</span>
+                         </div>
                        </div>
-                       <Button variant="ghost" size="icon" onClick={() => handleDelete(s.id)} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                         <Trash2 className="h-4 w-4" />
+                       <Button variant="ghost" size="icon" onClick={() => handleDelete(s.id)} className="h-12 w-12 rounded-xl text-red-400 hover:bg-red-50 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">
+                         <Trash2 className="h-5 w-5" />
                        </Button>
                     </div>
                   ))
@@ -152,3 +205,23 @@ export default function VagasTab() {
     </div>
   )
 }
+
+function Loader2(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
+  )
+}
+

@@ -90,6 +90,7 @@ export default function ChegadaTab() {
   const [municipios, setMunicipios] = useState<IbgeMunicipio[]>([])
 
   const [selectedAppt, setSelectedAppt] = useState<any>(null)
+  const [confirmedIds, setConfirmedIds] = useState<string[]>([])
   
   const [formData, setFormData] = useState({
     origin_id: "",
@@ -141,7 +142,7 @@ export default function ChegadaTab() {
 
         appData.forEach(app => {
           const procUpper = app.procedure_name.toUpperCase()
-          const typeUpper = app.exam_type.toUpperCase()
+          const typeUpper = app.exam_type?.toUpperCase() || ""
           
           const isGroupable = procUpper.includes("RAIO X") || typeUpper.includes("RAIO X") || 
                              procUpper.includes("TOMOGRAFIA") || typeUpper.includes("TOMOGRAFIA") ||
@@ -156,11 +157,13 @@ export default function ChegadaTab() {
                 ...app,
                 ids: [app.id],
                 all_procedures: [app.procedure_name],
+                raw_appointments: [app],
                 isGrouped: true
               }
               grouped.push(raioXGroups[patientKey])
             } else {
               raioXGroups[patientKey].ids.push(app.id)
+              raioXGroups[patientKey].raw_appointments.push(app)
               if (!raioXGroups[patientKey].all_procedures.includes(app.procedure_name)) {
                 raioXGroups[patientKey].all_procedures.push(app.procedure_name)
               }
@@ -174,7 +177,7 @@ export default function ChegadaTab() {
               raioXGroups[patientKey].procedure_name = `${prefix} (${raioXGroups[patientKey].all_procedures.length} exames)`
             }
           } else {
-            grouped.push({ ...app, ids: [app.id], isGrouped: false })
+            grouped.push({ ...app, ids: [app.id], raw_appointments: [app], isGrouped: false })
           }
         })
 
@@ -191,6 +194,7 @@ export default function ChegadaTab() {
 
   const handleSelectAppt = async (appt: any) => {
     setSelectedAppt(appt)
+    setConfirmedIds(appt.ids || [appt.id])
     
     let birthDate = ""
     
@@ -211,9 +215,9 @@ export default function ChegadaTab() {
       origin_id: origins[0]?.id || "",
       new_origin_name: "",
       birth_date: birthDate,
-      state: "MA",
-      city: "São Luís",
-      access_key: "",
+      state: appt.estado || "MA",
+      city: appt.municipio || "São Luís",
+      access_key: appt.access_key || "",
       priority: "Sem Prioridade",
       receptionist_name: user?.name || ""
     })
@@ -229,7 +233,12 @@ export default function ChegadaTab() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (confirmedIds.length === 0) {
+      alert("Selecione ao menos um exame para confirmar a entrada.")
+      return
+    }
     
+    setIsLoading(true)
     try {
       let finalOriginId = formData.origin_id
 
@@ -239,7 +248,8 @@ export default function ChegadaTab() {
         finalOriginId = data.id
       }
 
-      const { error } = await supabase.from("exam_appointments").update({
+      // 1. Confirmados -> aguardando
+      const { error: errorConfirm } = await supabase.from("exam_appointments").update({
         status: "aguardando",
         arrival_time: new Date().toISOString(),
         origin_id: finalOriginId,
@@ -249,9 +259,20 @@ export default function ChegadaTab() {
         access_key: formData.access_key,
         priority: formData.priority,
         receptionist_name: formData.receptionist_name
-      }).in("id", selectedAppt.ids || [selectedAppt.id])
+      }).in("id", confirmedIds)
 
-      if (error) throw error
+      if (errorConfirm) throw errorConfirm
+
+      // 2. Não Confirmados -> cancelado
+      const allIds = selectedAppt.ids || [selectedAppt.id]
+      const cancelledIds = allIds.filter((id: string) => !confirmedIds.includes(id))
+      
+      if (cancelledIds.length > 0) {
+        await supabase.from("exam_appointments").update({
+          status: "cancelado",
+          updated_at: new Date().toISOString()
+        }).in("id", cancelledIds)
+      }
 
       await supabase.from("patients").upsert({
         paciente: selectedAppt.patient_name,
@@ -269,7 +290,15 @@ export default function ChegadaTab() {
     } catch (err) {
       console.error(err)
       alert("Erro ao confirmar chegada.")
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+  const toggleExam = (id: string) => {
+    setConfirmedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    )
   }
 
   const calculatedAge = formData.birth_date ? differenceInYears(new Date(), parseISO(formData.birth_date)) : "--"
@@ -277,7 +306,7 @@ export default function ChegadaTab() {
   return (
     <div className="h-full min-h-[800px] flex flex-row-reverse gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden relative">
       
-      {/* RIGHT PANEL: ARRIVAL FORM (PULLS FROM RIGHT TO LEFT) */}
+      {/* RIGHT PANEL: ARRIVAL FORM */}
       <div className={`transition-all duration-700 ease-out h-full ${selectedAppt ? 'w-[550px] opacity-100 translate-x-0' : 'w-0 opacity-0 translate-x-full overflow-hidden'}`}>
          <div className="glass-card bg-white border-none rounded-[3.5rem] h-full shadow-2xl flex flex-col overflow-hidden border-2 border-emerald-500/10">
             <div className="p-8 border-b bg-emerald-600 text-white relative">
@@ -286,12 +315,39 @@ export default function ChegadaTab() {
                  <Button variant="ghost" size="icon" onClick={() => setSelectedAppt(null)} className="h-10 w-10 text-white hover:bg-white/10 rounded-full"><X className="h-6 w-6" /></Button>
                </div>
                <h3 className="text-2xl font-black font-space uppercase tracking-tight">Protocolo de Entrada</h3>
-               <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1">Paciente: {selectedAppt?.patient_name}</p>
+               <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1 line-clamp-1">Paciente: {selectedAppt?.patient_name}</p>
             </div>
 
             <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
                <form id="arrival-form" onSubmit={handleSubmit} className="space-y-8 pb-10">
                   <div className="space-y-6">
+                    {/* EXAM CONFIRMATION SECTION */}
+                    <div className="space-y-3 bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100">
+                      <Label className="uppercase text-[10px] font-black tracking-widest text-emerald-600 ml-2">Confirmar Exames a Realizar</Label>
+                      <div className="space-y-2">
+                        {(selectedAppt?.raw_appointments || []).map((exam: any) => {
+                          const id = exam.id
+                          const isConfirmed = confirmedIds.includes(id)
+                          return (
+                            <button 
+                              key={id}
+                              type="button"
+                              onClick={() => toggleExam(id)}
+                              className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${isConfirmed ? 'bg-white border-emerald-500 shadow-sm' : 'bg-slate-50 border-transparent opacity-60'}`}
+                            >
+                              <div className="flex flex-col items-start">
+                                <span className={`text-[11px] font-black uppercase ${isConfirmed ? 'text-emerald-700' : 'text-slate-500'}`}>{exam.procedure_name}</span>
+                                <span className="text-[9px] font-bold text-slate-400">{exam.exam_type || 'Padrão'}</span>
+                              </div>
+                              <div className={`h-6 w-6 rounded-full flex items-center justify-center border-2 ${isConfirmed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 text-transparent'}`}>
+                                {isConfirmed && <CheckSquare className="h-3 w-3" />}
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
                     <div className="space-y-2 group">
                        <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Origem do Encaminhamento</Label>
                        <div className="flex gap-2">
@@ -329,9 +385,9 @@ export default function ChegadaTab() {
                     <SearchableSelect label="Cidade" options={municipios} value={formData.city} onChange={(val: string) => setFormData(p => ({ ...p, city: val }))} icon={Search} disabled={!formData.state} />
 
                     <div className="space-y-2">
-                       <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Chave de Protocolo</Label>
+                       <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Chave de Protocolo (SISREG)</Label>
                        <div className="relative">
-                          <Input required type="number" placeholder="DIGITE A CHAVE..." value={formData.access_key} onChange={e => setFormData(p => ({ ...p, access_key: e.target.value }))} className="h-14 pl-12 font-black text-center tracking-widest bg-slate-50 border-none rounded-2xl shadow-inner" />
+                          <Input type="text" placeholder="CHAVE OPCIONAL..." value={formData.access_key} onChange={e => setFormData(p => ({ ...p, access_key: e.target.value }))} className="h-14 pl-12 font-black text-center tracking-widest bg-slate-50 border-none rounded-2xl shadow-inner uppercase" />
                           <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-500" />
                        </div>
                     </div>
@@ -357,14 +413,15 @@ export default function ChegadaTab() {
             </div>
 
             <div className="p-8 border-t bg-slate-50/50">
-               <Button form="arrival-form" type="submit" className="w-full h-16 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-emerald-500/20 gap-4 transition-all active:scale-95 group">
-                  <Send className="h-6 w-6 group-hover:translate-x-1 transition-transform" /> Confirmar Chegada
+               <Button form="arrival-form" type="submit" disabled={isLoading} className="w-full h-16 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-emerald-500/20 gap-4 transition-all active:scale-95 group">
+                  {isLoading ? <Loader2 className="animate-spin h-6 w-6" /> : <Send className="h-6 w-6 group-hover:translate-x-1 transition-transform" />}
+                  Confirmar Chegada
                </Button>
             </div>
          </div>
       </div>
 
-      {/* RIGHT PANEL: WAIT LIST */}
+      {/* LEFT PANEL: WAIT LIST */}
       <div className={`flex-1 transition-all duration-700 ${selectedAppt ? 'translate-x-0' : '-translate-x-0'}`}>
          <div className="glass-card !bg-white/40 border-none rounded-[3.5rem] p-8 lg:p-10 shadow-sm h-full flex flex-col relative overflow-hidden">
             <div className="flex items-center justify-between mb-10">
