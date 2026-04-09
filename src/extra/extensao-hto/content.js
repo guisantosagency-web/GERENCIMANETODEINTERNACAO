@@ -68,21 +68,27 @@ async function runAutoScrape() {
         if (index === 0) return;
         const cols = row.querySelectorAll("td");
         if (cols.length >= 6) {
-            const procName = cols[5].innerText.trim().toUpperCase();
+            const rawCns = cols[2].innerText.trim();
+            const procNameRaw = cols[5].innerText.trim();
+
+            // PULAR CABEÇALHOS (Se o CNS for a palavra "CNS")
+            if (rawCns.toUpperCase() === "CNS" || procNameRaw.toUpperCase() === "PROCEDIMENTO") {
+                return;
+            }
             
             // IGNORAR CONSULTAS - Filtro solicitado pelo usuário
-            if (procName.includes("CONSULTA")) {
-                console.log("Ignorando consulta:", procName);
+            if (procNameRaw.toUpperCase().includes("CONSULTA")) {
+                console.log("Ignorando consulta:", procNameRaw);
                 return;
             }
 
             extracted.push({
                 exam_date: formatSisregDate(cols[0].innerText),
                 soliciting_unit: cols[1].innerText.trim(),
-                cns: cols[2].innerText.trim(),
+                cns: rawCns,
                 patient_name: cols[3].innerText.trim(),
                 phone: cols[4].innerText.trim(),
-                procedure_name: cols[5].innerText.trim(),
+                procedure_name: procNameRaw,
                 professional: cols[6] ? cols[6].innerText.trim() : ""
             });
         }
@@ -90,7 +96,10 @@ async function runAutoScrape() {
 
     if (extracted.length > 0) {
         try {
-            const response = await fetch(API_URL, {
+            //on_conflict é essencial para o Upsert funcionar no PostgREST
+            const UPSERT_URL = `${API_URL}?on_conflict=exam_date,cns,procedure_name`;
+            
+            const response = await fetch(UPSERT_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
