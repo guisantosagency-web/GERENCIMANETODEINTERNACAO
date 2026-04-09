@@ -31,8 +31,9 @@ export default function SisregTab() {
         const grouped: Record<string, any> = {}
 
         importData.forEach(item => {
-          // Ignorar se houver palavra CONSULTA (Filtro redundante para segurança)
-          if (item.procedure_name.toUpperCase().includes("CONSULTA")) return
+          // Ignorar consultas e eletrocardiogramas (Filtro solicitado pelo usuário)
+          const procUpper = item.procedure_name.toUpperCase()
+          if (procUpper.includes("CONSULTA") || procUpper.includes("ELETROCARDIOGRAMA")) return
 
           if (!grouped[item.cns]) {
             grouped[item.cns] = { ...item, procedures: [item.procedure_name], ids: [item.id] }
