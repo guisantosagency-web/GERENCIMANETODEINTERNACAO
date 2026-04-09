@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { Globe, RefreshCw, CheckCircle2, AlertCircle, User, Calendar, Search, Loader2, UserPlus, Trash2, Filter } from "lucide-react"
+import { Globe, RefreshCw, CheckCircle2, AlertCircle, User, Calendar, Search, Loader2, UserPlus, Trash2, Filter, Undo2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,19 +23,14 @@ export default function SisregTab() {
   // MOTOR DE BUSCA INTELIGENTE (FUZZY MATCHING)
   const findBestProcedureMatch = (sisregName: string, procedures: string[], subTypes: any[]) => {
     const normalizedSisreg = sisregName.toUpperCase()
-    
-    // 0. IGNORAR CONSULTAS E RETORNOS
     if (normalizedSisreg.includes("CONSULTA") || normalizedSisreg.includes("RETORNO")) return "EXCLUDE"
 
-    // 1. Tenta busca exata ou por inclusão nos grupos (Tomografia, USG, etc.)
     const exactGroupMatch = procedures.find(p => normalizedSisreg.includes(p.toUpperCase()))
     if (exactGroupMatch) return exactGroupMatch
 
-    // 2. Tenta busca nos Sub-Tipos cadastrados (Crânio, Tórax, etc.)
     const subTypeMatch = subTypes.find(st => normalizedSisreg.includes(st.name.toUpperCase()))
     if (subTypeMatch) return subTypeMatch.procedure_name
 
-    // 3. Palavras-chave universais
     if (normalizedSisreg.includes("TC") || normalizedSisreg.includes("TOMOGRAFIA")) return "Tomografia"
     if (normalizedSisreg.includes("USG") || normalizedSisreg.includes("ULTRASSONO")) return "Ultrassom"
     if (normalizedSisreg.includes("RX") || normalizedSisreg.includes("RAIO")) return "Raio X"
@@ -53,28 +48,17 @@ export default function SisregTab() {
   const loadImports = async () => {
     setIsLoading(true)
     try {
-      // 1. Carregar Procedimentos e Tipos do banco HTO
-      const { data: configData } = await supabase
-        .from("exam_procedures_types")
-        .select("procedure_name, exam_type_name")
-      
+      const { data: configData } = await supabase.from("exam_procedures_types").select("procedure_name, exam_type_name")
       let procNames: string[] = []
       let sTypesMapped: any[] = []
 
       if (configData) {
-        // Extrair nomes únicos de procedimentos (Grupos)
         procNames = Array.from(new Set(configData.map(d => d.procedure_name)))
         setAllProcedures(procNames)
-
-        // Mapear tipos para o formato interno
-        sTypesMapped = configData.map(d => ({
-          name: d.exam_type_name,
-          procedure_name: d.procedure_name
-        }))
+        sTypesMapped = configData.map(d => ({ name: d.exam_type_name, procedure_name: d.procedure_name }))
         setAllSubTypes(sTypesMapped)
       }
 
-      // 2. Carregar Importações do SISREG
       const { data: importData } = await supabase
         .from("exam_sisreg_import")
         .select("*")
@@ -87,32 +71,17 @@ export default function SisregTab() {
 
         importData.forEach(item => {
           const matchedProc = findBestProcedureMatch(item.procedure_name, procNames, sTypesMapped)
-          
           if (matchedProc === "EXCLUDE") return
 
           if (!grouped[item.cns]) {
-            grouped[item.cns] = {
-              ...item,
-              procedures: [item.procedure_name],
-              ids: [item.id]
-            }
-            
-            // Sugestão inteligente de sub-tipo
-            const suggestedSubType = sTypesMapped.find(st => 
-                item.procedure_name.toUpperCase().includes(st.name.toUpperCase()) && 
-                st.procedure_name === matchedProc
-            )?.name || ""
-
-            initialSelections[item.cns] = {
-              procedure: matchedProc || (procNames[0] || ""),
-              subType: suggestedSubType
-            }
+            grouped[item.cns] = { ...item, procedures: [item.procedure_name], ids: [item.id] }
+            const suggestedSubType = sTypesMapped.find(st => item.procedure_name.toUpperCase().includes(st.name.toUpperCase()) && st.procedure_name === matchedProc)?.name || ""
+            initialSelections[item.cns] = { procedure: matchedProc || (procNames[0] || ""), subType: suggestedSubType }
           } else {
             grouped[item.cns].procedures.push(item.procedure_name)
             grouped[item.cns].ids.push(item.id)
           }
         })
-
         setImports(Object.values(grouped))
         setRowSelections(initialSelections)
       }
@@ -123,43 +92,73 @@ export default function SisregTab() {
 
   const handleConfirm = async (patient: any) => {
     const selection = rowSelections[patient.cns]
-    if (!selection || !selection.procedure) {
-      alert("Selecione o procedimento.")
-      return
-    }
+    if (!selection || !selection.procedure) return alert("Selecione o procedimento.")
 
     setIsLoading(true)
     try {
-      // Registrar no Agendamento HTO
+      // 1. Cadastro Mestre do Paciente (Obrigatório para recepção)
       await upsertMasterPatient({
         full_name: patient.patient_name.toUpperCase(),
         sus: patient.cns,
         origem_cadastro: 'sisreg'
       })
 
+      // 2. Inserir Agendamentos
       const inserts = patient.procedures.map((proc: string) => ({
         patient_name: patient.patient_name.toUpperCase(),
         sus: patient.cns,
         exam_date: patient.exam_date,
         exam_time: "08:00",
         procedure_name: selection.procedure,
-        procedure_detail: selection.subType || proc, 
+        exam_type: selection.subType || null, // Campo importante para recepção
+        procedure_detail: proc, 
         status: 'agendado',
         receptionist_name: user?.name || "INTEGRAÇÃO_SISREG",
         chave_sisreg: "IMPORT_SISREG"
       }))
 
-      await supabase.from("exam_appointments").insert(inserts)
+      const { error: apptError } = await supabase.from("exam_appointments").insert(inserts)
+      if (apptError) throw apptError
 
-      await supabase
-        .from("exam_sisreg_import")
-        .update({ status: 'confirmed' })
-        .in("id", patient.ids)
+      // 3. Marcar Importação como Confirmada
+      await supabase.from("exam_sisreg_import").update({ status: 'confirmed' }).in("id", patient.ids)
       
-      alert(`Paciente ${patient.patient_name} agendado!`)
+      alert(`Paciente ${patient.patient_name} agendado e enviado para recepção!`)
       loadImports()
     } catch (e) {
-      alert("Erro ao confirmar.")
+      console.error(e)
+      alert("Erro ao confirmar agendamento.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleUnconfirm = async (patient: any) => {
+    if (!confirm(`Deseja cancelar o agendamento de ${patient.patient_name} e voltar para triagem?`)) return
+    
+    setIsLoading(true)
+    try {
+      // 1. Remover da agenda oficial
+      const { error: delError } = await supabase
+        .from("exam_appointments")
+        .delete()
+        .eq("sus", patient.cns)
+        .eq("exam_date", patient.exam_date)
+        .eq("chave_sisreg", "IMPORT_SISREG")
+
+      if (delError) throw delError
+
+      // 2. Voltar status no SISREG Import
+      await supabase
+        .from("exam_sisreg_import")
+        .update({ status: 'pending' })
+        .in("id", patient.ids)
+
+      alert("Agendamento removido com sucesso.")
+      loadImports()
+    } catch (e) {
+      console.error(e)
+      alert("Erro ao desfazer agendamento.")
     } finally {
       setIsLoading(false)
     }
@@ -174,11 +173,7 @@ export default function SisregTab() {
   const updateSelection = (cns: string, field: 'procedure' | 'subType', value: string) => {
     setRowSelections(prev => ({
       ...prev,
-      [cns]: {
-        ...prev[cns],
-        [field]: value,
-        ...(field === 'procedure' ? { subType: "" } : {})
-      }
+      [cns]: { ...prev[cns], [field]: value, ...(field === 'procedure' ? { subType: "" } : {}) }
     }))
   }
 
@@ -203,7 +198,7 @@ export default function SisregTab() {
               <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-2">Data do SISREG</Label>
               <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-12 bg-white border-none rounded-xl text-xs font-black w-44 shadow-sm" />
             </div>
-            <Button onClick={loadImports} className="h-12 rounded-xl px-8 bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] tracking-widest gap-2 shadow-lg scale-100 active:scale-95 transition-all">
+            <Button onClick={loadImports} className="h-12 rounded-xl px-8 bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] tracking-widest gap-2">
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} /> Sincronizar
             </Button>
           </div>
@@ -226,7 +221,7 @@ export default function SisregTab() {
                    <td colSpan={5} className="py-20 text-center">
                       <div className="flex flex-col items-center gap-4 text-slate-400">
                          <Loader2 className="h-10 w-10 animate-spin" />
-                         <span className="text-[10px] font-black uppercase tracking-widest">Carregando Exames...</span>
+                         <span className="text-[10px] font-black uppercase tracking-widest">Processando...</span>
                       </div>
                    </td>
                 </tr>
@@ -242,12 +237,15 @@ export default function SisregTab() {
               ) : imports.map((item, idx) => {
                 const selection = rowSelections[item.cns] || { procedure: "", subType: "" }
                 const filteredSubTypes = allSubTypes.filter(s => s.procedure_name === selection.procedure)
+                const isConfirmed = item.status === 'confirmed'
 
                 return (
-                  <tr key={idx} className={`bg-white group rounded-[2.5rem] shadow-sm hover:shadow-md transition-all border border-transparent hover:border-blue-100 ${item.status === 'confirmed' ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
+                  <tr key={idx} className={`bg-white group rounded-[2.5rem] shadow-sm hover:shadow-md transition-all border border-transparent hover:border-blue-100 ${isConfirmed ? 'bg-emerald-50/30' : ''}`}>
                     <td className="px-6 py-6 rounded-l-[1.5rem]">
                       <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center font-bold text-slate-400 uppercase">{item.patient_name.charAt(0)}</div>
+                        <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold uppercase ${isConfirmed ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>
+                           {item.patient_name.charAt(0)}
+                        </div>
                         <div>
                            <p className="text-[11px] font-black text-slate-800 uppercase leading-none">{item.patient_name}</p>
                            <p className="text-[9px] font-bold text-slate-400 mt-1">SUS: {item.cns}</p>
@@ -263,9 +261,10 @@ export default function SisregTab() {
                     </td>
                     <td className="px-6 py-6">
                        <select 
+                          disabled={isConfirmed}
                           value={selection.procedure}
                           onChange={(e) => updateSelection(item.cns, 'procedure', e.target.value)}
-                          className="w-full h-10 bg-blue-50/50 border-none rounded-xl px-4 text-[10px] font-black uppercase text-blue-600 focus:ring-2 focus:ring-blue-500/20 shadow-inner"
+                          className="w-full h-10 bg-blue-50/50 border-none rounded-xl px-4 text-[10px] font-black uppercase text-blue-600 focus:ring-2 focus:ring-blue-500/20 shadow-inner disabled:opacity-50"
                        >
                           <option value="">Selecione...</option>
                           {allProcedures.map(p => <option key={p} value={p}>{p}</option>)}
@@ -273,10 +272,10 @@ export default function SisregTab() {
                     </td>
                     <td className="px-6 py-6">
                        <select 
+                          disabled={isConfirmed || !selection.procedure}
                           value={selection.subType}
                           onChange={(e) => updateSelection(item.cns, 'subType', e.target.value)}
                           className="w-full h-10 bg-slate-50 border-none rounded-xl px-4 text-[10px] font-black uppercase text-slate-500 disabled:opacity-30"
-                          disabled={!selection.procedure}
                        >
                           <option value="">Escolha o Exame...</option>
                           {filteredSubTypes.map((s: any) => <option key={s.name} value={s.name}>{s.name}</option>)}
@@ -284,17 +283,26 @@ export default function SisregTab() {
                     </td>
                     <td className="px-6 py-6 rounded-r-[1.5rem] text-center">
                        <div className="flex items-center justify-center gap-2">
-                          <Button 
-                              onClick={() => handleConfirm(item)}
-                              disabled={item.status === 'confirmed' || !selection.procedure}
-                              className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-[9px] uppercase tracking-widest gap-2 shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
-                          >
-                             {item.status === 'confirmed' ? 'Agendado' : <><UserPlus className="h-3.5 w-3.5" /> Agendar</>}
-                          </Button>
+                          {isConfirmed ? (
+                             <Button 
+                                onClick={() => handleUnconfirm(item)}
+                                className="h-10 px-4 rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-100 font-black text-[9px] uppercase tracking-widest gap-2 border border-amber-200"
+                             >
+                                <Undo2 className="h-4 w-4" /> Desagendar
+                             </Button>
+                          ) : (
+                             <Button 
+                                onClick={() => handleConfirm(item)}
+                                disabled={isLoading || !selection.procedure}
+                                className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-[9px] uppercase tracking-widest gap-2 shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+                             >
+                                <UserPlus className="h-3.5 w-3.5" /> Agendar
+                             </Button>
+                          )}
                           <Button 
                               variant="ghost" 
                               onClick={() => handleDelete(item.ids)}
-                              className="h-10 w-10 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50"
+                              className="h-10 w-10 text-slate-300 hover:text-red-500"
                           >
                              <Trash2 className="h-4 w-4" />
                           </Button>
