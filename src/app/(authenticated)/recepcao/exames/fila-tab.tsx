@@ -49,7 +49,9 @@ export default function FilaTab() {
           else if (proc.includes("ULTRASSOM") || proc.includes("USG") || type.includes("ULTRASSOM") || type.includes("USG")) category = "ULTRASSOM"
           else if (proc.includes("LABORATORIAIS") || type.includes("LABORATORIAIS")) category = "LABORATORIAIS"
           
-          const groupKey = `${category}|${app.patient_name}|${app.arrival_time}`
+          // Normalize arrival_time to minutes for grouping key to handle slight batch processing differences
+          const arrivalMinute = app.arrival_time ? app.arrival_time.substring(0, 16) : 'no-time'
+          const groupKey = `${category}|${app.patient_name}|${arrivalMinute}`
 
           if (!patientGroups[groupKey]) {
             patientGroups[groupKey] = {
