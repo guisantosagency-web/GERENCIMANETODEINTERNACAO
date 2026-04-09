@@ -15,9 +15,7 @@ export default function SisregTab() {
   const [allProcedures, setAllProcedures] = useState<string[]>([])
   const [allSubTypes, setAllSubTypes] = useState<any[]>([])
   const [rowSelections, setRowSelections] = useState<Record<string, { procedure: string, subType: string }>>({})
-  const [syncJob, setSyncJob] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [isSyncing, setIsSyncing] = useState(false)
   
   const { user } = useAuth()
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
@@ -26,7 +24,7 @@ export default function SisregTab() {
   const findBestProcedureMatch = (sisregName: string, procedures: string[], subTypes: any[]) => {
     const normalizedSisreg = sisregName.toUpperCase()
     
-    // 0. IGNORAR CONSULTAS E RETORNOS (Pedido do Usuário)
+    // 0. IGNORAR CONSULTAS E RETORNOS
     if (normalizedSisreg.includes("CONSULTA") || normalizedSisreg.includes("RETORNO")) return "EXCLUDE"
 
     // 1. Tenta busca exata ou por inclusão nos grupos (Tomografia, USG, etc.)
@@ -52,27 +50,40 @@ export default function SisregTab() {
   const loadImports = async () => {
     setIsLoading(true)
     try {
-      // 1. Carregar Catálogos HTO
-      const { data: procs } = await supabase.from("exam_procedures_list").select("name")
-      const { data: stypes } = await supabase.from("exam_types_list").select("name, procedure_name")
+      // 1. Carregar Procedimentos e Tipos do banco HTO
+      const { data: configData } = await supabase
+        .from("exam_procedures_types")
+        .select("procedure_name, exam_type_name")
       
-      const procNames = (procs || []).map(p => p.name)
-      setAllProcedures(procNames)
-      setAllSubTypes(stypes || [])
+      let procNames: string[] = []
+      let sTypesMapped: any[] = []
+
+      if (configData) {
+        // Extrair nomes únicos de procedimentos (Grupos)
+        procNames = Array.from(new Set(configData.map(d => d.procedure_name)))
+        setAllProcedures(procNames)
+
+        // Mapear tipos para o formato interno
+        sTypesMapped = configData.map(d => ({
+          name: d.exam_type_name,
+          procedure_name: d.procedure_name
+        }))
+        setAllSubTypes(sTypesMapped)
+      }
 
       // 2. Carregar Importações do SISREG
-      const { data, error } = await supabase
+      const { data: importData } = await supabase
         .from("exam_sisreg_import")
         .select("*")
         .eq("exam_date", date)
         .order("patient_name")
       
-      if (data) {
+      if (importData) {
         const grouped: Record<string, any> = {}
         const initialSelections: Record<string, { procedure: string, subType: string }> = {}
 
-        data.forEach(item => {
-          const matchedProc = findBestProcedureMatch(item.procedure_name, procNames, stypes || [])
+        importData.forEach(item => {
+          const matchedProc = findBestProcedureMatch(item.procedure_name, procNames, sTypesMapped)
           
           if (matchedProc === "EXCLUDE") return
 
@@ -83,8 +94,8 @@ export default function SisregTab() {
               ids: [item.id]
             }
             
-            // Tenta sugerir o melhor sub-tipo também
-            const suggestedSubType = stypes?.find(st => 
+            // Sugestão inteligente de sub-tipo
+            const suggestedSubType = sTypesMapped.find(st => 
                 item.procedure_name.toUpperCase().includes(st.name.toUpperCase()) && 
                 st.procedure_name === matchedProc
             )?.name || ""
@@ -110,34 +121,13 @@ export default function SisregTab() {
   const handleConfirm = async (patient: any) => {
     const selection = rowSelections[patient.cns]
     if (!selection || !selection.procedure) {
-      alert("Por favor, selecione o procedimento para este paciente.")
+      alert("Selecione o procedimento.")
       return
     }
 
     setIsLoading(true)
     try {
-      // 1. Verificar Vagas (Baseado na seleção manual)
-      const { data: slotConfig } = await supabase
-        .from("exam_slots")
-        .select("total_slots")
-        .eq("exam_date", patient.exam_date)
-        .eq("procedure_name", selection.procedure)
-        .maybeSingle()
-
-      if (slotConfig) {
-        const { count } = await supabase
-          .from("exam_appointments")
-          .select("*", { count: 'exact', head: true })
-          .eq("exam_date", patient.exam_date)
-          .eq("procedure_name", selection.procedure)
-          .neq("status", "cancelado")
-
-        if (count && count >= slotConfig.total_slots) {
-          if (!confirm(`LOTADO: ${count}/${slotConfig.total_slots} vagas preenchidas. Confirmar mesmo assim?`)) return
-        }
-      }
-
-      // 2. Registrar no Agendamento HTO
+      // Registrar no Agendamento HTO
       await upsertMasterPatient({
         full_name: patient.patient_name.toUpperCase(),
         sus: patient.cns,
@@ -150,7 +140,7 @@ export default function SisregTab() {
         exam_date: patient.exam_date,
         exam_time: "08:00",
         procedure_name: selection.procedure,
-        procedure_detail: proc, // Nome original do SISREG
+        procedure_detail: selection.subType || proc, 
         status: 'agendado',
         receptionist_name: user?.name || "INTEGRAÇÃO_SISREG",
         chave_sisreg: "IMPORT_SISREG"
@@ -158,17 +148,15 @@ export default function SisregTab() {
 
       await supabase.from("exam_appointments").insert(inserts)
 
-      // 3. Marcar como Importado
       await supabase
         .from("exam_sisreg_import")
         .update({ status: 'confirmed' })
         .in("id", patient.ids)
       
-      alert(`Paciente ${patient.patient_name} confirmado como ${selection.procedure}!`)
+      alert(`Paciente ${patient.patient_name} agendado!`)
       loadImports()
     } catch (e) {
-      console.error(e)
-      alert("Erro ao confirmar agendamento.")
+      alert("Erro ao confirmar.")
     } finally {
       setIsLoading(false)
     }
@@ -186,7 +174,6 @@ export default function SisregTab() {
       [cns]: {
         ...prev[cns],
         [field]: value,
-        // Reset subType if procedure changes
         ...(field === 'procedure' ? { subType: "" } : {})
       }
     }))
@@ -211,15 +198,14 @@ export default function SisregTab() {
           <div className="flex flex-wrap items-center gap-4 bg-slate-100/50 p-4 rounded-[2rem] border border-slate-200/50">
             <div className="space-y-1">
               <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-2">Data do SISREG</Label>
-              <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-12 bg-white border-none rounded-xl text-xs font-black w-44" />
+              <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-12 bg-white border-none rounded-xl text-xs font-black w-44 shadow-sm" />
             </div>
-            <Button onClick={loadImports} className="h-12 rounded-xl px-8 bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] tracking-widest gap-2">
+            <Button onClick={loadImports} className="h-12 rounded-xl px-8 bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] tracking-widest gap-2 shadow-lg scale-100 active:scale-95 transition-all">
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} /> Sincronizar
             </Button>
           </div>
         </div>
 
-        {/* TABELA DE TRIAGEM */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-separate border-spacing-y-3">
             <thead>
@@ -237,7 +223,7 @@ export default function SisregTab() {
                    <td colSpan={5} className="py-20 text-center">
                       <div className="flex flex-col items-center gap-4 text-slate-400">
                          <Loader2 className="h-10 w-10 animate-spin" />
-                         <span className="text-[10px] font-black uppercase tracking-widest">Processando Inteligência...</span>
+                         <span className="text-[10px] font-black uppercase tracking-widest">Carregando Exames...</span>
                       </div>
                    </td>
                 </tr>
@@ -300,7 +286,7 @@ export default function SisregTab() {
                               disabled={item.status === 'confirmed' || !selection.procedure}
                               className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-[9px] uppercase tracking-widest gap-2 shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
                           >
-                             {item.status === 'confirmed' ? 'OK' : <><UserPlus className="h-3.5 w-3.5" /> Agendar</>}
+                             {item.status === 'confirmed' ? 'Agendado' : <><UserPlus className="h-3.5 w-3.5" /> Agendar</>}
                           </Button>
                           <Button 
                               variant="ghost" 
@@ -317,21 +303,6 @@ export default function SisregTab() {
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* FOOTER INSTRUTIVO */}
-      <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden group">
-         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-            <div className="space-y-3">
-               <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500 rounded-lg text-white"><Filter className="h-5 w-5" /></div>
-                  <h5 className="text-xl font-black uppercase tracking-tight">Triagem Manual Operacional</h5>
-               </div>
-               <p className="text-slate-400 font-medium max-w-2xl leading-relaxed">
-                  O sistema agora busca automaticamente uma correspondência. Se ele reconhecer o exame, já deixará o dropdown preenchido. As <strong>Consultas</strong> e <strong>Retornos</strong> são ocultados automaticamente da triagem.
-               </p>
-            </div>
-         </div>
       </div>
     </div>
   )
