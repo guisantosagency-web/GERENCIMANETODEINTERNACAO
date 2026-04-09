@@ -1,7 +1,7 @@
 "use client"
 import { useState, useRef, useMemo, useEffect } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { CalendarDays, Save, Printer, Activity, FileText, AlertCircle, Heart, Search, ClipboardList, Loader2, UserPlus, ChevronRight, CreditCard, Clock, FileDown, Plus, Trash2 } from "lucide-react"
+import { CalendarDays, Save, Printer, Activity, FileText, AlertCircle, Heart, Search, ClipboardList, Loader2, UserPlus, ChevronRight, CreditCard, Clock, FileDown, Plus, Trash2, Check, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -33,10 +33,10 @@ const FALLBACK_TYPES: Record<string, string[]> = {
 
 // PREMIUM 3D HUMAN MODEL
 const HumanModel = ({ procedure }: { procedure: string }) => {
-  const isHead = procedure.includes("Tomografia") || procedure.includes("Angiotomografia")
+  const isHead = (procedure || "").includes("Tomografia") || (procedure || "").includes("Angiotomografia")
   const isChest = procedure === "Ecocardiograma" || procedure === "Eletrocardiograma" || procedure === "Raio X"
-  const isAbdomen = procedure.includes("Ultrassom") || procedure.includes("Abdome")
-  const isLimbs = procedure === "Raio X" || procedure.includes("Membros")
+  const isAbdomen = (procedure || "").includes("Ultrassom") || (procedure || "").includes("Abdome")
+  const isLimbs = procedure === "Raio X" || (procedure || "").includes("Membros")
   const isLaboratorial = procedure === "Laboratoriais"
 
   return (
@@ -157,6 +157,117 @@ const HumanModel = ({ procedure }: { procedure: string }) => {
   )
 }
 
+// SEARCHABLE SELECT COMPONENT WITH ADD OPTION
+const SearchableAdder = ({ 
+  value, 
+  onSelect, 
+  options, 
+  placeholder, 
+  label, 
+  onAddNew 
+}: { 
+  value: string, 
+  onSelect: (v: string) => void, 
+  options: string[], 
+  placeholder: string, 
+  label: string,
+  onAddNew: (v: string) => Promise<void>
+}) => {
+  const [isOpen, setIsOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [isAdding, setIsAdding] = useState(false)
+
+  const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()))
+  const showAdd = search.length > 2 && !options.some(o => o.toLowerCase() === search.toLowerCase())
+
+  useEffect(() => {
+    const clickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", clickOutside)
+    return () => document.removeEventListener("mousedown", clickOutside)
+  }, [])
+
+  const handleAdd = async () => {
+    setIsAdding(true)
+    try {
+      await onAddNew(search.toUpperCase())
+      onSelect(search.toUpperCase())
+      setSearch("")
+      setIsOpen(false)
+    } finally {
+      setIsAdding(false)
+    }
+  }
+
+  return (
+    <div className="space-y-1.5 relative" ref={dropdownRef}>
+      <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-2">{label}</Label>
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full h-12 bg-slate-50 flex items-center justify-between px-4 rounded-xl text-xs font-black shadow-inner cursor-pointer hover:bg-white transition-all border border-transparent hover:border-blue-100"
+      >
+        <span className="truncate uppercase">{value || placeholder}</span>
+        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-[100] mt-2 w-full bg-white/95 backdrop-blur-xl border border-slate-100 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="p-3 border-b border-slate-50">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <input 
+                autoFocus
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Pesquisar ou cadastrar..."
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 border-none rounded-lg text-xs font-bold focus:ring-2 focus:ring-blue-500/20 outline-none uppercase"
+              />
+            </div>
+          </div>
+          <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
+            {filtered.map(opt => (
+              <button
+                key={opt}
+                onClick={() => { onSelect(opt); setIsOpen(false); setSearch(""); }}
+                className="w-full text-left px-5 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between group"
+              >
+                <span className="text-xs font-bold text-slate-600 uppercase group-hover:text-blue-600">{opt}</span>
+                {value === opt && <Check className="h-3.5 w-3.5 text-blue-500" />}
+              </button>
+            ))}
+            {showAdd && (
+              <button
+                disabled={isAdding}
+                onClick={handleAdd}
+                className="w-full text-left px-5 py-4 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-3 border-t border-emerald-100 mt-1 shadow-inner"
+              >
+                <div className="h-7 w-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg">
+                  {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-emerald-600 uppercase">Não encontrado?</p>
+                  <p className="text-xs font-black text-emerald-700 uppercase">CADASTRAR "{search}"</p>
+                </div>
+              </button>
+            )}
+            {filtered.length === 0 && !showAdd && (
+              <div className="p-8 text-center opacity-30">
+                <Search className="h-8 w-8 mx-auto mb-2 text-slate-400" />
+                <p className="text-[10px] font-black uppercase tracking-widest">Nenhum resultado</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function AgendamentoTab() {
   const { user, logos } = useAuth()
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -192,27 +303,48 @@ export default function AgendamentoTab() {
 
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
 
-  useEffect(() => {
-    const loadConfig = async () => {
-      const { data: procs } = await supabase.from("exam_procedures_list").select("*")
-      const { data: types } = await supabase.from("exam_types_list").select("*")
+  const loadConfig = async () => {
+    const { data: procs } = await supabase.from("exam_procedures_list").select("*").order("name")
+    const { data: types } = await supabase.from("exam_types_list").select("*").order("name")
 
-      if (procs && procs.length > 0) {
-        const pList = procs.map((p: any) => p.name)
-        setDynamicProcedures(pList)
+    if (procs && procs.length > 0) {
+      const pList = procs.map((p: any) => p.name)
+      setDynamicProcedures(pList)
 
-        if (types) {
-          const tMap: Record<string, string[]> = {}
-          types.forEach((t: any) => {
-            if (!tMap[t.procedure_name]) tMap[t.procedure_name] = []
+      if (types) {
+        const tMap: Record<string, string[]> = {}
+        types.forEach((t: any) => {
+          if (!tMap[t.procedure_name]) tMap[t.procedure_name] = []
+          if (!tMap[t.procedure_name].includes(t.name)) {
             tMap[t.procedure_name].push(t.name)
-          })
-          setDynamicTypes(tMap)
-        }
+          }
+        })
+        setDynamicTypes(tMap)
       }
     }
+  }
+
+  useEffect(() => {
     loadConfig()
   }, [supabase])
+
+  const handleAddNewProcedure = async (name: string) => {
+    const { error } = await supabase.from("exam_procedures_list").insert([{ name }])
+    if (error) {
+      alert("Erro ao cadastrar procedimento: " + error.message)
+    } else {
+      await loadConfig()
+    }
+  }
+
+  const handleAddNewType = async (name: string, procedure_name: string) => {
+    const { error } = await supabase.from("exam_types_list").insert([{ name, procedure_name }])
+    if (error) {
+      alert("Erro ao cadastrar especificação: " + error.message)
+    } else {
+      await loadConfig()
+    }
+  }
 
   useEffect(() => {
     // Carregar agendamentos da data do primeiro exame da lista para o preview lateral
@@ -326,8 +458,8 @@ export default function AgendamentoTab() {
       id: Math.random().toString(36).substr(2, 9),
       exam_date: format(new Date(), 'yyyy-MM-dd'),
       exam_time: format(new Date(), 'HH:mm'),
-      procedure_name: FALLBACK_PROCEDURES[0],
-      exam_type: FALLBACK_TYPES[FALLBACK_PROCEDURES[0]][0] || "",
+      procedure_name: dynamicProcedures[0] || FALLBACK_PROCEDURES[0],
+      exam_type: (dynamicTypes[dynamicProcedures[0] || FALLBACK_PROCEDURES[0]] || [])[0] || "",
     }])
   }
 
@@ -420,8 +552,8 @@ export default function AgendamentoTab() {
         id: Math.random().toString(36).substr(2, 9),
         exam_date: format(new Date(), 'yyyy-MM-dd'),
         exam_time: format(new Date(), 'HH:mm'),
-        procedure_name: FALLBACK_PROCEDURES[0],
-        exam_type: FALLBACK_TYPES[FALLBACK_PROCEDURES[0]][0] || "",
+        procedure_name: dynamicProcedures[0] || FALLBACK_PROCEDURES[0],
+        exam_type: (dynamicTypes[dynamicProcedures[0] || FALLBACK_PROCEDURES[0]] || [])[0] || "",
       }])
     } catch (err) {
       console.error(err)
@@ -522,7 +654,7 @@ export default function AgendamentoTab() {
               const allInstructions = new Set<string>()
               
               procedures.forEach(p => {
-                const name = p.procedure_name.toUpperCase()
+                const name = (p.procedure_name || "").toUpperCase()
                 if (name.includes("TOMOGRAFIA") || name.includes("ANGIOTOMOGRAFIA")) {
                   allInstructions.add("PACIENTE EM JEJUM DE 6 HORAS")
                   allInstructions.add("TRAZER EXAMES DE UREIA E CREATININA RECENTE (MÁXIMO 30 DIAS)")
@@ -650,18 +782,22 @@ export default function AgendamentoTab() {
                           </button>
                           
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div className="space-y-1.5">
-                              <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-2">Procedimento</Label>
-                              <select value={exam.procedure_name} onChange={e => updateExam(exam.id, 'procedure_name', e.target.value)} className="w-full appearance-none h-12 bg-slate-50 border-none px-4 rounded-xl text-xs font-black shadow-inner focus:outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer uppercase transition-all">
-                                {dynamicProcedures.map((p: any) => <option key={p} value={p}>{p}</option>)}
-                              </select>
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-2">Especificação</Label>
-                              <select value={exam.exam_type} onChange={e => updateExam(exam.id, 'exam_type', e.target.value)} className="w-full appearance-none h-12 bg-slate-50 border-none px-4 rounded-xl text-xs font-black shadow-inner focus:outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer uppercase transition-all">
-                                {(dynamicTypes[exam.procedure_name] || []).map((t: any) => <option key={t} value={t}>{t}</option>)}
-                              </select>
-                            </div>
+                            <SearchableAdder 
+                              label="Procedimento"
+                              placeholder="Selecione..."
+                              value={exam.procedure_name}
+                              options={dynamicProcedures}
+                              onSelect={(v) => updateExam(exam.id, 'procedure_name', v)}
+                              onAddNew={handleAddNewProcedure}
+                            />
+                            <SearchableAdder 
+                              label="Especificação"
+                              placeholder="Selecione..."
+                              value={exam.exam_type}
+                              options={dynamicTypes[exam.procedure_name] || []}
+                              onSelect={(v) => updateExam(exam.id, 'exam_type', v)}
+                              onAddNew={(v) => handleAddNewType(v, exam.procedure_name)}
+                            />
                             <div className="space-y-1.5">
                               <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-2">Data</Label>
                               <Input type="date" value={exam.exam_date} onChange={e => updateExam(exam.id, 'exam_date', e.target.value)} className="h-12 bg-slate-50 border-none rounded-xl text-xs font-black text-center" />
@@ -710,7 +846,7 @@ export default function AgendamentoTab() {
                     <div key={idx} className="bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100">
                       <div className="flex justify-between items-center mb-4">
                         <span className="text-[10px] font-black uppercase text-blue-600">{ex.procedure_name}</span>
-                        <span className="text-[9px] font-bold text-slate-400">{format(parseISO(ex.exam_date), 'dd/MM')}</span>
+                        <span className="text-[9px] font-bold text-slate-400">{ex.exam_date ? format(parseISO(ex.exam_date), 'dd/MM') : '--'}</span>
                       </div>
                       
                       <div className="space-y-2">
@@ -782,6 +918,12 @@ export default function AgendamentoTab() {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+      `}</style>
     </div>
   )
 }
