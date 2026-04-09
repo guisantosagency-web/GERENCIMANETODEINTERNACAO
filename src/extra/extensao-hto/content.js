@@ -1,7 +1,17 @@
 // CONFIGURAÇÕES
-const API_URL = "https://dhphlokdzbzewirnuxds.supabase.co/rest/v1/exam_sisreg_import";
+const API_URL = "https://dhphlokdzbzewirnuxds.supabase.co/rest/v1/exam_sisreg_import?on_conflict=exam_date,cns,procedure_name";
 const API_KEY = "@averoagency@";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRocGhsb2tkemJ6ZXdpcm51eGRzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Nzg4ODI2NCwiZXhwIjoyMDgzNDY0MjY0fQ.2lVMW6Hbc2LYLWPFbXBlkVVEZoWrr8uHeOXm5CuhUvs";
+
+// Auxiliar para formatar data (DD.MM.YYYY -> YYYY-MM-DD)
+function formatSisregDate(rawDate) {
+    if (!rawDate) return new Date().toISOString().split('T')[0];
+    const parts = rawDate.trim().split(/[./-]/);
+    if (parts.length !== 3) return new Date().toISOString().split('T')[0];
+    // Garante que o ano tenha 4 dígitos (ex: 10.04.2026 -> year: 2026)
+    const year = parts[2].length === 4 ? parts[2] : `20${parts[2]}`;
+    return `${year}-${parts[1]}-${parts[0]}`;
+}
 
 // 1. JANELA PRINCIPAL (BOTÃO)
 if (window.self === window.top) {
@@ -67,7 +77,7 @@ async function runAutoScrape() {
             }
 
             extracted.push({
-                exam_date: new Date().toISOString().split('T')[0],
+                exam_date: formatSisregDate(cols[0].innerText),
                 soliciting_unit: cols[1].innerText.trim(),
                 cns: cols[2].innerText.trim(),
                 patient_name: cols[3].innerText.trim(),
