@@ -90,6 +90,7 @@ export default function ChegadaTab() {
   const [estados, setEstados] = useState<IbgeEstado[]>([])
   const [municipios, setMunicipios] = useState<IbgeMunicipio[]>([])
 
+  const [selectedAppt, setSelectedAppt] = useState<any>(null)
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), "yyyy-MM-dd"))
   const [searchFilter, setSearchFilter] = useState("")
   const [confirmedIds, setConfirmedIds] = useState<string[]>([])
