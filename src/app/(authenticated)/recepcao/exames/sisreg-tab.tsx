@@ -19,6 +19,7 @@ export default function SisregTab() {
   const [panelExams, setPanelExams] = useState<any[]>([])
   const [panelDate, setPanelDate] = useState("")
   const [panelTime, setPanelTime] = useState("08:00")
+  const [isLoading, setIsLoading] = useState(false)
   
   const { user } = useAuth()
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
