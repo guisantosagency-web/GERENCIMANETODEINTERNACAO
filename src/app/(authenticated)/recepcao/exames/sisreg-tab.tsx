@@ -21,6 +21,13 @@ export default function SisregTab() {
   const loadImports = async () => {
     setIsLoading(true)
     try {
+      // 1. Busca os procedimentos permitidos do HTO
+      const { data: allowedProcedures } = await supabase
+        .from("exam_procedures_list")
+        .select("name")
+      const allowedNames = (allowedProcedures || []).map(p => p.name)
+
+      // 2. Busca TODOS os dados importados para a data
       const { data, error } = await supabase
         .from("exam_sisreg_import")
         .select("*")
@@ -28,18 +35,24 @@ export default function SisregTab() {
         .order("patient_name")
       
       if (data) {
-        // Agrupar por paciente (CNS)
+        // 3. Filtra e Agrupa usando a inteligência do sistema
         const grouped: Record<string, any> = {}
         data.forEach(item => {
-          if (!grouped[item.cns]) {
-            grouped[item.cns] = {
-              ...item,
-              procedures: [item.procedure_name],
-              ids: [item.id]
+          // Verifica se o procedimento se enquadra em algum do HTO
+          const matchedProc = findBestProcedureMatch(item.procedure_name, allowedNames)
+          
+          if (matchedProc) {
+            if (!grouped[item.cns]) {
+              grouped[item.cns] = {
+                ...item,
+                hto_procedure: matchedProc,
+                procedures: [item.procedure_name],
+                ids: [item.id]
+              }
+            } else {
+              grouped[item.cns].procedures.push(item.procedure_name)
+              grouped[item.cns].ids.push(item.id)
             }
-          } else {
-            grouped[item.cns].procedures.push(item.procedure_name)
-            grouped[item.cns].ids.push(item.id)
           }
         })
         setImports(Object.values(grouped))
@@ -72,14 +85,24 @@ export default function SisregTab() {
     checkSyncStatus()
   }, [date])
 
-  // Polling para status de sincronização
+  // Inscrição em Tempo Real para ver os dados aparecendo enquanto a extensão trabalha
   useEffect(() => {
-    let interval: any
-    if (isSyncing) {
-      interval = setInterval(checkSyncStatus, 5000)
+    const channel = supabase
+      .channel('sisreg-realtime')
+      .on(
+        'postgres_changes', 
+        { event: '*', schema: 'public', table: 'exam_sisreg_import' }, 
+        () => {
+          console.log("Mudança detectada no banco, atualizando lista...")
+          loadImports()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
     }
-    return () => clearInterval(interval)
-  }, [isSyncing])
+  }, [date])
 
   const handleStartSync = async () => {
     setIsSyncing(true)
@@ -93,45 +116,94 @@ export default function SisregTab() {
     }
   }
 
+  // MOTOR DE BUSCA INTELIGENTE (FUZZY MATCHING)
+  const findBestProcedureMatch = (sisregName: string, procedures: string[]) => {
+    const normalizedSisreg = sisregName.toUpperCase()
+    
+    // 1. Tenta busca exata
+    const exactMatch = procedures.find(p => normalizedSisreg.includes(p.toUpperCase()))
+    if (exactMatch) return exactMatch
+
+    // 2. Tenta por palavras-chave comuns
+    if (normalizedSisreg.includes("TC") || normalizedSisreg.includes("TOMOGRAFIA")) return "Tomografia"
+    if (normalizedSisreg.includes("USG") || normalizedSisreg.includes("ULTRASSONO")) return "Ultrassom"
+    if (normalizedSisreg.includes("RX") || normalizedSisreg.includes("RAIO")) return "Raio X"
+    if (normalizedSisreg.includes("ECO")) return "Ecocardiograma"
+    if (normalizedSisreg.includes("LAB") || normalizedSisreg.includes("SANGUE")) return "Laboratoriais"
+    
+    return null
+  }
+
   const handleConfirm = async (patient: any) => {
     setIsLoading(true)
     try {
-      // 1. Registrar/Atualizar Paciente Master
+      // 1. Identificar Procedimento Interno correspondente
+      const { data: procs } = await supabase.from("exam_procedures_list").select("name")
+      const htoProcedure = findBestProcedureMatch(patient.procedure_name, (procs || []).map(p => p.name))
+
+      if (!htoProcedure) {
+        alert(`Não encontramos um exame correspondente no HTO para: "${patient.procedure_name}". Verifique o cadastro do procedimento.`)
+        return
+      }
+
+      // 2. Verificar Disponibilidade de Vagas
+      const { data: slotConfig } = await supabase
+        .from("exam_slots")
+        .select("total_slots")
+        .eq("exam_date", patient.exam_date)
+        .eq("procedure_name", htoProcedure)
+        .maybeSingle()
+
+      if (!slotConfig) {
+        if (!confirm(`Não há limite de vagas configurado para ${htoProcedure} em ${format(new Date(patient.exam_date + 'T00:00:00'), 'dd/MM')}. Deseja confirmar mesmo assim?`)) return
+      } else {
+        // Contar agendamentos existentes
+        const { count } = await supabase
+          .from("exam_appointments")
+          .select("*", { count: 'exact', head: true })
+          .eq("exam_date", patient.exam_date)
+          .eq("procedure_name", htoProcedure)
+          .neq("status", "cancelado")
+
+        if (count && count >= slotConfig.total_slots) {
+          if (!confirm(`ATENÇÃO: Limite de vagas atingido (${count}/${slotConfig.total_slots}). Confirmar mesmo assim?`)) return
+        }
+      }
+
+      // 3. Registrar Paciente Master
       await upsertMasterPatient({
         full_name: patient.patient_name.toUpperCase(),
-        cpf: undefined, // SISREG costuma vir com CNS, CPF as vezes não.
         sus: patient.cns,
         origem_cadastro: 'sisreg'
       })
 
-      // 2. Criar Agendamentos Oficiais
+      // 4. Criar Agendamentos Oficiais
       const inserts = patient.procedures.map((proc: string) => ({
         patient_name: patient.patient_name.toUpperCase(),
         sus: patient.cns,
         exam_date: patient.exam_date,
-        exam_time: "08:00", // Default ou extraído do profissional
-        procedure_name: proc,
-        status: 'agendado',
-        receptionist_name: user?.name || "SISREG_AUTO",
+        exam_time: "08:00", // Horário padrão de chegada
+        procedure_name: htoProcedure, // Usa o nome reconhecido pelo sistema
+        procedure_detail: proc, // Guarda o nome original do SISREG como detalhe
+        status: 'agendado', // Status agendado faz aparecer na recepção/chegada
+        receptionist_name: user?.name || "INTEGRAÇÃO_SISREG",
         chave_sisreg: "IMPORT_SISREG"
       }))
 
       const { error: apptError } = await supabase.from("exam_appointments").insert(inserts)
       if (apptError) throw apptError
 
-      // 3. Atualizar status da importação
-      const { error: importError } = await supabase
+      // 5. Atualizar status da importação
+      await supabase
         .from("exam_sisreg_import")
         .update({ status: 'confirmed' })
         .in("id", patient.ids)
       
-      if (importError) throw importError
-
-      alert(`Agenda de ${patient.patient_name} confirmada com sucesso!`)
+      alert(`Sucesso! ${patient.patient_name.split(' ')[0]} foi agendado para ${htoProcedure}.`)
       loadImports()
     } catch (e) {
       console.error(e)
-      alert("Erro ao confirmar agendamento.")
+      alert("Falha ao processar confirmação.")
     } finally {
       setIsLoading(false)
     }
@@ -249,25 +321,25 @@ export default function SisregTab() {
         </div>
       </div>
       
-      {/* CARD DE DICA DE USO */}
+      {/* CARD DE DICA DE USO - ATUALIZADO PARA EXTENSÃO */}
       <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden group">
          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-blue-500/20 transition-all duration-1000" />
          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div className="space-y-3">
                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500 rounded-lg text-white"><AlertCircle className="h-5 w-5" /></div>
-                  <h5 className="text-xl font-black uppercase tracking-tight">Instruções da Automação</h5>
+                  <div className="p-2 bg-blue-500 rounded-lg text-white"><Globe className="h-5 w-5" /></div>
+                  <h5 className="text-xl font-black uppercase tracking-tight">Como usar a Extensão HTO</h5>
                </div>
                <p className="text-slate-400 font-medium max-w-2xl leading-relaxed">
-                  Para que a sincronização funcione, você deve manter o arquivo <code className="text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded">sisreg_automation.py</code> aberto no seu computador. Ao clicar no botão acima, o robô irá detectar o pedido, abrir o Chrome e extrair os dados da tabela oficial do SISREG para esta plataforma.
+                  Para importar dados, abra o <span className="text-blue-400 font-bold">SISREG</span> em uma aba ao lado, faça sua consulta e clique no botão azul flutuante <span className="text-blue-400 font-bold">"🚀 IMPORTAR TUDO PARA HTO"</span>. Os dados aparecerão aqui automaticamente conforme forem sendo processados pela extensão.
                </p>
             </div>
             <div className="flex items-center gap-6">
                <div className="text-right">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Status do Robô Local</p>
-                  <p className="text-sm font-black uppercase tracking-tight flex items-center justify-end gap-2 text-emerald-400">
-                     <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                     Sincronizado via Supabase
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Status da Integração</p>
+                  <p className="text-sm font-black uppercase tracking-tight flex items-center justify-end gap-2 text-blue-400">
+                     <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+                     Extensão HTO Ativa
                   </p>
                </div>
             </div>

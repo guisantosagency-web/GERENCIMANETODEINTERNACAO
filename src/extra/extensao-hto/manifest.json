@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "HTO - Integrador SISREG",
+  "version": "1.0",
+  "description": "Extrai dados do SISREG e envia para o sistema HTO",
+  "permissions": ["storage", "activeTab"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://sisregiii.saude.gov.br/*"],
+      "js": ["content.js"],
+      "all_frames": true,
+      "run_at": "document_end"
+    }
+  ],
+  "host_permissions": [
+    "https://dhphlokdzbzewirnuxds.supabase.co/*"
+  ]
+}
