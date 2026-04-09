@@ -1,6 +1,8 @@
 import time
 import logging
 import datetime
+import os
+from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -10,9 +12,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from supabase import create_client, Client
 
+# Carrega variáveis do arquivo .env.local na raiz do projeto
+load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env.local"))
+
 # --- CONFIGURAÇÕES ---
-SUPABASE_URL = "SUA_URL_DO_SUPABASE"
-SUPABASE_KEY = "SUA_KEY_DO_SUPABASE"
+SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 SISREG_URL = "https://sisregiii.saude.gov.br/"
 
 # LOGS
@@ -46,7 +51,7 @@ class SisregRobot:
         # (ex: o menu principal ou o nome do usuário)
         try:
             WebDriverWait(self.driver, 120).until(
-                EC.presence_of_element_label((By.LINK_TEXT, "CONSULTA GERAL"))
+                EC.presence_of_element_located((By.LINK_TEXT, "CONSULTA GERAL"))
             )
             logging.info("Login detectado com sucesso!")
             return True
