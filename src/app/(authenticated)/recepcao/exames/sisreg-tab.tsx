@@ -108,13 +108,6 @@ export default function SisregTab() {
     }
   }
 
-  const handlePrintLabel = async (patient: any) => {
-    const { data } = await supabase.from("exam_appointments").select("*").eq("sus", patient.cns).eq("exam_date", patient.exam_date).eq("chave_sisreg", "IMPORT_SISREG")
-    if (data && data.length > 0) {
-      generatePrintableFicha(data)
-    }
-  }
-
   const handleUnconfirm = async (patient: any) => {
     if (!confirm(`Deseja cancelar o agendamento de ${patient.patient_name}?`)) return
     setIsLoading(true)
@@ -208,12 +201,9 @@ export default function SisregTab() {
                         <div className="flex items-center justify-end gap-3">
                            {isConfirmed ? (
                               <div className="flex items-center gap-3">
-                                <Button 
-                                  onClick={() => handlePrintLabel(item)}
-                                  className="h-11 px-6 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg shadow-emerald-500/10"
-                                >
-                                  <Globe className="h-4 w-4" /> Imprimir Ficha
-                                </Button>
+                                <div className="px-5 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl font-black text-[10px] uppercase flex items-center gap-2 border border-emerald-100/50">
+                                  <CheckCircle2 className="h-4 w-4" /> Agendado
+                                </div>
                                 <Button 
                                   onClick={() => handleUnconfirm(item)}
                                   className="h-11 px-6 rounded-xl bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500 font-black text-[10px] uppercase tracking-widest gap-2 border border-slate-200"
