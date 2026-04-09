@@ -85,13 +85,20 @@ export async function upsertMasterPatient(
 ): Promise<MasterPatient | null> {
   const supabase = getSupabase()
 
-  if (patient.cpf) {
-    // Tenta atualizar apenas campos nulos/vazios
-    const existing = await findPatientByCpf(patient.cpf)
+  if (patient.cpf || patient.sus) {
+    const supabase = getSupabase()
+    
+    // Tenta encontrar por CPF ou por SUS
+    let query = supabase.from("master_patients").select("*")
+    if (patient.cpf) query = query.eq("cpf", patient.cpf.trim())
+    else if (patient.sus) query = query.eq("sus", patient.sus.trim())
+    
+    const { data: existing } = await query.maybeSingle()
+
     if (existing) {
       const updates: Partial<MasterPatient> = {}
       const fields: (keyof MasterPatient)[] = [
-        "sus", "telefone", "data_nascimento", "estado", "municipio",
+        "sus", "cpf", "telefone", "data_nascimento", "estado", "municipio",
         "rg", "sexo", "tipagem_sanguinea", "estado_civil", "nome_mae",
         "nome_pai", "endereco", "bairro", "cep", "email"
       ]
