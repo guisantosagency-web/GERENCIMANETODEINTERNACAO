@@ -58,6 +58,14 @@ async function runAutoScrape() {
         if (index === 0) return;
         const cols = row.querySelectorAll("td");
         if (cols.length >= 6) {
+            const procName = cols[5].innerText.trim().toUpperCase();
+            
+            // IGNORAR CONSULTAS - Filtro solicitado pelo usuário
+            if (procName.includes("CONSULTA")) {
+                console.log("Ignorando consulta:", procName);
+                return;
+            }
+
             extracted.push({
                 exam_date: new Date().toISOString().split('T')[0],
                 soliciting_unit: cols[1].innerText.trim(),
