@@ -76,9 +76,10 @@ async function runAutoScrape() {
                 return;
             }
             
-            // IGNORAR CONSULTAS - Filtro solicitado pelo usuário
-            if (procNameRaw.toUpperCase().includes("CONSULTA")) {
-                console.log("Ignorando consulta:", procNameRaw);
+            // IGNORAR CONSULTAS E AGENDAS LOCAIS - Filtro solicitado pelo usuário
+            if (procNameRaw.toUpperCase().includes("CONSULTA") || 
+                procNameRaw.toUpperCase().includes("ELETROCARDIOGRAMA - AGENDA LOCAL")) {
+                console.log("Ignorando procedimento filtrado:", procNameRaw);
                 return;
             }
 
