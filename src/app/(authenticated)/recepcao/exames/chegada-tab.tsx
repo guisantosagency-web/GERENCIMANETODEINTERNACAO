@@ -1,13 +1,13 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { List, CheckSquare, Clock, MapPin, Key, AlertTriangle, User, Loader2, Save, Users, Trash, Search, ChevronDown, ChevronRight, X, ArrowLeft, Send } from "lucide-react"
+import { CheckSquare, Clock, MapPin, Key, Loader2, Users, Trash, Search, ChevronDown, ChevronRight, X, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { differenceInYears, parseISO, format } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
-import { upsertMasterPatient, searchMasterPatients } from "@/lib/patient-search"
+import { upsertMasterPatient } from "@/lib/patient-search"
 
 type IbgeEstado = { id: number, sigla: string, nome: string }
 type IbgeMunicipio = { id: number, nome: string }

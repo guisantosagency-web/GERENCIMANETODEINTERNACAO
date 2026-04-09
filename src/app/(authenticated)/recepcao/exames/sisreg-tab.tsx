@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { Globe, RefreshCw, CheckCircle2, AlertCircle, User, Calendar, Search, Loader2, UserPlus, Trash2, Filter, Undo2, X, Plus } from "lucide-react"
+import { Globe, RefreshCw, CheckCircle2, Search, Loader2, UserPlus, Trash2, Undo2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,34 +15,12 @@ export default function SisregTab() {
   const [isLoading, setIsLoading] = useState(false)
   const [processingId, setProcessingId] = useState<string | null>(null)
   
-  const { user, logos } = useAuth()
+  const { user } = useAuth()
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
 
-  // ... (findBestProcedureMatch remains the same)
-  const findBestProcedureMatch = (sisregName: string, procedures: string[], subTypes: any[]) => {
-    const normalizedSisreg = sisregName.toUpperCase()
-    if (normalizedSisreg.includes("CONSULTA") || normalizedSisreg.includes("RETORNO")) return "EXCLUDE"
-
-    const exactGroupMatch = procedures.find(p => normalizedSisreg.includes(p.toUpperCase()))
-    if (exactGroupMatch) return exactGroupMatch
-
-    const subTypeMatch = subTypes.find(st => normalizedSisreg.includes(st.name.toUpperCase()))
-    if (subTypeMatch) return subTypeMatch.procedure_name
-
-    if (normalizedSisreg.includes("TC") || normalizedSisreg.includes("TOMOGRAFIA")) return "Tomografia"
-    if (normalizedSisreg.includes("USG") || normalizedSisreg.includes("ULTRASSONO")) return "Ultrassom"
-    if (normalizedSisreg.includes("RX") || normalizedSisreg.includes("RAIO")) return "Raio X"
-    if (normalizedSisreg.includes("ECO")) return "Ecocardiograma"
-    if (normalizedSisreg.includes("LAB") || normalizedSisreg.includes("SANGUE") || normalizedSisreg.includes("BIOQUIMICA") || 
-        normalizedSisreg.includes("DOSAGEM") || normalizedSisreg.includes("HEMOGRAMA") || normalizedSisreg.includes("GLICOSE") ||
-        normalizedSisreg.includes("UREIA") || normalizedSisreg.includes("CREATININA") || normalizedSisreg.includes("TESTE") ||
-        normalizedSisreg.includes("CONTAGEM") || normalizedSisreg.includes("TIPAGEM")) return "Laboratoriais"
-    if (normalizedSisreg.includes("ECG") || normalizedSisreg.includes("ELETRO")) return "Eletrocardiograma"
-    if (normalizedSisreg.includes("RM") || normalizedSisreg.includes("RESSONANCIA")) return "Ressonância"
-    
-    return null
-  }
-
+  const loadImports = async () => {
+    setIsLoading(true)
+    try {
       const { data: importData } = await supabase
         .from("exam_sisreg_import")
         .select("*")
@@ -135,7 +113,6 @@ export default function SisregTab() {
   return (
     <div className="h-full flex gap-8 relative overflow-hidden animate-in fade-in duration-500">
       
-
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 space-y-6">
         <div className="glass-card !bg-white/40 border-none rounded-[3rem] p-8 lg:p-12 shadow-sm relative overflow-hidden">
@@ -238,5 +215,3 @@ export default function SisregTab() {
     </div>
   )
 }
-
-
