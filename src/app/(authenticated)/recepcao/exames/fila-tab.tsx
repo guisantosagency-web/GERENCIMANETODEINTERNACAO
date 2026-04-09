@@ -36,9 +36,12 @@ export default function FilaTab() {
         
         categories.forEach(cat => groupedData[cat] = [])
 
+        // 1. First Pass: Categorize and Group by Patient/Time
+        const patientGroups: Record<string, any> = {}
+
         data.forEach(app => {
-          const proc = app.procedure_name.toUpperCase()
-          const type = app.exam_type.toUpperCase()
+          const proc = (app.procedure_name || "").toUpperCase()
+          const type = (app.exam_type || "").toUpperCase()
           
           let category = "OUTROS"
           if (proc.includes("RAIO X") || type.includes("RAIO X")) category = "RAIO X"
@@ -46,10 +49,27 @@ export default function FilaTab() {
           else if (proc.includes("ULTRASSOM") || proc.includes("USG") || type.includes("ULTRASSOM") || type.includes("USG")) category = "ULTRASSOM"
           else if (proc.includes("LABORATORIAIS") || type.includes("LABORATORIAIS")) category = "LABORATORIAIS"
           
-          groupedData[category].push(app)
+          const groupKey = `${category}|${app.patient_name}|${app.arrival_time}`
+
+          if (!patientGroups[groupKey]) {
+            patientGroups[groupKey] = {
+              ...app,
+              category,
+              ids: [app.id],
+              exams: [{ procedure: app.procedure_name, type: app.exam_type }]
+            }
+          } else {
+            patientGroups[groupKey].ids.push(app.id)
+            patientGroups[groupKey].exams.push({ procedure: app.procedure_name, type: app.exam_type })
+          }
         })
 
-        // Apply interleaving logic PER CATEGORY
+        // 2. Put into Category Buckets
+        Object.values(patientGroups).forEach((group: any) => {
+          groupedData[group.category].push(group)
+        })
+
+        // 3. Apply interleaving logic PER CATEGORY
         const finalGrouped: Record<string, any[]> = {}
         
         Object.keys(groupedData).forEach(cat => {
@@ -81,25 +101,25 @@ export default function FilaTab() {
     loadData()
   }, [])
 
-  const handleStatusChange = async (id: string, newStatus: string, appt: any) => {
+  const handleStatusChange = async (ids: string[], newStatus: string, firstAppt: any) => {
     try {
-      const { error } = await supabase.from("exam_appointments").update({ status: newStatus }).eq("id", id)
+      const { error } = await supabase.from("exam_appointments").update({ status: newStatus }).in("id", ids)
       if (error) throw error
 
-      // Mirror to daily_exams - Use the date of the EXAM for statistics consistency
-      const dateKey = appt.exam_date 
-      const procedure = appt.procedure_name
+      // Mirror to daily_exams - Use first appointment data for statistics
+      const dateKey = firstAppt.exam_date 
+      const procedure = firstAppt.procedure_name
 
       const { data: existing } = await supabase.from("daily_exams").select("*").eq("exam_date", dateKey).eq("procedure_name", procedure).maybeSingle()
 
       const isNewPresent = newStatus === "presente"
       const isNewAbsent = newStatus === "falta"
-      const wasPresent = appt.status === "presente"
-      const wasAbsent = appt.status === "falta"
+      const wasPresent = firstAppt.status === "presente"
+      const wasAbsent = firstAppt.status === "falta"
 
       if (existing) {
-        const newPresentCount = Math.max(0, existing.present_count + (isNewPresent ? 1 : 0) - (wasPresent ? 1 : 0))
-        const newAbsentCount = Math.max(0, existing.absent_count + (isNewAbsent ? 1 : 0) - (wasAbsent ? 1 : 0))
+        const newPresentCount = Math.max(0, existing.present_count + (isNewPresent ? ids.length : 0) - (wasPresent ? ids.length : 0))
+        const newAbsentCount = Math.max(0, existing.absent_count + (isNewAbsent ? ids.length : 0) - (wasAbsent ? ids.length : 0))
         
         await supabase.from("daily_exams").update({
           present_count: newPresentCount,
@@ -109,14 +129,25 @@ export default function FilaTab() {
         await supabase.from("daily_exams").insert([{
           exam_date: dateKey,
           procedure_name: procedure,
-          present_count: isNewPresent ? 1 : 0,
-          absent_count: isNewAbsent ? 1 : 0
+          present_count: isNewPresent ? ids.length : 0,
+          absent_count: isNewAbsent ? ids.length : 0
         }])
       }
 
       loadData()
     } catch (e) {
       console.error(e)
+    }
+  }
+
+  const handleDelete = async (ids: string[]) => {
+    if (!confirm(`Deseja excluir este paciente e todos os seus ${ids.length} exames da fila?`)) return
+    try {
+      const { error } = await supabase.from("exam_appointments").delete().in("id", ids)
+      if (error) throw error
+      loadData()
+    } catch (e) {
+      alert("Erro ao excluir")
     }
   }
 
@@ -175,37 +206,43 @@ export default function FilaTab() {
                                    </div>
                                 </td>
                                 <td className="p-4 font-black uppercase text-xs text-slate-400">{originName}</td>
-                                <td className="p-4 font-black uppercase text-slate-800 text-base tracking-tight">{a.patient_name}</td>
+                                <td className="p-4">
+                                   <div className="flex flex-col">
+                                      <span className="font-black uppercase text-slate-800 text-base tracking-tight">{a.patient_name}</span>
+                                      {a.ids.length > 1 && <span className="text-[8px] font-black text-purple-500 uppercase mt-1 bg-purple-50 w-fit px-2 py-0.5 rounded-lg">{a.ids.length} EXAMES AGRUPADOS</span>}
+                                   </div>
+                                </td>
                                 <td className="p-4 font-bold text-center text-slate-600">{age}</td>
                                 <td className="p-4 text-center font-bold">
                                    {isPriority ? <span className="text-red-500 p-1.5 px-3 rounded-xl bg-red-50 text-[10px] font-black uppercase tracking-widest border border-red-100 italic">{a.priority}</span> : <span className="text-slate-300 text-[10px] font-black uppercase tracking-widest">--</span>}
                                 </td>
-                                <td className="p-4 font-bold">
-                                  <span className="text-purple-600 text-xs font-black uppercase tracking-tight">{a.procedure_name}</span>
-                                  <span className="text-[9px] border border-slate-100 ml-2 px-2 py-0.5 rounded-lg bg-slate-50 text-slate-400 font-black uppercase">{a.exam_type}</span>
+                                <td className="p-4">
+                                   <div className="flex flex-col gap-2 max-w-[350px]">
+                                      {a.exams.map((exam: any, idx: number) => (
+                                         <div key={idx} className="flex items-center gap-2 group/exam">
+                                            <span className="text-purple-600 text-xs font-black uppercase tracking-tight">{exam.procedure}</span>
+                                            <span className="text-[9px] border border-slate-100 px-2 py-0.5 rounded-lg bg-slate-50 text-slate-400 font-black uppercase">{exam.type}</span>
+                                         </div>
+                                      ))}
+                                   </div>
                                 </td>
                                 <td className="p-4 text-center">
                                    {a.status === "aguardando" ? (
                                       <div className="flex justify-center gap-2 scale-90">
-                                        <Button onClick={() => handleStatusChange(a.id, "presente", a)} className="h-10 w-11 p-0 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white rounded-xl shadow-inner transition-all" title="Marcar Presente">
+                                        <Button onClick={() => handleStatusChange(a.ids, "presente", a)} className="h-10 w-11 p-0 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white rounded-xl shadow-inner transition-all" title="Marcar Presente (Todos)">
                                            <Check className="h-5 w-5" />
                                         </Button>
-                                        <Button onClick={() => handleStatusChange(a.id, "falta", a)} className="h-10 w-11 p-0 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl shadow-inner transition-all" title="Marcar Falta">
+                                        <Button onClick={() => handleStatusChange(a.ids, "falta", a)} className="h-10 w-11 p-0 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl shadow-inner transition-all" title="Marcar Falta (Todos)">
                                            <X className="h-5 w-5" />
                                         </Button>
 
                                         {user?.role === "admin" && (
                                           <Button 
-                                            onClick={async () => {
-                                              if(confirm("Excluir este agendamento?")) {
-                                                await supabase.from("exam_appointments").delete().eq("id", a.id)
-                                                loadData()
-                                              }
-                                            }} 
+                                            onClick={() => handleDelete(a.ids)} 
                                             variant="ghost" 
                                             size="icon" 
                                             className="h-10 w-11 rounded-xl text-slate-300 hover:bg-red-50 hover:text-red-500" 
-                                            title="Excluir Registro"
+                                            title="Excluir Registros"
                                           >
                                             <Trash className="h-4 w-4" />
                                           </Button>
@@ -213,10 +250,10 @@ export default function FilaTab() {
                                       </div>
                                    ) : (
                                       <div className="flex justify-center items-center gap-3">
-                                         {a.status === "presente" && <span className="text-emerald-500 font-black uppercase text-[10px] flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4"/> Presente</span>}
-                                         {a.status === "falta" && <span className="text-red-500 font-black uppercase text-[10px] flex items-center gap-1.5"><UserX className="h-4 w-4"/> Falta</span>}
+                                         {a.status === "presente" && <span className="text-emerald-500 font-black uppercase text-[10px] flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4"/> Presentes</span>}
+                                         {a.status === "falta" && <span className="text-red-500 font-black uppercase text-[10px] flex items-center gap-1.5"><UserX className="h-4 w-4"/> Faltas</span>}
                                          
-                                         <Button onClick={() => handleStatusChange(a.id, "aguardando", a)} variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:bg-blue-500/10 rounded-full" title="Corrigir / Editar Status">
+                                         <Button onClick={() => handleStatusChange(a.ids, "aguardando", a)} variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:bg-blue-500/10 rounded-full" title="Corrigir / Editar Status">
                                             <Edit className="h-4 w-4" />
                                          </Button>
 
@@ -225,13 +262,8 @@ export default function FilaTab() {
                                               variant="ghost" 
                                               size="icon" 
                                               className="h-8 w-8 text-slate-300 hover:bg-red-50 hover:text-red-500 rounded-full" 
-                                              title="Excluir Registro"
-                                              onClick={async () => {
-                                                if (confirm("Excluir este agendamento permanentemente?")) {
-                                                  await supabase.from("exam_appointments").delete().eq("id", a.id)
-                                                  loadData()
-                                                }
-                                              }}
+                                              title="Excluir Registros"
+                                              onClick={() => handleDelete(a.ids)}
                                            >
                                               <Trash className="h-4 w-4" />
                                            </Button>
