@@ -1,0 +1,35 @@
+2026-04-09 08:35:21,935 - INFO - HTO Robot Iniciado - Monitorando Pedidos de Sincronização...
+2026-04-09 08:35:21,989 - INFO - ====== WebDriver manager ======
+2026-04-09 08:35:24,408 - INFO - Get LATEST chromedriver version for google-chrome
+2026-04-09 08:35:24,955 - INFO - Get LATEST chromedriver version for google-chrome
+2026-04-09 08:35:25,475 - INFO - There is no [win64] chromedriver "146.0.7680.165" for browser google-chrome "146.0.7680" in cache
+2026-04-09 08:35:25,477 - INFO - Get LATEST chromedriver version for google-chrome
+2026-04-09 08:35:26,604 - INFO - WebDriver version 146.0.7680.165 selected
+2026-04-09 08:35:26,613 - INFO - Modern chrome version https://storage.googleapis.com/chrome-for-testing-public/146.0.7680.165/win32/chromedriver-win32.zip
+2026-04-09 08:35:26,614 - INFO - About to download new driver from https://storage.googleapis.com/chrome-for-testing-public/146.0.7680.165/win32/chromedriver-win32.zip
+2026-04-09 08:35:27,199 - INFO - Driver downloading response is 200
+2026-04-09 08:35:27,863 - INFO - Get LATEST chromedriver version for google-chrome
+2026-04-09 08:35:28,541 - INFO - Driver has been saved in cache [C:\Users\guilherme\.wdm\drivers\chromedriver\win64\146.0.7680.165]
+2026-04-09 08:35:35,449 - INFO - Aguardando login manual no SISREG (você tem 2 minutos)...
+2026-04-09 08:37:37,433 - ERROR - Tempo de login expirado ou erro na navegação.
+2026-04-09 08:39:26,189 - INFO - HTO Robot Iniciado - Monitorando Pedidos de Sincronização...
+2026-04-09 08:39:26,194 - INFO - ====== WebDriver manager ======
+2026-04-09 08:39:27,293 - INFO - Get LATEST chromedriver version for google-chrome
+2026-04-09 08:39:27,791 - INFO - Get LATEST chromedriver version for google-chrome
+2026-04-09 08:39:28,264 - INFO - Driver [C:\Users\guilherme\.wdm\drivers\chromedriver\win64\146.0.7680.165\chromedriver-win32/chromedriver.exe] found in cache
+2026-04-09 08:39:29,480 - INFO - Aguardando login manual no SISREG (você tem 2 minutos)...
+2026-04-09 08:40:00,090 - ERROR - Tempo de login expirado ou erro na navegação.
+2026-04-09 08:40:15,452 - INFO - HTO Robot Iniciado - Monitorando Pedidos de Sincronização...
+2026-04-09 08:40:15,458 - INFO - ====== WebDriver manager ======
+2026-04-09 08:40:16,594 - INFO - Get LATEST chromedriver version for google-chrome
+2026-04-09 08:40:17,076 - INFO - Get LATEST chromedriver version for google-chrome
+2026-04-09 08:40:17,555 - INFO - Driver [C:\Users\guilherme\.wdm\drivers\chromedriver\win64\146.0.7680.165\chromedriver-win32/chromedriver.exe] found in cache
+2026-04-09 08:40:18,726 - INFO - Aguardando login manual no SISREG (você tem 2 minutos)...
+2026-04-09 08:40:41,694 - ERROR - Tempo de login expirado ou erro na navegação.
+2026-04-09 08:40:56,469 - INFO - HTO Robot Iniciado - Monitorando Pedidos de Sincronização...
+2026-04-09 08:40:56,474 - INFO - ====== WebDriver manager ======
+2026-04-09 08:40:57,590 - INFO - Get LATEST chromedriver version for google-chrome
+2026-04-09 08:40:58,074 - INFO - Get LATEST chromedriver version for google-chrome
+2026-04-09 08:40:58,549 - INFO - Driver [C:\Users\guilherme\.wdm\drivers\chromedriver\win64\146.0.7680.165\chromedriver-win32/chromedriver.exe] found in cache
+2026-04-09 08:40:59,809 - INFO - Aguardando login manual no SISREG (você tem 2 minutos)...
+2026-04-09 08:42:11,436 - ERROR - Tempo de login expirado ou erro na navegação.

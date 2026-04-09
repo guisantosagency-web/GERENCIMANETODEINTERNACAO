@@ -495,13 +495,19 @@ export default function AgendamentoTab() {
           <tbody>
             ${Array.isArray(data) ? data.map(item => `
               <tr>
-                <td>${item.procedure_name}</td>
+                <td>
+                  ${item.procedure_name}
+                  ${item.procedure_detail ? `<div style="font-size: 8pt; color: #666; font-style: italic; margin-top: 2mm;">SISREG: ${item.procedure_detail}</div>` : ""}
+                </td>
                 <td>${item.exam_type}</td>
                 <td>${format(new Date(item.exam_date + 'T00:00:00'), 'dd/MM/yyyy')} às ${item.exam_time}</td>
               </tr>
             `).join('') : `
               <tr>
-                <td>${data.procedure_name}</td>
+                <td>
+                  ${data.procedure_name}
+                  ${data.procedure_detail ? `<div style="font-size: 8pt; color: #666; font-style: italic; margin-top: 2mm;">SISREG: ${data.procedure_detail}</div>` : ""}
+                </td>
                 <td>${data.exam_type}</td>
                 <td>${format(new Date(data.exam_date + 'T00:00:00'), 'dd/MM/yyyy')} às ${data.exam_time}</td>
               </tr>

@@ -136,48 +136,34 @@ export default function ChegadaTab() {
       const { data: appData } = await supabase.from("exam_appointments").select("*").eq("status", "agendado").order("exam_date").order("exam_time")
       
       if (appData) {
-        // Lógica de Agrupamento para RAIO X
+        // Agrupamento Universal por Paciente/Data
         const grouped: any[] = []
-        const raioXGroups: Record<string, any> = {}
+        const patientGroups: Record<string, any> = {}
 
         appData.forEach(app => {
-          const procUpper = app.procedure_name.toUpperCase()
-          const typeUpper = app.exam_type?.toUpperCase() || ""
-          
-          const isGroupable = procUpper.includes("RAIO X") || typeUpper.includes("RAIO X") || 
-                             procUpper.includes("TOMOGRAFIA") || typeUpper.includes("TOMOGRAFIA") ||
-                             procUpper.includes("ULTRASSOM") || typeUpper.includes("ULTRASSOM") ||
-                             procUpper.includes("USG") || typeUpper.includes("USG")
-
           const patientKey = `${app.patient_name}-${app.exam_date}-${app.cpf || app.sus}`
 
-          if (isGroupable) {
-            if (!raioXGroups[patientKey]) {
-              raioXGroups[patientKey] = {
-                ...app,
-                ids: [app.id],
-                all_procedures: [app.procedure_name],
-                raw_appointments: [app],
-                isGrouped: true
-              }
-              grouped.push(raioXGroups[patientKey])
-            } else {
-              raioXGroups[patientKey].ids.push(app.id)
-              raioXGroups[patientKey].raw_appointments.push(app)
-              if (!raioXGroups[patientKey].all_procedures.includes(app.procedure_name)) {
-                raioXGroups[patientKey].all_procedures.push(app.procedure_name)
-              }
-              
-              // Determinar o prefixo do rótulo baseado no tipo
-              let prefix = "Exames"
-              if (procUpper.includes("RAIO X")) prefix = "Raio X"
-              else if (procUpper.includes("TOMOGRAFIA")) prefix = "Tomografia"
-              else if (procUpper.includes("ULTRASSOM") || procUpper.includes("USG")) prefix = "Ultrassom"
-
-              raioXGroups[patientKey].procedure_name = `${prefix} (${raioXGroups[patientKey].all_procedures.length} exames)`
+          if (!patientGroups[patientKey]) {
+            patientGroups[patientKey] = {
+              ...app,
+              ids: [app.id],
+              all_procedures: [app.procedure_name],
+              raw_appointments: [app],
+              isGrouped: false // Será marcado como true se houver mais de um record
             }
+            grouped.push(patientGroups[patientKey])
           } else {
-            grouped.push({ ...app, ids: [app.id], raw_appointments: [app], isGrouped: false })
+            patientGroups[patientKey].isGrouped = true
+            patientGroups[patientKey].ids.push(app.id)
+            patientGroups[patientKey].raw_appointments.push(app)
+            
+            if (!patientGroups[patientKey].all_procedures.includes(app.procedure_name)) {
+              patientGroups[patientKey].all_procedures.push(app.procedure_name)
+            }
+            
+            // Atualizar o nome do procedimento para refletir o grupo
+            const count = patientGroups[patientKey].raw_appointments.length
+            patientGroups[patientKey].procedure_name = `Pacote de Exames (${count} itens)`
           }
         })
 
@@ -337,7 +323,12 @@ export default function ChegadaTab() {
                             >
                               <div className="flex flex-col items-start">
                                 <span className={`text-[11px] font-black uppercase ${isConfirmed ? 'text-emerald-700' : 'text-slate-500'}`}>{exam.procedure_name}</span>
-                                <span className="text-[9px] font-bold text-slate-400">{exam.exam_type || 'Padrão'}</span>
+                                <div className="flex items-baseline gap-2">
+                                  <span className="text-[9px] font-bold text-slate-400">{exam.exam_type || 'Padrão'}</span>
+                                  {exam.procedure_detail && (
+                                    <span className="text-[8px] font-medium text-slate-300 italic truncate max-w-[200px]">SISREG: {exam.procedure_detail}</span>
+                                  )}
+                                </div>
                               </div>
                               <div className={`h-6 w-6 rounded-full flex items-center justify-center border-2 ${isConfirmed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 text-transparent'}`}>
                                 {isConfirmed && <CheckSquare className="h-3 w-3" />}
