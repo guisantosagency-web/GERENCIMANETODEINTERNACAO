@@ -452,7 +452,7 @@ export default function ChegadaTab() {
                       <div className="space-y-1">
                         <h4 className="font-black text-lg text-slate-800 uppercase tracking-tight">{a.patient_name}</h4>
                         <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                          <span className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-emerald-500" /> {a.exam_time} • {format(new Date(a.exam_date + "T00:00:00"), "dd/MM/yyyy")}</span>
+                          <span className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-emerald-500" /> {a.exam_time} • {a.exam_date ? format(new Date(a.exam_date + "T00:00:00"), "dd/MM/yyyy") : "Sem Data"}</span>
                           <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md font-black">{a.procedure_name}</span>
                           {a.isGrouped && (
                             <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-md font-black italic">Agrupado</span>
