@@ -487,14 +487,21 @@ export default function AgendamentoTab() {
     try {
       // 1. Validation for Duplication in Patients Table
       const cleanCPF = formData.cpf.replace(/\D/g, "")
-      const { data: existingPatient } = await supabase
-        .from("patients")
-        .select("*")
-        .or(`cpf.eq.${cleanCPF},sus.eq.${formData.sus}`)
-        .maybeSingle()
+      
+      let existingPatient = null
+      if (cleanCPF || formData.sus) {
+        const query = supabase.from("patients").select("*")
+        const filters = []
+        if (cleanCPF) filters.push(`cpf.eq.${cleanCPF}`)
+        if (formData.sus) filters.push(`sus.eq.${formData.sus}`)
+        
+        if (filters.length > 0) {
+          const { data } = await query.or(filters.join(",")).maybeSingle()
+          existingPatient = data
+        }
+      }
 
       // If we find a patient but the name is significantly different, we might want to warn
-      // But for now, if it's a new patient entry and CPF/SUS matches someone else, show error
       if (existingPatient && !formData.patient_name.toUpperCase().includes(existingPatient.paciente.toUpperCase().split(' ')[0])) {
          if(!confirm(`AVISO: Já existe um cadastro com este CPF/SUS no nome de ${existingPatient.paciente}. Deseja continuar mesmo assim?`)) {
            setIsSubmitting(false)
@@ -752,7 +759,7 @@ export default function AgendamentoTab() {
                   </div>
                   <div className="space-y-3 relative">
                     <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">CPF</Label>
-                    <Input required placeholder="000.000.000-00" value={formData.cpf} onChange={e => setFormData(p => ({ ...p, cpf: maskCPF(e.target.value) }))} className="pl-16 h-16 font-bold text-center text-lg bg-slate-50 border-none rounded-[1.5rem]" />
+                    <Input placeholder="000.000.000-00" value={formData.cpf} onChange={e => setFormData(p => ({ ...p, cpf: maskCPF(e.target.value) }))} className="pl-16 h-16 font-bold text-center text-lg bg-slate-50 border-none rounded-[1.5rem]" />
                     <CreditCard className="absolute left-6 bottom-[1.2rem] h-6 w-6 text-blue-500" />
                   </div>
                   <div className="space-y-3 relative">
