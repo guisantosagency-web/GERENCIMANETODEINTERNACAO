@@ -110,24 +110,22 @@ export default function SisregTab() {
         exam_date: patient.exam_date,
         exam_time: "08:00",
         procedure_name: selection.procedure,
-        exam_type: selection.subType || null, // Campo importante para recepção
-        procedure_detail: proc, 
+        exam_type: selection.subType || null, 
         status: 'agendado',
-        receptionist_name: user?.name || "INTEGRAÇÃO_SISREG",
-        chave_sisreg: "IMPORT_SISREG"
+        receptionist_name: user?.name || "SISREG"
       }))
 
       const { error: apptError } = await supabase.from("exam_appointments").insert(inserts)
-      if (apptError) throw apptError
+      if (apptError) throw new Error(apptError.message)
 
       // 3. Marcar Importação como Confirmada
       await supabase.from("exam_sisreg_import").update({ status: 'confirmed' }).in("id", patient.ids)
       
       alert(`Paciente ${patient.patient_name} agendado e enviado para recepção!`)
       loadImports()
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
-      alert("Erro ao confirmar agendamento.")
+      alert(`Erro ao confirmar: ${e.message || "Verifique os logs"}`)
     } finally {
       setIsLoading(false)
     }
