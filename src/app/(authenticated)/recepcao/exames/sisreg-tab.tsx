@@ -41,17 +41,21 @@ export default function SisregTab() {
           // Verifica se o procedimento se enquadra em algum do HTO
           const matchedProc = findBestProcedureMatch(item.procedure_name, allowedNames)
           
-          if (matchedProc) {
-            if (!grouped[item.cns]) {
-              grouped[item.cns] = {
-                ...item,
-                hto_procedure: matchedProc,
-                procedures: [item.procedure_name],
-                ids: [item.id]
-              }
-            } else {
-              grouped[item.cns].procedures.push(item.procedure_name)
-              grouped[item.cns].ids.push(item.id)
+          if (!grouped[item.cns]) {
+            grouped[item.cns] = {
+              ...item,
+              hto_procedure: matchedProc || null, // Se não achar, fica null
+              unrecognized: !matchedProc, // Marca como não reconhecido
+              procedures: [item.procedure_name],
+              ids: [item.id]
+            }
+          } else {
+            grouped[item.cns].procedures.push(item.procedure_name)
+            grouped[item.cns].ids.push(item.id)
+            // Se um dos procedimentos do grupo for reconhecido, atualiza
+            if (matchedProc && !grouped[item.cns].hto_procedure) {
+               grouped[item.cns].hto_procedure = matchedProc
+               grouped[item.cns].unrecognized = false
             }
           }
         })
@@ -287,7 +291,15 @@ export default function SisregTab() {
                        </h4>
                        <div className="flex flex-wrap items-center gap-3 mt-1.5">
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-md">CNS: {item.cns}</span>
-                          <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded-md flex items-center gap-1.5"><User className="h-3 w-3" /> {item.professional || 'Prof. não inf.'}</span>
+                          {item.unrecognized ? (
+                             <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest bg-amber-100 px-2 py-0.5 rounded-md flex items-center gap-1.5 animate-pulse">
+                                <AlertCircle className="h-3 w-3" /> Exame não reconhecido pelo HTO
+                             </span>
+                          ) : (
+                             <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded-md flex items-center gap-1.5">
+                                <User className="h-3 w-3" /> {item.professional || 'Prof. não inf.'}
+                             </span>
+                          )}
                        </div>
                     </div>
                  </div>
