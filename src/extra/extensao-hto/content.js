@@ -1,5 +1,5 @@
 // CONFIGURAÇÕES
-const API_URL = "https://dhphlokdzbzewirnuxds.supabase.co/rest/v1/exam_sisreg_import?on_conflict=exam_date,cns,procedure_name";
+const API_URL = "https://dhphlokdzbzewirnuxds.supabase.co/rest/v1/exam_sisreg_import";
 const API_KEY = "@averoagency@";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRocGhsb2tkemJ6ZXdpcm51eGRzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Nzg4ODI2NCwiZXhwIjoyMDgzNDY0MjY0fQ.2lVMW6Hbc2LYLWPFbXBlkVVEZoWrr8uHeOXm5CuhUvs";
 
@@ -89,18 +89,29 @@ async function runAutoScrape() {
     });
 
     if (extracted.length > 0) {
-        await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`,
-                'X-HTO-API-KEY': API_KEY,
-                'Prefer': 'resolution=merge-duplicates'
-            },
-            body: JSON.stringify(extracted)
-        });
-        console.log(`Página enviada: ${extracted.length} registros.`);
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'X-HTO-API-KEY': API_KEY,
+                    'Prefer': 'resolution=merge-duplicates'
+                },
+                body: JSON.stringify(extracted)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("❌ ERRO NO SUPABASE:", errorData);
+                alert("Erro na importação: " + (errorData.message || "Erro desconhecido"));
+            } else {
+                console.log(`✅ Página enviada: ${extracted.length} registros.`);
+            }
+        } catch (err) {
+            console.error("❌ ERRO DE REDE/FETCH:", err);
+        }
     }
 
     // Tentar encontrar botão PRÓXIMA
