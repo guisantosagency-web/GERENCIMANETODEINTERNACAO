@@ -90,7 +90,8 @@ export default function ChegadaTab() {
   const [estados, setEstados] = useState<IbgeEstado[]>([])
   const [municipios, setMunicipios] = useState<IbgeMunicipio[]>([])
 
-  const [selectedAppt, setSelectedAppt] = useState<any>(null)
+  const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), "yyyy-MM-dd"))
+  const [searchFilter, setSearchFilter] = useState("")
   const [confirmedIds, setConfirmedIds] = useState<string[]>([])
 
   const [formData, setFormData] = useState({
@@ -133,8 +134,13 @@ export default function ChegadaTab() {
     try {
       const { data: orgData } = await supabase.from("exam_origins").select("*").order("name")
       if (orgData) setOrigins(orgData)
-
-      const { data: appData } = await supabase.from("exam_appointments").select("*").eq("status", "agendado").order("exam_date").order("exam_time")
+  
+      const { data: appData } = await supabase
+        .from("exam_appointments")
+        .select("*")
+        .eq("status", "agendado")
+        .eq("exam_date", selectedDate) // Filtro por data selecionada
+        .order("exam_time")
 
       if (appData) {
         // Agrupamento Universal por Paciente/Data
@@ -177,7 +183,7 @@ export default function ChegadaTab() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [selectedDate]) // Recarregar quando a data mudar
 
   const handleSelectAppt = async (appt: any) => {
     setSelectedAppt(appt)
@@ -425,7 +431,7 @@ export default function ChegadaTab() {
       {/* LEFT PANEL: WAIT LIST */}
       <div className={`flex-1 transition-all duration-700 ${selectedAppt ? 'translate-x-0' : '-translate-x-0'}`}>
         <div className="glass-card !bg-white/40 border-none rounded-[3.5rem] p-8 lg:p-10 shadow-sm h-full flex flex-col relative overflow-hidden">
-          <div className="flex items-center justify-between mb-10">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
             <div>
               <h2 className="text-3xl font-black font-space uppercase tracking-tight flex items-center gap-4 text-slate-800">
                 <div className="p-4 bg-emerald-600 text-white rounded-[1.5rem] shadow-xl shadow-emerald-500/10"><Users className="h-7 w-7" /></div>
@@ -434,9 +440,28 @@ export default function ChegadaTab() {
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-3 ml-20">Controle Dinâmico de Pacientes Aguardando</p>
             </div>
 
-            <div className="px-5 py-3 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-              <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{appointments.length} AGUARDANDO</span>
+            <div className="flex flex-wrap items-center gap-4 bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                <input 
+                  type="text" 
+                  placeholder="Pesquisar paciente..." 
+                  value={searchFilter}
+                  onChange={(e) => setSearchFilter(e.target.value)}
+                  className="h-12 pl-12 pr-4 w-64 bg-slate-50 border-none rounded-xl text-xs font-black uppercase tracking-wider focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                />
+              </div>
+              <div className="h-12 w-[1.5px] bg-slate-100" />
+              <input 
+                type="date" 
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="h-12 px-4 bg-slate-50 border-none rounded-xl text-xs font-black uppercase focus:ring-2 focus:ring-emerald-500/20 transition-all"
+              />
+              <div className="px-5 py-3 bg-emerald-50 text-emerald-600 rounded-xl flex items-center gap-3">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-widest">{appointments.length} REGISTROS</span>
+              </div>
             </div>
           </div>
 
@@ -453,8 +478,14 @@ export default function ChegadaTab() {
           ) : (
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-10">
               <div className="grid grid-cols-1 gap-4">
-                {appointments.map(a => (
-                  <div key={a.id} className={`p-6 rounded-[2rem] transition-all duration-500 border-2 flex items-center justify-between group ${selectedAppt?.id === a.id ? 'bg-emerald-50 border-emerald-500 shadow-xl' : 'bg-white border-slate-100 hover:border-emerald-200 hover:shadow-lg'}`}>
+                {appointments
+                  .filter(a => 
+                    a.patient_name.toLowerCase().includes(searchFilter.toLowerCase()) || 
+                    (a.cpf && a.cpf.includes(searchFilter)) || 
+                    (a.sus && a.sus.includes(searchFilter))
+                  )
+                  .map(a => (
+                    <div key={a.id} className={`p-6 rounded-[2rem] transition-all duration-500 border-2 flex items-center justify-between group ${selectedAppt?.id === a.id ? 'bg-emerald-50 border-emerald-500 shadow-xl' : 'bg-white border-slate-100 hover:border-emerald-200 hover:shadow-lg'}`}>
                     <div className="flex items-center gap-6">
                       <div className={`h-16 w-16 rounded-[1.5rem] flex items-center justify-center font-black text-2xl transition-all duration-500 ${selectedAppt?.id === a.id ? 'bg-emerald-600 text-white scale-110 rotate-3' : 'bg-slate-50 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 group-hover:-rotate-3'}`}>
                         {a.patient_name.charAt(0)}
