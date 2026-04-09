@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { differenceInYears, parseISO, format } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
+import { upsertMasterPatient, searchMasterPatients } from "@/lib/patient-search"
 
 type IbgeEstado = { id: number, sigla: string, nome: string }
 type IbgeMunicipio = { id: number, nome: string }
@@ -182,25 +183,33 @@ export default function ChegadaTab() {
     setSelectedAppt(appt)
     setConfirmedIds(appt.ids || [appt.id])
 
-    let birthDate = ""
-
-    // Buscar data de nascimento se o paciente já existir na base
+    // Buscar dados completos se o paciente já existir na base
     if (appt.cpf || appt.sus) {
       const { data: masterPatient } = await supabase
         .from("master_patients")
-        .select("data_nascimento")
+        .select("*")
         .or(`cpf.eq.${appt.cpf},sus.eq.${appt.sus}`)
         .maybeSingle()
 
-      if (masterPatient?.data_nascimento) {
-        birthDate = masterPatient.data_nascimento
+      if (masterPatient) {
+        setFormData({
+          origin_id: origins[0]?.id || "",
+          new_origin_name: "",
+          birth_date: masterPatient.data_nascimento || "",
+          state: masterPatient.estado || "MA",
+          city: masterPatient.municipio || "São Luís",
+          access_key: appt.access_key || "",
+          priority: "Sem Prioridade",
+          receptionist_name: user?.name || ""
+        })
+        return
       }
     }
 
     setFormData({
       origin_id: origins[0]?.id || "",
       new_origin_name: "",
-      birth_date: birthDate,
+      birth_date: "",
       state: appt.estado || "MA",
       city: appt.municipio || "São Luís",
       access_key: appt.access_key || "",
@@ -260,15 +269,16 @@ export default function ChegadaTab() {
         }).in("id", cancelledIds)
       }
 
-      await supabase.from("patients").upsert({
-        paciente: selectedAppt.patient_name,
+      // 3. Sincronizar Cadastro Mestre
+      await upsertMasterPatient({
+        full_name: selectedAppt.patient_name,
         cpf: selectedAppt.cpf,
         sus: selectedAppt.sus,
         data_nascimento: formData.birth_date,
-        cidade_origem: formData.city,
+        municipio: formData.city,
         estado: formData.state,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "cpf" })
+        origem_cadastro: 'reception_arrival'
+      })
 
       setSelectedAppt(null)
       loadData()
