@@ -96,7 +96,16 @@ async function runAutoScrape() {
 
     if (extracted.length > 0) {
         try {
-            //on_conflict é essencial para o Upsert funcionar no PostgREST
+            // DE-DUPLICAÇÃO LOCAL: Evita erro 21000 do Postgres
+            // Se houver registros idênticos no mesmo lote, o banco trava no Upsert.
+            const uniqueMap = new Map();
+            extracted.forEach(item => {
+                const key = `${item.exam_date}-${item.cns}-${item.procedure_name}`;
+                uniqueMap.set(key, item);
+            });
+            const finalData = Array.from(uniqueMap.values());
+
+            // on_conflict é essencial para o Upsert funcionar no PostgREST
             const UPSERT_URL = `${API_URL}?on_conflict=exam_date,cns,procedure_name`;
             
             const response = await fetch(UPSERT_URL, {
@@ -108,7 +117,7 @@ async function runAutoScrape() {
                     'X-HTO-API-KEY': API_KEY,
                     'Prefer': 'resolution=merge-duplicates'
                 },
-                body: JSON.stringify(extracted)
+                body: JSON.stringify(finalData)
             });
 
             if (!response.ok) {
