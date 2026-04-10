@@ -7,14 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { format, parseISO } from "date-fns"
+import { format, parseISO, startOfMonth, endOfMonth } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useAuth } from "@/lib/auth-context"
-
-const MONTHS_NAMES = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-]
 
 export default function HistoricoTab() {
   const { user } = useAuth()
@@ -24,9 +19,8 @@ export default function HistoricoTab() {
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedDay, setSelectedDay] = useState("")
-  const [selectedMonth, setSelectedMonth] = useState("")
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString())
+  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"))
+  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"))
   const [selectedProcedure, setSelectedProcedure] = useState("")
   const [selectedReceptionist, setSelectedReceptionist] = useState("")
 
@@ -41,11 +35,8 @@ export default function HistoricoTab() {
         .order("exam_date", { ascending: false })
         .order("exam_time", { ascending: false })
 
-      if (selectedYear) {
-        // We filter manually or via query if possible. 
-        // exam_date is 'YYYY-MM-DD'
-        query = query.gte("exam_date", `${selectedYear}-01-01`).lte("exam_date", `${selectedYear}-12-31`)
-      }
+      if (startDate) query = query.gte("exam_date", startDate)
+      if (endDate) query = query.lte("exam_date", endDate)
 
       const { data, error } = await query
       if (!error && data) {
@@ -60,7 +51,7 @@ export default function HistoricoTab() {
 
   useEffect(() => {
     loadAppointments()
-  }, [selectedYear])
+  }, [startDate, endDate])
 
   const filteredAppointments = useMemo(() => {
     return appointments.filter(appt => {
@@ -71,26 +62,16 @@ export default function HistoricoTab() {
         (appt.cpf && appt.cpf.includes(searchTerm)) ||
         (appt.sus && appt.sus.includes(searchTerm))
 
-      // Date Filters
-      const apptDate = parseISO(appt.exam_date)
-      const matchesDay = !selectedDay || format(apptDate, 'dd') === selectedDay.padStart(2, '0')
-      const matchesMonth = !selectedMonth || (apptDate.getMonth() + 1).toString() === selectedMonth
-      
       // Other Filters
       const matchesProcedure = !selectedProcedure || appt.procedure_name === selectedProcedure
       const matchesReceptionist = !selectedReceptionist || appt.receptionist_name === selectedReceptionist
 
-      return matchesSearch && matchesDay && matchesMonth && matchesProcedure && matchesReceptionist
+      return matchesSearch && matchesProcedure && matchesReceptionist
     })
-  }, [appointments, searchTerm, selectedDay, selectedMonth, selectedProcedure, selectedReceptionist])
+  }, [appointments, searchTerm, selectedProcedure, selectedReceptionist])
 
   const procedures = useMemo(() => Array.from(new Set(appointments.map(a => a.procedure_name))), [appointments])
   const receptionists = useMemo(() => Array.from(new Set(appointments.map(a => a.receptionist_name).filter(Boolean))), [appointments])
-  const years = useMemo(() => {
-    const list = Array.from(new Set(appointments.map(a => a.exam_date.substring(0, 4))))
-    if (list.length === 0) list.push(new Date().getFullYear().toString())
-    return list.sort().reverse()
-  }, [appointments])
 
   const generateRelatorioPDF = () => {
     const printWindow = window.open("", "_blank")
@@ -129,6 +110,7 @@ export default function HistoricoTab() {
       <body>
         ${logoHtml}
         <h1>Relatório de Atendimentos - Exames</h1>
+        <p style="text-align: center; font-size: 8pt; margin-bottom: 4mm;">PERÍODO: ${format(parseISO(startDate), 'dd/MM/yyyy')} ATÉ ${format(parseISO(endDate), 'dd/MM/yyyy')}</p>
         <p style="text-align: right; font-size: 8pt; margin-bottom: 2mm;"><strong>TOTAL DE REGISTROS: ${filteredAppointments.length}</strong></p>
         <table>
           <thead>
@@ -185,7 +167,7 @@ export default function HistoricoTab() {
              </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
             <div className="space-y-1.5 xl:col-span-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Pesquisa Geral</Label>
               <div className="relative">
@@ -200,26 +182,23 @@ export default function HistoricoTab() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Ano</Label>
-              <select 
-                value={selectedYear} 
-                onChange={e => setSelectedYear(e.target.value)}
-                className="w-full appearance-none h-12 bg-white border border-slate-100 px-4 rounded-2xl text-xs font-black uppercase cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-              >
-                {years.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Data Inicial</Label>
+              <Input 
+                type="date"
+                value={startDate} 
+                onChange={e => setStartDate(e.target.value)}
+                className="h-12 bg-white border-slate-100 rounded-2xl text-xs font-black uppercase focus:ring-4 focus:ring-blue-500/10"
+              />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Mês</Label>
-              <select 
-                value={selectedMonth} 
-                onChange={e => setSelectedMonth(e.target.value)}
-                className="w-full appearance-none h-12 bg-white border border-slate-100 px-4 rounded-2xl text-xs font-black uppercase cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-              >
-                <option value="">Todos</option>
-                {MONTHS_NAMES.map((m, i) => <option key={m} value={(i+1).toString()}>{m}</option>)}
-              </select>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Data Final</Label>
+              <Input 
+                type="date"
+                value={endDate} 
+                onChange={e => setEndDate(e.target.value)}
+                className="h-12 bg-white border-slate-100 rounded-2xl text-xs font-black uppercase focus:ring-4 focus:ring-blue-500/10"
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -272,7 +251,7 @@ export default function HistoricoTab() {
               <tbody className="divide-y divide-slate-50">
                 {filteredAppointments.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-8 py-20 text-center">
+                    <td colSpan={7} className="px-8 py-20 text-center">
                       <div className="flex flex-col items-center gap-4 opacity-20">
                         <Search className="h-12 w-12" />
                         <p className="font-black uppercase tracking-widest text-sm">Nenhum registro encontrado</p>
@@ -394,8 +373,8 @@ export default function HistoricoTab() {
             <div className="space-y-4">
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Todos os Agendamentos Cadastrados</h3>
               <div className="space-y-3 relative pl-4 border-l-2 border-slate-200">
-                {appointments.filter(a => a.cpf === selectedPatient?.cpf && a.cpf).length > 0 
-                  ? appointments.filter(a => a.cpf === selectedPatient?.cpf && a.cpf).map((historyItem, idx) => (
+                {appointments.filter(a => (a.cpf === selectedPatient?.cpf && a.cpf) || (a.sus === selectedPatient?.sus && a.sus)).length > 0 
+                  ? appointments.filter(a => (a.cpf === selectedPatient?.cpf && a.cpf) || (a.sus === selectedPatient?.sus && a.sus)).map((historyItem, idx) => (
                       <div key={idx} className="relative bg-white p-5 rounded-2xl shadow-sm border border-slate-100 ml-2">
                         <div className="absolute top-8 -left-[27px] w-3 h-3 rounded-full bg-blue-500 border-[3px] border-slate-50 shadow-sm" />
                         <div className="flex justify-between items-start mb-2">

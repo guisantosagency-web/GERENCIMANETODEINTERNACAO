@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { CheckSquare, Clock, MapPin, Key, Loader2, Users, Trash, Search, ChevronDown, ChevronRight, X, Send } from "lucide-react"
+import { CheckSquare, Clock, MapPin, Key, Loader2, Users, Trash, Search, ChevronDown, ChevronRight, X, Send, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -98,10 +98,11 @@ export default function ChegadaTab() {
   const [formData, setFormData] = useState({
     origin_id: "",
     new_origin_name: "",
+    cpf: "",
     birth_date: "",
     state: "MA",
     city: "São Luís",
-    access_key: "",
+    chave_sisreg: "",
     priority: "Sem Prioridade",
     receptionist_name: ""
   })
@@ -191,35 +192,24 @@ export default function ChegadaTab() {
     setConfirmedIds(appt.ids || [appt.id])
 
     // Buscar dados completos se o paciente já existir na base
+    let masterData: any = null
     if (appt.cpf || appt.sus) {
       const { data: masterPatient } = await supabase
         .from("master_patients")
         .select("*")
         .or(`cpf.eq.${appt.cpf},sus.eq.${appt.sus}`)
         .maybeSingle()
-
-      if (masterPatient) {
-        setFormData({
-          origin_id: origins[0]?.id || "",
-          new_origin_name: "",
-          birth_date: masterPatient.data_nascimento || "",
-          state: masterPatient.estado || "MA",
-          city: masterPatient.municipio || "São Luís",
-          access_key: appt.access_key || "",
-          priority: "Sem Prioridade",
-          receptionist_name: user?.name || ""
-        })
-        return
-      }
+      masterData = masterPatient
     }
 
     setFormData({
       origin_id: origins[0]?.id || "",
       new_origin_name: "",
-      birth_date: "",
-      state: appt.estado || "MA",
-      city: appt.municipio || "São Luís",
-      access_key: appt.access_key || "",
+      cpf: appt.cpf || masterData?.cpf || "",
+      birth_date: masterData?.data_nascimento || appt.birth_date || "",
+      state: masterData?.estado || appt.estado || "MA",
+      city: masterData?.municipio || appt.municipio || "São Luís",
+      chave_sisreg: appt.chave_sisreg || "",
       priority: "Sem Prioridade",
       receptionist_name: user?.name || ""
     })
@@ -231,6 +221,12 @@ export default function ChegadaTab() {
       await supabase.from("exam_origins").delete().eq("id", id)
       loadData()
     }
+  }
+
+  const maskCPF = (v: string) => {
+    v = v.replace(/\D/g, "")
+    if (v.length > 11) v = v.substring(0, 11)
+    return v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -250,15 +246,18 @@ export default function ChegadaTab() {
         finalOriginId = data.id
       }
 
+      const cleanCPF = formData.cpf.replace(/\D/g, "")
+
       // 1. Confirmados -> aguardando
       const { error: errorConfirm } = await supabase.from("exam_appointments").update({
         status: "aguardando",
         arrival_time: new Date().toISOString(),
         origin_id: finalOriginId,
+        cpf: cleanCPF, // Atualiza o CPF se for inserido na recepção
         birth_date: formData.birth_date,
         state: formData.state,
         city: formData.city,
-        access_key: formData.access_key,
+        chave_sisreg: formData.chave_sisreg,
         priority: formData.priority,
         receptionist_name: formData.receptionist_name
       }).in("id", confirmedIds)
@@ -279,7 +278,7 @@ export default function ChegadaTab() {
       // 3. Sincronizar Cadastro Mestre
       await upsertMasterPatient({
         full_name: selectedAppt.patient_name,
-        cpf: selectedAppt.cpf,
+        cpf: cleanCPF || undefined,
         sus: selectedAppt.sus,
         data_nascimento: formData.birth_date,
         municipio: formData.city,
@@ -389,13 +388,21 @@ export default function ChegadaTab() {
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">CPF do Paciente</Label>
+                  <div className="relative">
+                    <Input placeholder="000.000.000-00" value={formData.cpf} onChange={e => setFormData(p => ({ ...p, cpf: maskCPF(e.target.value) }))} className="h-14 pl-12 font-bold bg-slate-50 border-none rounded-2xl text-center shadow-inner" />
+                    <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-500" />
+                  </div>
+                </div>
+
                 <SearchableSelect label="Estado (UF)" options={estados} value={formData.state} onChange={(val: string) => setFormData(p => ({ ...p, state: val, city: "" }))} icon={MapPin} />
                 <SearchableSelect label="Cidade" options={municipios} value={formData.city} onChange={(val: string) => setFormData(p => ({ ...p, city: val }))} icon={Search} disabled={!formData.state} />
 
                 <div className="space-y-2">
                   <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Chave de Protocolo (SISREG)</Label>
                   <div className="relative">
-                    <Input type="text" placeholder="CHAVE OPCIONAL..." value={formData.access_key} onChange={e => setFormData(p => ({ ...p, access_key: e.target.value }))} className="h-14 pl-12 font-black text-center tracking-widest bg-slate-50 border-none rounded-2xl shadow-inner uppercase" />
+                    <Input type="text" placeholder="CHAVE OPCIONAL..." value={formData.chave_sisreg} onChange={e => setFormData(p => ({ ...p, chave_sisreg: e.target.value.toUpperCase() }))} className="h-14 pl-12 font-black text-center tracking-widest bg-slate-50 border-none rounded-2xl shadow-inner uppercase" />
                     <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-500" />
                   </div>
                 </div>
