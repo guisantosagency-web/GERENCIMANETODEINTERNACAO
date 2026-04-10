@@ -154,11 +154,11 @@ export default function FilaTab() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="glass-card !bg-card/40 border-none rounded-[2.5rem] p-6 lg:p-8 shadow-sm">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="glass-premium rounded-[2.5rem] p-6 lg:p-8 shadow-premium">
         <h2 className="text-2xl font-black font-space uppercase tracking-tight mb-8 flex items-center gap-3">
-          <div className="p-3 bg-purple-500/10 text-purple-500 rounded-xl"><Play className="h-6 w-6" /></div>
-          Fila de Realização (Painel de Chamada)
+          <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-2xl shadow-lg shadow-purple-500/20"><Play className="h-6 w-6" /></div>
+          Fila de Realização <span className="text-muted-foreground font-medium text-base">(Painel de Chamada)</span>
         </h2>
         {isLoading ? (
            <div className="h-64 flex items-center justify-center">
@@ -172,12 +172,15 @@ export default function FilaTab() {
         ) : (
            <div className="space-y-12 pb-12">
               {Object.keys(appointments).map(category => (
-                 <div key={category} className="space-y-4">
-                    <div className="flex items-center gap-4 px-4">
-                       <div className="h-2 w-2 rounded-full bg-purple-500 animate-pulse" />
-                       <h3 className="text-lg font-black font-space text-purple-600 tracking-tighter uppercase">{category}</h3>
-                       <div className="h-[1px] flex-1 bg-slate-100" />
-                       <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">{(appointments as any)[category].length} Pacientes</span>
+                  <div key={category} className="space-y-4">
+                     <div className="flex items-center gap-4 px-2">
+                        <div className="relative">
+                          <div className="h-2 w-2 rounded-full bg-purple-500" />
+                          <div className="absolute inset-0 h-2 w-2 rounded-full bg-purple-500 ping-subtle" />
+                        </div>
+                        <h3 className="text-sm font-black font-space text-purple-600 tracking-[0.15em] uppercase">{category}</h3>
+                        <div className="h-px flex-1 bg-gradient-to-r from-purple-100 to-transparent" />
+                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">{(appointments as any)[category].length} Pac.</span>
                     </div>
                     
                     <div className="overflow-x-auto rounded-[2rem] border border-slate-100 bg-white/50 backdrop-blur-md shadow-sm">

@@ -74,11 +74,19 @@ function AuthenticatedLayoutContent({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-accent/20 to-background">
-      {/* Decorative background elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl" />
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[oklch(0.975_0.008_265)] via-[oklch(0.970_0.012_280)] to-[oklch(0.968_0.010_255)]">
+      {/* Premium Ambient Background — orbs flutuantes */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        {/* Orbs de Plasma */}
+        <div className="ambient-orb floating w-[700px] h-[700px] bg-gradient-to-br from-violet-200/50 to-blue-200/30 -top-48 -right-48" />
+        <div className="ambient-orb floating-slow w-[500px] h-[500px] bg-gradient-to-br from-blue-200/40 to-cyan-100/30 top-1/3 -left-32" />
+        <div className="ambient-orb floating-delay w-[400px] h-[400px] bg-gradient-to-br from-purple-100/40 to-pink-100/20 bottom-0 right-1/4" />
+        <div className="ambient-orb glow-pulse-slow w-[300px] h-[300px] bg-gradient-to-br from-indigo-200/30 to-violet-100/20 top-1/4 right-1/3" />
+        {/* Noise Texture Overlay */}
+        <div className="absolute inset-0 opacity-[0.015]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundSize: '200px 200px'
+        }} />
       </div>
 
       <Sidebar />

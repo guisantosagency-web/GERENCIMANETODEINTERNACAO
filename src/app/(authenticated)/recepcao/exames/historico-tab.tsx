@@ -155,7 +155,7 @@ export default function HistoricoTab() {
     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-700">
       
       {/* FILTROS PREMIUM */}
-      <div className="glass-card !bg-white/40 border-none rounded-[3rem] p-8 lg:p-10 shadow-xl">
+      <div className="glass-premium rounded-[2.5rem] p-7 lg:p-9 shadow-premium">
         <div className="flex flex-col gap-8">
           <div className="flex items-center gap-4">
              <div className="p-3 bg-purple-600 text-white rounded-2xl shadow-lg">
@@ -234,7 +234,7 @@ export default function HistoricoTab() {
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-500/60">Carregando Histórico...</p>
         </div>
       ) : (
-        <div className="glass-card bg-white border-none rounded-[3rem] overflow-hidden shadow-2xl">
+        <div className="glass-premium rounded-[2.5rem] overflow-hidden shadow-premium">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -260,7 +260,7 @@ export default function HistoricoTab() {
                   </tr>
                 ) : (
                   filteredAppointments.map(appt => (
-                    <tr key={appt.id} onClick={() => setSelectedPatient(appt)} className="hover:bg-slate-50/50 transition-colors group cursor-pointer">
+                    <tr key={appt.id} onClick={() => setSelectedPatient(appt)} className="hover:bg-gradient-to-r hover:from-slate-50/60 hover:to-blue-50/30 transition-all duration-200 group cursor-pointer border-b border-slate-50">
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center font-black text-blue-600 text-xs">
@@ -321,7 +321,7 @@ export default function HistoricoTab() {
             </table>
           </div>
           
-          <div className="bg-slate-50 px-8 py-6 border-t border-slate-100 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-slate-50 to-slate-50/50 px-8 py-5 border-t border-slate-100/80 flex items-center justify-between">
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
               Total de registros filtrados: <span className="text-slate-800">{filteredAppointments.length}</span>
             </div>

@@ -306,11 +306,11 @@ export default function ChegadaTab() {
   const calculatedAge = formData.birth_date ? differenceInYears(new Date(), parseISO(formData.birth_date)) : "--"
 
   return (
-    <div className="h-full min-h-[800px] flex flex-row-reverse gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden relative">
+    <div className="h-full min-h-[800px] flex flex-row-reverse gap-8 animate-in fade-in duration-500 overflow-hidden relative">
 
       {/* RIGHT PANEL: ARRIVAL FORM */}
       <div className={`transition-all duration-700 ease-out h-full ${selectedAppt ? 'w-[550px] opacity-100 translate-x-0' : 'w-0 opacity-0 translate-x-full overflow-hidden'}`}>
-        <div className="glass-card bg-white border-none rounded-[3.5rem] h-full shadow-2xl flex flex-col overflow-hidden border-2 border-emerald-500/10">
+        <div className="glass-premium rounded-[2.5rem] h-full flex flex-col overflow-hidden shadow-xl border border-emerald-500/15">
           <div className="p-8 border-b bg-emerald-600 text-white relative">
             <div className="flex items-center justify-between mb-2">
               <div className="h-10 w-10 flex items-center justify-center bg-white/20 rounded-xl"><CheckSquare className="h-6 w-6" /></div>
@@ -438,7 +438,7 @@ export default function ChegadaTab() {
 
       {/* LEFT PANEL: WAIT LIST */}
       <div className={`flex-1 transition-all duration-700 ${selectedAppt ? 'translate-x-0' : '-translate-x-0'}`}>
-        <div className="glass-card !bg-white/40 border-none rounded-[3.5rem] p-8 lg:p-10 shadow-sm h-full flex flex-col relative overflow-hidden">
+        <div className="glass-premium rounded-[2.5rem] p-7 lg:p-9 shadow-premium h-full flex flex-col relative overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
             <div>
               <h2 className="text-3xl font-black font-space uppercase tracking-tight flex items-center gap-4 text-slate-800">
@@ -466,7 +466,7 @@ export default function ChegadaTab() {
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="h-12 px-4 bg-slate-50 border-none rounded-xl text-xs font-black uppercase focus:ring-2 focus:ring-emerald-500/20 transition-all"
               />
-              <div className="px-5 py-3 bg-emerald-50 text-emerald-600 rounded-xl flex items-center gap-3">
+              <div className="px-4 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl flex items-center gap-2.5 border border-emerald-100">
                 <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-[10px] font-black uppercase tracking-widest">{appointments.length} REGISTROS</span>
               </div>
@@ -493,7 +493,7 @@ export default function ChegadaTab() {
                     (a.sus && a.sus.includes(searchFilter))
                   )
                   .map(a => (
-                    <div key={a.id} className={`p-6 rounded-[2rem] transition-all duration-500 border-2 flex items-center justify-between group ${selectedAppt?.id === a.id ? 'bg-emerald-50 border-emerald-500 shadow-xl' : 'bg-white border-slate-100 hover:border-emerald-200 hover:shadow-lg'}`}>
+                    <div key={a.id} className={`p-5 rounded-[1.75rem] transition-all duration-500 border flex items-center justify-between group ${selectedAppt?.id === a.id ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-400/60 shadow-lg shadow-emerald-500/10' : 'bg-white/90 border-slate-100 hover:border-emerald-200/80 hover:shadow-md hover:-translate-y-0.5'}`}>
                     <div className="flex items-center gap-6">
                       <div className={`h-16 w-16 rounded-[1.5rem] flex items-center justify-center font-black text-2xl transition-all duration-500 ${selectedAppt?.id === a.id ? 'bg-emerald-600 text-white scale-110 rotate-3' : 'bg-slate-50 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 group-hover:-rotate-3'}`}>
                         {a.patient_name.charAt(0)}
