@@ -280,6 +280,7 @@ export default function AgendamentoTab() {
   const [showDropdown, setShowDropdown] = useState(false)
   const [dateAppointments, setDateAppointments] = useState<any[]>([])
   const [lastSaved, setLastSaved] = useState<any>(null)
+  const [selectedAgendadoDate, setSelectedAgendadoDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
 
   const [dynamicProcedures, setDynamicProcedures] = useState<string[]>(FALLBACK_PROCEDURES)
   const [dynamicTypes, setDynamicTypes] = useState<Record<string, string[]>>(FALLBACK_TYPES)
@@ -307,21 +308,22 @@ export default function AgendamentoTab() {
     const { data: procs } = await supabase.from("exam_procedures_list").select("*").order("name")
     const { data: types } = await supabase.from("exam_types_list").select("*").order("name")
 
-    if (procs && procs.length > 0) {
-      const pList = procs.map((p: any) => p.name)
-      setDynamicProcedures(pList)
+    // Sempre mescla o banco com o FALLBACK garantindo que todos os procedimentos aparecem
+    const dbProcs = (procs || []).map((p: any) => p.name)
+    const merged = Array.from(new Set([...FALLBACK_PROCEDURES, ...dbProcs]))
+    setDynamicProcedures(merged)
 
-      if (types) {
-        const tMap: Record<string, string[]> = {}
-        types.forEach((t: any) => {
-          if (!tMap[t.procedure_name]) tMap[t.procedure_name] = []
-          if (!tMap[t.procedure_name].includes(t.name)) {
-            tMap[t.procedure_name].push(t.name)
-          }
-        })
-        setDynamicTypes(tMap)
-      }
+    // Inicia com o mapa de tipos do fallback e adiciona do banco
+    const tMap: Record<string, string[]> = { ...FALLBACK_TYPES }
+    if (types) {
+      types.forEach((t: any) => {
+        if (!tMap[t.procedure_name]) tMap[t.procedure_name] = []
+        if (!tMap[t.procedure_name].includes(t.name)) {
+          tMap[t.procedure_name].push(t.name)
+        }
+      })
     }
+    setDynamicTypes(tMap)
   }
 
   useEffect(() => {
@@ -347,11 +349,9 @@ export default function AgendamentoTab() {
   }
 
   useEffect(() => {
-    // Carregar agendamentos da data do primeiro exame da lista para o preview lateral
-    if (exams.length > 0) {
-      loadDateAppointments(exams[0].exam_date)
-    }
-  }, [exams[0]?.exam_date])
+    // Recarrega a lista de agendados quando a data selecionada muda
+    loadDateAppointments(selectedAgendadoDate)
+  }, [selectedAgendadoDate])
 
   useEffect(() => {
     const loadProcedureSlots = async () => {
@@ -880,26 +880,37 @@ export default function AgendamentoTab() {
         </div>
 
         {/* LISTA DE AGENDADOS NA DATA */}
-        <div className="mt-12 glass-card !bg-white/40 border-none rounded-[3.5rem] p-8 lg:p-12 shadow-2xl relative overflow-hidden">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h3 className="text-2xl font-black font-space uppercase tracking-tight text-slate-800 flex items-center gap-4">
-                <div className="p-3 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20"><ClipboardList className="h-6 w-6" /></div>
-                Agendados para {exams[0] ? format(new Date(exams[0].exam_date + 'T00:00:00'), 'dd/MM/yyyy') : '---'}
-              </h3>
-            </div>
+        <div className="mt-12 glass-premium rounded-[2.5rem] p-8 lg:p-12 shadow-premium relative overflow-hidden">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 mb-8">
+            <h3 className="text-2xl font-black font-space uppercase tracking-tight text-slate-800 flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl shadow-lg shadow-emerald-500/20">
+                <ClipboardList className="h-6 w-6" />
+              </div>
+              Agendados para {selectedAgendadoDate ? format(new Date(selectedAgendadoDate + 'T00:00:00'), 'dd/MM/yyyy') : '---'}
+            </h3>
 
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Seletor de Data independente do formulario */}
+              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-soft">
+                <CalendarDays className="h-4 w-4 text-emerald-500 shrink-0" />
+                <input
+                  type="date"
+                  value={selectedAgendadoDate}
+                  onChange={e => setSelectedAgendadoDate(e.target.value)}
+                  className="bg-transparent border-none text-[11px] font-black uppercase text-slate-600 focus:ring-0 focus:outline-none cursor-pointer"
+                />
+              </div>
+              {/* Busca por nome */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
-                  className="bg-white border border-slate-100 rounded-xl px-3 py-2 pl-10 text-[10px] font-black uppercase tracking-widest focus:ring-0 w-64"
+                  className="bg-white border border-slate-100 rounded-2xl px-3 py-2.5 pl-10 text-[10px] font-black uppercase tracking-widest focus:ring-0 w-56"
                   placeholder="Filtrar por nome..."
                   value={appointmentSearch}
                   onChange={e => setAppointmentSearch(e.target.value)}
                 />
               </div>
-              <div className="bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm text-xs font-black text-slate-500 uppercase">{filteredAppointments.length} PACIENTES</div>
+              <div className="bg-white px-5 py-2.5 rounded-2xl border border-slate-100 shadow-soft text-[10px] font-black text-slate-500 uppercase">{filteredAppointments.length} pacientes</div>
             </div>
           </div>
 
