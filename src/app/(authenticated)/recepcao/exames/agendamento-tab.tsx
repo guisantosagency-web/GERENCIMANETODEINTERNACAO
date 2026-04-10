@@ -664,9 +664,12 @@ export default function AgendamentoTab() {
                 const name = (p.procedure_name || "").toUpperCase()
                 if (name.includes("TOMOGRAFIA") || name.includes("ANGIOTOMOGRAFIA")) {
                   allInstructions.add("PACIENTE EM JEJUM DE 6 HORAS")
-                  allInstructions.add("TRAZER EXAMES DE UREIA E CREATININA RECENTE (MÁXIMO 30 DIAS)")
-                  allInstructions.add("NÃO FAZER USO DE METFORMINA NO DIA DO EXAME")
                   allInstructions.add("TRAZER SOLICITAÇÃO MÉDICA E DOCUMENTOS ORIGINAIS")
+                  // Apenas com contraste exige ureia/creatinina e metformina
+                  if (name.includes("COM CONTRASTE") || name.includes("ANGIOTOMOGRAFIA")) {
+                    allInstructions.add("TRAZER EXAMES DE UREIA E CREATININA RECENTE (MÁXIMO 7 DIAS)")
+                    allInstructions.add("NÃO FAZER USO DE METFORMINA NO DIA DO EXAME")
+                  }
                 } else if (name.includes("ULTRASSOM") || name.includes("USG")) {
                   if (name.includes("ABDOMINAL")) {
                     allInstructions.add("JEJUM DE 6 HORAS E BEXIGA CHEIA")
