@@ -43,7 +43,7 @@ export function Sidebar() {
     if (user?.role === "admin") return adminMenuItems
     return adminMenuItems.filter(item =>
       item.id === "portal" ||
-      item.id === "dashboard" ||
+      item.id === "resultados" || // Entrega sempre visível para todos
       user?.allowedModules?.includes(item.id.toUpperCase()) ||
       user?.allowedModules?.includes(item.label.toUpperCase())
     )

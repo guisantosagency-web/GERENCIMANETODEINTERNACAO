@@ -60,7 +60,8 @@ function AuthenticatedLayoutContent({ children }: { children: React.ReactNode })
   }
 
   const allowedRoutes = user.role === "admin" ? adminRoutes : userRoutes
-  const hasAccess = allowedRoutes.some((route) => pathname.startsWith(route))
+  // /resultados é sempre permitido para todos os usuários autenticados
+  const hasAccess = allowedRoutes.some((route) => pathname.startsWith(route)) || pathname.startsWith("/resultados")
 
   if (!hasAccess) {
     return (
