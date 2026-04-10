@@ -8,6 +8,7 @@ import {
   CheckCircle2, CalendarX2, Clock3, BarChart3,
   CalendarDays, TrendingDown, Target, Zap
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
