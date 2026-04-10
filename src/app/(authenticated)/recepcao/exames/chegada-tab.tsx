@@ -99,6 +99,7 @@ export default function ChegadaTab() {
     origin_id: "",
     new_origin_name: "",
     cpf: "",
+    sus: "",
     birth_date: "",
     state: "MA",
     city: "São Luís",
@@ -206,6 +207,7 @@ export default function ChegadaTab() {
       origin_id: origins[0]?.id || "",
       new_origin_name: "",
       cpf: appt.cpf || masterData?.cpf || "",
+      sus: appt.sus || masterData?.sus || "",
       birth_date: masterData?.data_nascimento || appt.birth_date || "",
       state: masterData?.estado || appt.estado || "MA",
       city: masterData?.municipio || appt.municipio || "São Luís",
@@ -253,7 +255,8 @@ export default function ChegadaTab() {
         status: "aguardando",
         arrival_time: new Date().toISOString(),
         origin_id: finalOriginId,
-        cpf: cleanCPF, // Atualiza o CPF se for inserido na recepção
+        cpf: cleanCPF,
+        sus: formData.sus.replace(/\D/g, "") || undefined,
         birth_date: formData.birth_date,
         state: formData.state,
         city: formData.city,
@@ -279,7 +282,7 @@ export default function ChegadaTab() {
       await upsertMasterPatient({
         full_name: selectedAppt.patient_name,
         cpf: cleanCPF || undefined,
-        sus: selectedAppt.sus,
+        sus: formData.sus || selectedAppt.sus,
         data_nascimento: formData.birth_date,
         municipio: formData.city,
         estado: formData.state,
@@ -393,6 +396,22 @@ export default function ChegadaTab() {
                   <div className="relative">
                     <Input placeholder="000.000.000-00" value={formData.cpf} onChange={e => setFormData(p => ({ ...p, cpf: maskCPF(e.target.value) }))} className="h-14 pl-12 font-bold bg-slate-50 border-none rounded-2xl text-center shadow-inner" />
                     <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-500" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Cartão SUS</Label>
+                  <div className="relative">
+                    <Input
+                      placeholder="000 0000 0000 0000"
+                      value={formData.sus}
+                      onChange={e => {
+                        const v = e.target.value.replace(/\D/g, "").substring(0, 15)
+                        setFormData(p => ({ ...p, sus: v }))
+                      }}
+                      className="h-14 pl-12 font-bold bg-slate-50 border-none rounded-2xl text-center shadow-inner tracking-widest"
+                    />
+                    <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-500" />
                   </div>
                 </div>
 
