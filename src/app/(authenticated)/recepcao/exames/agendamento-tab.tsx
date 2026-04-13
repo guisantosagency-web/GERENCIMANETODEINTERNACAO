@@ -401,8 +401,15 @@ export default function AgendamentoTab() {
       setIsCheckingSlots(true)
       try {
         const { data: slotData } = await supabase.from("exam_slots").select("total_slots").eq("exam_date", firstExam.exam_date).eq("procedure_name", firstExam.procedure_name).maybeSingle()
+        
+        // If no slot configuration exists, we don't return 0/0, we return null to signify unlimited
+        if (!slotData) {
+          setSlotInfo(null)
+          return
+        }
+
         const { count } = await supabase.from("exam_appointments").select("*", { count: 'exact', head: true }).eq("exam_date", firstExam.exam_date).eq("procedure_name", firstExam.procedure_name).neq("status", "cancelado")
-        setSlotInfo({ total: slotData?.total_slots || 0, occupied: count || 0 })
+        setSlotInfo({ total: slotData.total_slots, occupied: count || 0 })
       } finally {
         setIsCheckingSlots(false)
       }
@@ -697,24 +704,21 @@ export default function AgendamentoTab() {
     printWindow.document.close()
   }
 
-  const hasSlots = useMemo(() => {
-    // Se não houver exames ou se for Raio X (unidade geralmente sem limite rígido no sistema)
-    if (!exams[0]) return true
-    if (exams[0].procedure_name === "Raio X") return true
+  const noSlotsAtAll = useMemo(() => {
+    // Raio X is ALWAYS allowed
+    if (exams[0]?.procedure_name === "Raio X") return false
     
-    // Se houver configuração de vagas e o total for maior que 0
-    if (slotInfo && slotInfo.total > 0) {
-      return slotInfo.occupied < slotInfo.total
-    }
+    // If no config exists, it is BLOCKED (except Raio X handled above)
+    if (slotInfo === null) return true
     
-    // Se não houver configuração para o dia/procedimento, assume-se livre
-    return true
+    // If config exists, check occupancy
+    return slotInfo.occupied >= slotInfo.total
   }, [slotInfo, exams])
 
-  const noSlotsAtAll = useMemo(() => {
-    if (!exams[0] || exams[0].procedure_name === "Raio X") return false
-    return slotInfo !== null && slotInfo.total > 0 && slotInfo.occupied >= slotInfo.total
-  }, [slotInfo, exams])
+  const hasSlots = useMemo(() => {
+    if (!exams[0]) return true
+    return !noSlotsAtAll
+  }, [noSlotsAtAll, exams])
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
@@ -733,11 +737,13 @@ export default function AgendamentoTab() {
                   </h2>
                 </div>
                 {(exams[0] && exams[0].procedure_name !== "Raio X") && (
-                  <div className={`px-8 py-5 rounded-[2rem] border-2 flex items-center gap-5 shadow-inner ${slotInfo && slotInfo.total > 0 && slotInfo.occupied >= slotInfo.total ? 'bg-red-50 border-red-100 text-red-600' : 'bg-blue-50/50 border-blue-100 text-blue-700'}`}>
+                  <div className={`px-8 py-5 rounded-[2rem] border-2 flex items-center gap-5 shadow-inner ${noSlotsAtAll ? 'bg-red-50 border-red-100 text-red-600' : 'bg-blue-50/50 border-blue-100 text-blue-700'}`}>
                     {isCheckingSlots ? <Loader2 className="h-6 w-6 animate-spin" /> : <AlertCircle className="h-7 w-7" />}
                     <div className="text-right">
                       <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Status Vagas</p>
-                      <p className="text-2xl font-black font-space">{slotInfo && slotInfo.total > 0 && slotInfo.occupied >= slotInfo.total ? "LOTADO" : `${slotInfo?.occupied || 0} / ${slotInfo?.total || 0}`}</p>
+                      <p className="text-2xl font-black font-space">
+                        {slotInfo === null ? "SEM CONFIG." : noSlotsAtAll ? "LOTADO" : `${slotInfo.occupied} / ${slotInfo.total}`}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -778,7 +784,7 @@ export default function AgendamentoTab() {
                   </div>
                   <div className="space-y-3 relative">
                     <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">SUS</Label>
-                    <Input required placeholder="000 0000 0000 0000" value={formData.sus} onChange={e => setFormData(prev => ({ ...prev, sus: e.target.value }))} className="pl-16 h-16 font-bold text-center text-lg bg-slate-50 border-none rounded-[1.5rem]" />
+                    <Input placeholder="000 0000 0000 0000" value={formData.sus} onChange={e => setFormData(prev => ({ ...prev, sus: e.target.value }))} className="pl-16 h-16 font-bold text-center text-lg bg-slate-50 border-none rounded-[1.5rem]" />
                     <ClipboardList className="absolute left-6 bottom-[1.2rem] h-6 w-6 text-emerald-500" />
                   </div>
                   <div className="space-y-3 relative">

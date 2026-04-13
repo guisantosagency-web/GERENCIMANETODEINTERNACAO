@@ -232,8 +232,14 @@ export default function ChegadaTab() {
       setIsCheckingSlots(true)
       try {
         const { data: slotData } = await supabase.from("exam_slots").select("total_slots").eq("exam_date", selectedDate).eq("procedure_name", procedure).maybeSingle()
+        
+        if (!slotData) {
+          setSlotInfo(null)
+          return
+        }
+
         const { count } = await supabase.from("exam_appointments").select("*", { count: 'exact', head: true }).eq("exam_date", selectedDate).eq("procedure_name", procedure).neq("status", "cancelado")
-        setSlotInfo({ total: slotData?.total_slots || 0, occupied: count || 0 })
+        setSlotInfo({ total: slotData.total_slots, occupied: count || 0 })
       } finally {
         setIsCheckingSlots(false)
       }
@@ -475,13 +481,21 @@ export default function ChegadaTab() {
             </div>
           </div>
 
-          {formData.is_encaixe && slotInfo && (
-            <div className={`p-4 flex items-center justify-between border-b ${slotInfo.total > 0 && slotInfo.occupied >= slotInfo.total ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+          {formData.is_encaixe && (
+            <div className={`p-4 flex items-center justify-between border-b ${
+              (selectedAppt?.procedure_name !== "Raio X" && (slotInfo === null || slotInfo.occupied >= slotInfo.total)) 
+              ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
+            }`}>
               <div className="flex items-center gap-2">
                 {isCheckingSlots ? <Loader2 className="h-4 w-4 animate-spin" /> : <AlertCircle className="h-4 w-4" />}
                 <span className="text-[10px] font-black uppercase tracking-widest">Disponibilidade de Vagas:</span>
               </div>
-              <span className="text-xs font-black">{slotInfo.total === 0 ? "Sem Limite" : `${slotInfo.occupied} / ${slotInfo.total}`}</span>
+              <span className="text-xs font-black">
+                {selectedAppt?.procedure_name === "Raio X" ? "ILIMITADO" : 
+                 slotInfo === null ? "BLOQUEADO (SEM CONFIG.)" : 
+                 slotInfo.occupied >= slotInfo.total ? "LOTADO" : 
+                 `${slotInfo.occupied} / ${slotInfo.total}`}
+              </span>
             </div>
           )}
 
@@ -665,8 +679,17 @@ export default function ChegadaTab() {
             <Button 
               form="arrival-form" 
               type="submit" 
-              disabled={isLoading || (formData.is_encaixe && slotInfo && slotInfo.total > 0 && slotInfo.occupied >= slotInfo.total)} 
-              className={`w-full h-16 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl gap-4 transition-all active:scale-95 group ${formData.is_encaixe && slotInfo && slotInfo.total > 0 && slotInfo.occupied >= slotInfo.total ? 'bg-slate-300 shadow-none' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20'}`}
+              disabled={isLoading || (
+                formData.is_encaixe && 
+                selectedAppt?.procedure_name !== "Raio X" && 
+                (slotInfo === null || slotInfo.occupied >= slotInfo.total)
+              )} 
+              className={`w-full h-16 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl gap-4 transition-all active:scale-95 group ${
+                formData.is_encaixe && 
+                selectedAppt?.procedure_name !== "Raio X" && 
+                (slotInfo === null || slotInfo.occupied >= slotInfo.total) 
+                ? 'bg-slate-300 shadow-none' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20'
+              }`}
             >
               {isLoading ? <Loader2 className="animate-spin h-6 w-6" /> : <Send className="h-6 w-6 group-hover:translate-x-1 transition-transform" />}
               {formData.is_encaixe ? "Confirmar Encaixe" : "Confirmar Chegada"}
