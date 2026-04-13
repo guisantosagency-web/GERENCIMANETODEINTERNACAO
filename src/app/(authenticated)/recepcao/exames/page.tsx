@@ -9,6 +9,7 @@ import ChegadaTab from "./chegada-tab"
 import FilaTab from "./fila-tab"
 import HistoricoTab from "./historico-tab"
 import SisregTab from "./sisreg-tab"
+import PacientesTab from "./pacientes-tab"
 import { useAuth } from "@/lib/auth-context"
 
 export default function ExamesHubPage() {
@@ -17,6 +18,7 @@ export default function ExamesHubPage() {
 
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: BarChart2, adminOnly: false },
+    { id: "pacientes", label: "Pacientes", icon: List, adminOnly: false },
     { id: "vagas", label: "Config. Vagas", icon: CheckCircle2, adminOnly: false },
     { id: "sisreg", label: "Pacientes SISREG", icon: Globe, adminOnly: false },
     { id: "agendamento", label: "Agendamentos", icon: CalendarDays, adminOnly: false },
@@ -62,6 +64,7 @@ export default function ExamesHubPage() {
 
       <div className="pt-2 animate-in fade-in zoom-in-95 duration-500">
         {activeTab === "dashboard" && <ExamesDashboardTab />}
+        {activeTab === "pacientes" && <PacientesTab />}
         {activeTab === "vagas" && <VagasTab />}
         {activeTab === "sisreg" && <SisregTab />}
         {activeTab === "agendamento" && <AgendamentoTab />}
