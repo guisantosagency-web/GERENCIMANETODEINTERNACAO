@@ -1,9 +1,9 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { 
-  Users, Search, Edit3, Trash2, RefreshCw, Loader2, 
-  UserCircle, CreditCard, ClipboardList, MapPin, 
+import {
+  Users, Search, Edit3, Trash2, RefreshCw, Loader2,
+  UserCircle, CreditCard, ClipboardList, MapPin,
   CalendarDays, Globe, User, Save, X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -40,14 +40,14 @@ export default function PacientesTab() {
         .from("master_patients")
         .select("*")
         .order("full_name")
-      
+
       if (pError) throw pError
 
       // 2. Carregar agendamentos de exames para identificar quem é SISREG
       const { data: appointments, error: aError } = await supabase
         .from("exam_appointments")
         .select("sus, cpf, chave_sisreg")
-      
+
       if (aError) throw aError
 
       setPatients(mPatients || [])
@@ -75,9 +75,9 @@ export default function PacientesTab() {
   const filteredPatients = useMemo(() => {
     if (!searchTerm) return patients
     const s = searchTerm.toUpperCase()
-    return patients.filter(p => 
-      p.full_name?.toUpperCase().includes(s) || 
-      p.cpf?.includes(s) || 
+    return patients.filter(p =>
+      p.full_name?.toUpperCase().includes(s) ||
+      p.cpf?.includes(s) ||
       p.sus?.includes(s)
     )
   }, [patients, searchTerm])
@@ -89,7 +89,7 @@ export default function PacientesTab() {
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Deseja realmente excluir o paciente ${name}? Esta ação não pode ser desfeita e removerá o vínculo em outros módulos.`)) return
-    
+
     setIsLoading(true)
     try {
       const { error } = await supabase.from("master_patients").delete().eq("id", id)
@@ -108,7 +108,7 @@ export default function PacientesTab() {
     setIsSaving(true)
     try {
       const oldPatient = patients.find(p => p.id === selectedPatient.id)
-      
+
       // 1. Atualizar no Master Patients
       const { error: pError } = await supabase
         .from("master_patients")
@@ -155,7 +155,7 @@ export default function PacientesTab() {
 
   return (
     <div className="space-y-6 pb-10 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
-      
+
       {/* HEADER SECTION */}
       <div className="relative group">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-cyan-600/5 rounded-[2.5rem] blur-xl" />
@@ -180,8 +180,8 @@ export default function PacientesTab() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
               <div className="relative group/search min-w-[300px]">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-hover/search:text-blue-500 transition-colors" />
-                <Input 
-                  placeholder="BUSCAR NOME, CPF OU SUS..." 
+                <Input
+                  placeholder="BUSCAR NOME, CPF OU SUS..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   className="h-14 pl-14 pr-6 bg-white border-slate-200 rounded-2xl text-sm font-bold shadow-sm focus:ring-blue-500/20 transition-all uppercase"
@@ -246,12 +246,12 @@ export default function PacientesTab() {
                     <td className="px-8 py-6">
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-2 text-[10px] font-black text-slate-600">
-                           <CreditCard className="h-3.5 w-3.5 text-blue-500" />
-                           CPF: {p.cpf || "---"}
+                          <CreditCard className="h-3.5 w-3.5 text-blue-500" />
+                          CPF: {p.cpf || "---"}
                         </div>
                         <div className="flex items-center gap-2 text-[10px] font-black text-slate-600">
-                           <ClipboardList className="h-3.5 w-3.5 text-emerald-500" />
-                           SUS: {p.sus || "---"}
+                          <ClipboardList className="h-3.5 w-3.5 text-emerald-500" />
+                          SUS: {p.sus || "---"}
                         </div>
                       </div>
                     </td>
@@ -263,16 +263,16 @@ export default function PacientesTab() {
                     </td>
                     <td className="px-8 py-6 rounded-r-[2rem]">
                       <div className="flex items-center justify-end gap-2">
-                        <Button 
+                        <Button
                           onClick={() => handleEdit(p)}
-                          variant="ghost" 
+                          variant="ghost"
                           className="h-11 w-11 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm shadow-blue-500/10"
                         >
                           <Edit3 className="h-4.5 w-4.5" />
                         </Button>
-                        <Button 
+                        <Button
                           onClick={() => handleDelete(p.id, p.full_name)}
-                          variant="ghost" 
+                          variant="ghost"
                           className="h-11 w-11 rounded-xl bg-slate-50 text-slate-400 hover:bg-red-500 hover:text-white transition-all border border-slate-100/50"
                         >
                           <Trash2 className="h-4.5 w-4.5" />
@@ -292,10 +292,10 @@ export default function PacientesTab() {
         <DialogContent className="max-w-2xl rounded-[3rem] p-8 border-none bg-white shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-3xl font-black font-space uppercase tracking-tight text-slate-800 flex items-center gap-4">
-               <div className="p-4 bg-blue-100 text-blue-600 rounded-2xl">
-                  <UserCircle className="h-7 w-7" />
-               </div>
-               Editar Paciente
+              <div className="p-4 bg-blue-100 text-blue-600 rounded-2xl">
+                <UserCircle className="h-7 w-7" />
+              </div>
+              Editar Paciente
             </DialogTitle>
             <DialogDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-2 ml-1">
               Atualize as informações cadastrais do paciente
@@ -306,56 +306,56 @@ export default function PacientesTab() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6">
               <div className="md:col-span-2 space-y-2">
                 <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-4">Nome Completo</Label>
-                <Input 
-                  value={selectedPatient.full_name} 
-                  onChange={e => setSelectedPatient({...selectedPatient, full_name: e.target.value})}
+                <Input
+                  value={selectedPatient.full_name}
+                  onChange={e => setSelectedPatient({ ...selectedPatient, full_name: e.target.value })}
                   className="h-14 bg-slate-50 border-none rounded-2xl text-sm font-black uppercase px-6"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-4">CPF</Label>
-                <Input 
-                  value={selectedPatient.cpf || ""} 
-                  onChange={e => setSelectedPatient({...selectedPatient, cpf: e.target.value})}
+                <Input
+                  value={selectedPatient.cpf || ""}
+                  onChange={e => setSelectedPatient({ ...selectedPatient, cpf: e.target.value })}
                   className="h-14 bg-slate-50 border-none rounded-2xl text-sm font-black text-center px-6"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-4">Cartão SUS</Label>
-                <Input 
-                  value={selectedPatient.sus || ""} 
-                  onChange={e => setSelectedPatient({...selectedPatient, sus: e.target.value})}
+                <Input
+                  value={selectedPatient.sus || ""}
+                  onChange={e => setSelectedPatient({ ...selectedPatient, sus: e.target.value })}
                   className="h-14 bg-slate-50 border-none rounded-2xl text-sm font-black text-center px-6"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-4">Data de Nascimento</Label>
-                <Input 
+                <Input
                   type="date"
-                  value={selectedPatient.data_nascimento || ""} 
-                  onChange={e => setSelectedPatient({...selectedPatient, data_nascimento: e.target.value})}
+                  value={selectedPatient.data_nascimento || ""}
+                  onChange={e => setSelectedPatient({ ...selectedPatient, data_nascimento: e.target.value })}
                   className="h-14 bg-slate-50 border-none rounded-2xl text-sm font-black px-6"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-4">Município</Label>
-                <Input 
-                  value={selectedPatient.municipio || ""} 
-                  onChange={e => setSelectedPatient({...selectedPatient, municipio: e.target.value})}
+                <Input
+                  value={selectedPatient.municipio || ""}
+                  onChange={e => setSelectedPatient({ ...selectedPatient, municipio: e.target.value })}
                   className="h-14 bg-slate-50 border-none rounded-2xl text-sm font-black uppercase px-6"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-4">Estado (UF)</Label>
-                <Input 
+                <Input
                   maxLength={2}
-                  value={selectedPatient.estado || ""} 
-                  onChange={e => setSelectedPatient({...selectedPatient, estado: e.target.value.toUpperCase()})}
+                  value={selectedPatient.estado || ""}
+                  onChange={e => setSelectedPatient({ ...selectedPatient, estado: e.target.value.toUpperCase() })}
                   className="h-14 bg-slate-50 border-none rounded-2xl text-sm font-black text-center px-6"
                 />
               </div>
@@ -363,21 +363,21 @@ export default function PacientesTab() {
           )}
 
           <DialogFooter className="flex flex-col sm:flex-row gap-3 pt-4">
-             <Button 
-               variant="ghost" 
-               onClick={() => setIsEditing(false)}
-               className="h-14 px-10 rounded-[1.5rem] bg-slate-50 text-slate-500 font-black uppercase text-[10px] tracking-widest border border-slate-100"
-             >
-                Cancelar
-             </Button>
-             <Button 
-               onClick={savePatient}
-               disabled={isSaving}
-               className="h-14 px-10 rounded-[1.5rem] bg-blue-600 hover:bg-black text-white font-black uppercase text-[10px] tracking-widest gap-2"
-             >
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Salvar Alterações
-             </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setIsEditing(false)}
+              className="h-14 px-10 rounded-[1.5rem] bg-slate-50 text-slate-500 font-black uppercase text-[10px] tracking-widest border border-slate-100"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={savePatient}
+              disabled={isSaving}
+              className="h-14 px-10 rounded-[1.5rem] bg-blue-600 hover:bg-black text-white font-black uppercase text-[10px] tracking-widest gap-2"
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Salvar Alterações
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

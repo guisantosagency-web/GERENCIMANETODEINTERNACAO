@@ -101,6 +101,8 @@ export default function PacientesPage() {
     triagem: { label: "Triagem", color: "bg-purple-500", badge: "bg-purple-100 text-purple-700" },
     consulta: { label: "Consulta", color: "bg-emerald-500", badge: "bg-emerald-100 text-emerald-700" },
     manual: { label: "Manual", color: "bg-slate-500", badge: "bg-slate-100 text-slate-600" },
+    reception_arrival: { label: "Recepção", color: "bg-teal-500", badge: "bg-teal-100 text-teal-700" },
+    sisreg_direct: { label: "SISREG", color: "bg-indigo-500", badge: "bg-indigo-100 text-indigo-700" },
   }
 
   return (
@@ -143,7 +145,8 @@ export default function PacientesPage() {
             <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-3 custom-scrollbar">
               {results.length > 0 ? (
                 results.map((p) => {
-                  const origin = originMap[p.origem_cadastro || "manual"]
+                  const originKey = p.origem_cadastro && originMap[p.origem_cadastro] ? p.origem_cadastro : "manual"
+                  const origin = originMap[originKey]
                   const isPatientSelected = selected?.id === p.id
                   return (
                     <button
@@ -241,7 +244,14 @@ export default function PacientesPage() {
                          {selected.sus && <InfoBadge icon={<Activity />} label="SUS" value={selected.sus} color="bg-slate-100 text-slate-600" />}
                          {selected.data_nascimento && <InfoBadge icon={<Calendar />} label="DN" value={selected.data_nascimento} color="bg-slate-100 text-slate-600" />}
                          {selected.tipagem_sanguinea && <InfoBadge icon={<Heart />} label="SANGUE" value={selected.tipagem_sanguinea} color="bg-red-50 text-red-600" />}
-                         {selected.origem_cadastro && <InfoBadge icon={<History />} label="ORIGEM" value={originMap[selected.origem_cadastro]?.label || "—"} color="bg-indigo-50 text-indigo-600" />}
+                         {selected.origem_cadastro && (
+                           <InfoBadge 
+                             icon={<History />} 
+                             label="ORIGEM" 
+                             value={originMap[selected.origem_cadastro]?.label || "MANUAL"} 
+                             color={originMap[selected.origem_cadastro]?.badge || "bg-slate-100 text-slate-600"} 
+                           />
+                         )}
                        </div>
                     </div>
                   </div>
