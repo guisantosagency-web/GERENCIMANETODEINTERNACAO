@@ -111,6 +111,8 @@ export default function ChegadaTab() {
 
   const [slotInfo, setSlotInfo] = useState<{ total: number; occupied: number } | null>(null)
   const [isCheckingSlots, setIsCheckingSlots] = useState(false)
+  const [dynamicProcedures, setDynamicProcedures] = useState<string[]>([])
+  const [dynamicTypes, setDynamicTypes] = useState<Record<string, string[]>>({})
 
   const { user } = useAuth()
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
@@ -135,6 +137,26 @@ export default function ChegadaTab() {
       setMunicipios([])
     }
   }, [formData.state, estados])
+
+  const loadConfig = async () => {
+    const { data: procs } = await supabase.from("exam_procedures_list").select("*").order("name")
+    const { data: types } = await supabase.from("exam_types_list").select("*").order("name")
+
+    if (procs) setDynamicProcedures(procs.map((p: any) => p.name))
+    
+    if (types) {
+      const tMap: Record<string, string[]> = {}
+      types.forEach((t: any) => {
+        if (!tMap[t.procedure_name]) tMap[t.procedure_name] = []
+        tMap[t.procedure_name].push(t.name)
+      })
+      setDynamicTypes(tMap)
+    }
+  }
+
+  useEffect(() => {
+    loadConfig()
+  }, [])
 
   const loadData = async () => {
     setIsLoading(true)
@@ -192,6 +214,36 @@ export default function ChegadaTab() {
     loadData()
   }, [selectedDate]) // Recarregar quando a data mudar
 
+  useEffect(() => {
+    const checkSlots = async () => {
+      // Find the currently selected exam for encaixe
+      let procedure = ""
+      if (selectedAppt?.isBlankEncaixe) {
+        procedure = selectedAppt.procedure_name
+      } else if (selectedAppt) {
+        procedure = selectedAppt.procedure_name
+      }
+
+      if (!procedure || procedure === "Raio X") {
+        setSlotInfo(null)
+        return
+      }
+
+      setIsCheckingSlots(true)
+      try {
+        const { data: slotData } = await supabase.from("exam_slots").select("total_slots").eq("exam_date", selectedDate).eq("procedure_name", procedure).maybeSingle()
+        const { count } = await supabase.from("exam_appointments").select("*", { count: 'exact', head: true }).eq("exam_date", selectedDate).eq("procedure_name", procedure).neq("status", "cancelado")
+        setSlotInfo({ total: slotData?.total_slots || 0, occupied: count || 0 })
+      } finally {
+        setIsCheckingSlots(false)
+      }
+    }
+    
+    if (formData.is_encaixe) {
+      checkSlots()
+    }
+  }, [selectedAppt?.procedure_name, formData.is_encaixe, selectedDate, supabase])
+
   const handleSelectAppt = async (appt: any) => {
     setSelectedAppt(appt)
     setConfirmedIds(appt.ids || [appt.id])
@@ -226,58 +278,61 @@ export default function ChegadaTab() {
   const handleEncaixe = async (appt: any) => {
     setSelectedAppt(appt)
     setConfirmedIds(appt.ids || [appt.id])
-    setIsCheckingSlots(true)
-
-    try {
-      // 1. Check Slots
-      const { data: slotData } = await supabase
-        .from("exam_slots")
-        .select("total_slots")
-        .eq("exam_date", appt.exam_date)
-        .eq("procedure_name", appt.procedure_name)
+    
+    // Fetch Master Data
+    let masterData: any = null
+    if (appt.cpf || appt.sus) {
+      const { data: masterPatient } = await supabase
+        .from("master_patients")
+        .select("*")
+        .or(`cpf.eq.${appt.cpf},sus.eq.${appt.sus}`)
         .maybeSingle()
-
-      const { count } = await supabase
-        .from("exam_appointments")
-        .select("*", { count: 'exact', head: true })
-        .eq("exam_date", appt.exam_date)
-        .eq("procedure_name", appt.procedure_name)
-        .neq("status", "cancelado")
-
-      const info = { total: slotData?.total_slots || 0, occupied: count || 0 }
-      setSlotInfo(info)
-
-      if (info.total > 0 && info.occupied >= info.total) {
-        alert(`ATENÇÃO: Não há vagas disponíveis para ${appt.procedure_name} nesta data (${info.occupied}/${info.total}).`)
-      }
-
-      // 2. Fetch Master Data
-      let masterData: any = null
-      if (appt.cpf || appt.sus) {
-        const { data: masterPatient } = await supabase
-          .from("master_patients")
-          .select("*")
-          .or(`cpf.eq.${appt.cpf},sus.eq.${appt.sus}`)
-          .maybeSingle()
-        masterData = masterPatient
-      }
-
-      setFormData({
-        origin_id: origins[0]?.id || "",
-        new_origin_name: "",
-        cpf: appt.cpf || masterData?.cpf || "",
-        sus: appt.sus || masterData?.sus || "",
-        birth_date: masterData?.data_nascimento || appt.birth_date || "",
-        state: masterData?.estado || appt.estado || "MA",
-        city: masterData?.municipio || appt.municipio || "São Luís",
-        chave_sisreg: appt.chave_sisreg || "",
-        priority: "Sem Prioridade",
-        receptionist_name: user?.name || "",
-        is_encaixe: true
-      })
-    } finally {
-      setIsCheckingSlots(false)
+      masterData = masterPatient
     }
+
+    setFormData({
+      origin_id: origins[0]?.id || "",
+      new_origin_name: "",
+      cpf: appt.cpf || masterData?.cpf || "",
+      sus: appt.sus || masterData?.sus || "",
+      birth_date: masterData?.data_nascimento || appt.birth_date || "",
+      state: masterData?.estado || appt.estado || "MA",
+      city: masterData?.municipio || appt.municipio || "São Luís",
+      chave_sisreg: appt.chave_sisreg || "",
+      priority: "Sem Prioridade",
+      receptionist_name: user?.name || "",
+      is_encaixe: true
+    })
+  }
+
+  const handleNewEncaixe = () => {
+    const blankAppt = {
+      id: 'NEW-' + Math.random().toString(36).substr(2, 9),
+      patient_name: "",
+      exam_date: selectedDate,
+      exam_time: format(new Date(), "HH:mm"),
+      procedure_name: "",
+      exam_type: "",
+      cpf: "",
+      sus: "",
+      isBlankEncaixe: true
+    }
+    setSelectedAppt(blankAppt)
+    setConfirmedIds([blankAppt.id])
+    setFormData({
+      origin_id: origins[0]?.id || "",
+      new_origin_name: "",
+      cpf: "",
+      sus: "",
+      birth_date: "",
+      state: "MA",
+      city: "São Luís",
+      chave_sisreg: "",
+      priority: "Sem Prioridade",
+      receptionist_name: user?.name || "",
+      is_encaixe: true
+    })
+    setSlotInfo(null)
   }
 
   const handleDeleteOrigin = async (e: any, id: string) => {
@@ -301,6 +356,11 @@ export default function ChegadaTab() {
       return
     }
 
+    if (selectedAppt.isBlankEncaixe && (!selectedAppt.patient_name || !selectedAppt.procedure_name)) {
+      alert("Por favor, preencha o nome do paciente e o procedimento.")
+      return
+    }
+
     setIsLoading(true)
     try {
       let finalOriginId = formData.origin_id
@@ -313,32 +373,56 @@ export default function ChegadaTab() {
 
       const cleanCPF = formData.cpf.replace(/\D/g, "")
 
-      // 1. Confirmados -> aguardando
-      const { error: errorConfirm } = await supabase.from("exam_appointments").update({
-        status: "aguardando",
-        arrival_time: new Date().toISOString(),
-        origin_id: finalOriginId,
-        cpf: cleanCPF,
-        sus: formData.sus.replace(/\D/g, "") || undefined,
-        birth_date: formData.birth_date,
-        state: formData.state,
-        city: formData.city,
-        chave_sisreg: formData.chave_sisreg,
-        priority: formData.priority,
-        receptionist_name: formData.receptionist_name
-      }).in("id", confirmedIds)
+      if (selectedAppt.isBlankEncaixe) {
+        // Fluxo para NOVO AGENDA + ENTRADA DIRETA
+        const { error: insertError } = await supabase.from("exam_appointments").insert([{
+          patient_name: selectedAppt.patient_name.toUpperCase(),
+          exam_date: selectedDate,
+          exam_time: selectedAppt.exam_time || format(new Date(), "HH:mm"),
+          procedure_name: selectedAppt.procedure_name,
+          exam_type: selectedAppt.exam_type,
+          status: "aguardando",
+          arrival_time: new Date().toISOString(),
+          origin_id: finalOriginId,
+          cpf: cleanCPF,
+          sus: formData.sus.replace(/\D/g, "") || undefined,
+          birth_date: formData.birth_date,
+          state: formData.state,
+          city: formData.city,
+          chave_sisreg: formData.chave_sisreg,
+          priority: formData.priority,
+          receptionist_name: formData.receptionist_name
+        }])
 
-      if (errorConfirm) throw errorConfirm
-
-      // 2. Não Confirmados -> cancelado
-      const allIds = selectedAppt.ids || [selectedAppt.id]
-      const cancelledIds = allIds.filter((id: string) => !confirmedIds.includes(id))
-
-      if (cancelledIds.length > 0) {
-        await supabase.from("exam_appointments").update({
-          status: "cancelado",
-          updated_at: new Date().toISOString()
-        }).in("id", cancelledIds)
+        if (insertError) throw insertError
+      } else {
+        // 1. Confirmados -> aguardando
+        const { error: errorConfirm } = await supabase.from("exam_appointments").update({
+          status: "aguardando",
+          arrival_time: new Date().toISOString(),
+          origin_id: finalOriginId,
+          cpf: cleanCPF,
+          sus: formData.sus.replace(/\D/g, "") || undefined,
+          birth_date: formData.birth_date,
+          state: formData.state,
+          city: formData.city,
+          chave_sisreg: formData.chave_sisreg,
+          priority: formData.priority,
+          receptionist_name: formData.receptionist_name
+        }).in("id", confirmedIds)
+  
+        if (errorConfirm) throw errorConfirm
+  
+        // 2. Não Confirmados -> cancelado
+        const allIds = selectedAppt.ids || [selectedAppt.id]
+        const cancelledIds = allIds.filter((id: string) => !confirmedIds.includes(id))
+  
+        if (cancelledIds.length > 0) {
+          await supabase.from("exam_appointments").update({
+            status: "cancelado",
+            updated_at: new Date().toISOString()
+          }).in("id", cancelledIds)
+        }
       }
 
       // 3. Sincronizar Cadastro Mestre
@@ -394,7 +478,7 @@ export default function ChegadaTab() {
           {formData.is_encaixe && slotInfo && (
             <div className={`p-4 flex items-center justify-between border-b ${slotInfo.total > 0 && slotInfo.occupied >= slotInfo.total ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
               <div className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
+                {isCheckingSlots ? <Loader2 className="h-4 w-4 animate-spin" /> : <AlertCircle className="h-4 w-4" />}
                 <span className="text-[10px] font-black uppercase tracking-widest">Disponibilidade de Vagas:</span>
               </div>
               <span className="text-xs font-black">{slotInfo.total === 0 ? "Sem Limite" : `${slotInfo.occupied} / ${slotInfo.total}`}</span>
@@ -404,37 +488,90 @@ export default function ChegadaTab() {
           <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
             <form id="arrival-form" onSubmit={handleSubmit} className="space-y-8 pb-10">
               <div className="space-y-6">
-                {/* EXAM CONFIRMATION SECTION */}
-                <div className="space-y-3 bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100">
-                  <Label className="uppercase text-[10px] font-black tracking-widest text-emerald-600 ml-2">Confirmar Exames a Realizar</Label>
-                  <div className="space-y-2">
-                    {(selectedAppt?.raw_appointments || []).map((exam: any) => {
-                      const id = exam.id
-                      const isConfirmed = confirmedIds.includes(id)
-                      return (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => toggleExam(id)}
-                          className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${isConfirmed ? 'bg-white border-emerald-500 shadow-sm' : 'bg-slate-50 border-transparent opacity-60'}`}
+                
+                {/* BLANK ENCAIXE FIELDS */}
+                {selectedAppt?.isBlankEncaixe && (
+                  <div className="space-y-6 animate-in slide-in-from-top-4 duration-500">
+                    <div className="space-y-2">
+                      <Label className="uppercase text-[10px] font-black tracking-widest text-blue-600 ml-2">Nome Completo do Paciente</Label>
+                      <Input 
+                        required 
+                        placeholder="DIGITAR NOME..." 
+                        value={selectedAppt.patient_name} 
+                        onChange={e => setSelectedAppt((p: any) => ({ ...p, patient_name: e.target.value.toUpperCase() }))} 
+                        className="h-14 font-black uppercase bg-blue-50 border-blue-100 rounded-2xl" 
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="space-y-2">
+                        <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Procedimento</Label>
+                        <select 
+                          required 
+                          value={selectedAppt.procedure_name} 
+                          onChange={e => {
+                            const val = e.target.value
+                            setSelectedAppt((p: any) => ({ 
+                              ...p, 
+                              procedure_name: val, 
+                              exam_type: (dynamicTypes[val] || [])[0] || "" 
+                            }))
+                          }} 
+                          className="w-full h-14 bg-slate-50 border-none rounded-2xl px-4 font-black uppercase text-xs"
                         >
-                          <div className="flex flex-col items-start">
-                            <span className={`text-[11px] font-black uppercase ${isConfirmed ? 'text-emerald-700' : 'text-slate-500'}`}>{exam.procedure_name}</span>
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-[9px] font-bold text-slate-400">{exam.exam_type || 'Padrão'}</span>
-                              {exam.procedure_detail && (
-                                <span className="text-[8px] font-medium text-slate-300 italic truncate max-w-[200px]">SISREG: {exam.procedure_detail}</span>
-                              )}
-                            </div>
-                          </div>
-                          <div className={`h-6 w-6 rounded-full flex items-center justify-center border-2 ${isConfirmed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 text-transparent'}`}>
-                            {isConfirmed && <CheckSquare className="h-3 w-3" />}
-                          </div>
-                        </button>
-                      )
-                    })}
+                          <option value="">SELECIONE...</option>
+                          {dynamicProcedures.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Especificação</Label>
+                        <select 
+                          value={selectedAppt.exam_type} 
+                          onChange={e => setSelectedAppt((p: any) => ({ ...p, exam_type: e.target.value }))} 
+                          className="w-full h-14 bg-slate-50 border-none rounded-2xl px-4 font-black uppercase text-xs"
+                        >
+                          <option value="">PADRÃO / NENHUMA</option>
+                          {(dynamicTypes[selectedAppt.procedure_name] || []).map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* EXAM CONFIRMATION SECTION (Only for existing appointments) */}
+                {!selectedAppt?.isBlankEncaixe && (
+                  <div className="space-y-3 bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100">
+                    <Label className="uppercase text-[10px] font-black tracking-widest text-emerald-600 ml-2">Confirmar Exames a Realizar</Label>
+                    <div className="space-y-2">
+                      {(selectedAppt?.raw_appointments || []).map((exam: any) => {
+                        const id = exam.id
+                        const isConfirmed = confirmedIds.includes(id)
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => toggleExam(id)}
+                            className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${isConfirmed ? 'bg-white border-emerald-500 shadow-sm' : 'bg-slate-50 border-transparent opacity-60'}`}
+                          >
+                            <div className="flex flex-col items-start">
+                              <span className={`text-[11px] font-black uppercase ${isConfirmed ? 'text-emerald-700' : 'text-slate-500'}`}>{exam.procedure_name}</span>
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-[9px] font-bold text-slate-400">{exam.exam_type || 'Padrão'}</span>
+                                {exam.procedure_detail && (
+                                  <span className="text-[8px] font-medium text-slate-300 italic truncate max-w-[200px]">SISREG: {exam.procedure_detail}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className={`h-6 w-6 rounded-full flex items-center justify-center border-2 ${isConfirmed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 text-transparent'}`}>
+                              {isConfirmed && <CheckSquare className="h-3 w-3" />}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2 group">
                   <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Origem do Encaminhamento</Label>
@@ -562,18 +699,28 @@ export default function ChegadaTab() {
                 />
               </div>
               <div className="h-12 w-[1.5px] bg-slate-100" />
-              <input 
-                type="date" 
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="h-12 px-4 bg-slate-50 border-none rounded-xl text-xs font-black uppercase focus:ring-2 focus:ring-emerald-500/20 transition-all"
-              />
-              <div className="px-4 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl flex items-center gap-2.5 border border-emerald-100">
-                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest">{appointments.length} REGISTROS</span>
+                <input 
+                  type="date" 
+                  value={selectedDate}
+                  onChange={(e: any) => setSelectedDate(e.target.value)}
+                  className="h-12 px-4 bg-slate-50 border-none rounded-xl text-xs font-black uppercase focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                />
+                <div className="flex items-center gap-2">
+                  <div className="px-4 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl flex items-center gap-2.5 border border-emerald-100">
+                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">{appointments.length} REGISTROS</span>
+                  </div>
+
+                  <Button
+                    onClick={handleNewEncaixe}
+                    className="h-12 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black uppercase text-[10px] tracking-widest shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition-all gap-2"
+                  >
+                    <Activity className="h-4 w-4" />
+                    Encaixe
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
 
           {isLoading ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 text-slate-400">
@@ -621,18 +768,10 @@ export default function ChegadaTab() {
                       <div className="flex items-center gap-2">
                         <Button
                           onClick={() => handleSelectAppt(a)}
-                          className={`h-14 px-6 rounded-2xl gap-3 font-black uppercase text-[10px] tracking-widest transition-all ${selectedAppt?.id === a.id && !formData.is_encaixe ? 'bg-emerald-700 text-white shadow-none' : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/30'}`}
+                          className={`h-14 px-8 rounded-2xl gap-3 font-black uppercase text-xs tracking-widest transition-all ${selectedAppt?.id === a.id && !formData.is_encaixe ? 'bg-emerald-700 text-white shadow-none' : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/30'}`}
                         >
                           {selectedAppt?.id === a.id && !formData.is_encaixe ? <ChevronRight className="h-5 w-5 animate-bounce-horizontal" /> : <CheckSquare className="h-5 w-5" />}
-                          {selectedAppt?.id === a.id && !formData.is_encaixe ? "Editando..." : "Registrar"}
-                        </Button>
-
-                        <Button
-                          onClick={() => handleEncaixe(a)}
-                          className={`h-14 px-6 rounded-2xl gap-3 font-black uppercase text-[10px] tracking-widest transition-all ${selectedAppt?.id === a.id && formData.is_encaixe ? 'bg-amber-600 text-white shadow-none' : 'bg-white border-2 border-amber-500 text-amber-600 hover:bg-amber-50 shadow-lg shadow-amber-500/5 hover:shadow-amber-500/20'}`}
-                        >
-                          {isCheckingSlots && selectedAppt?.id === a.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Activity className="h-4 w-4" />}
-                          Encaixe
+                          {selectedAppt?.id === a.id && !formData.is_encaixe ? "Editando..." : "Registrar Entrada"}
                         </Button>
                       </div>
 
