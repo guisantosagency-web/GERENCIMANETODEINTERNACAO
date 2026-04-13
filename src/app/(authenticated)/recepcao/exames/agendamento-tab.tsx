@@ -697,8 +697,24 @@ export default function AgendamentoTab() {
     printWindow.document.close()
   }
 
-  const hasSlots = exams.every(e => e.procedure_name === "Raio X") || true // Simplified for multi-procedure, we can refine this later
-  const noSlotsAtAll = false // Simplified for now
+  const hasSlots = useMemo(() => {
+    // Se não houver exames ou se for Raio X (unidade geralmente sem limite rígido no sistema)
+    if (!exams[0]) return true
+    if (exams[0].procedure_name === "Raio X") return true
+    
+    // Se houver configuração de vagas e o total for maior que 0
+    if (slotInfo && slotInfo.total > 0) {
+      return slotInfo.occupied < slotInfo.total
+    }
+    
+    // Se não houver configuração para o dia/procedimento, assume-se livre
+    return true
+  }, [slotInfo, exams])
+
+  const noSlotsAtAll = useMemo(() => {
+    if (!exams[0] || exams[0].procedure_name === "Raio X") return false
+    return slotInfo !== null && slotInfo.total > 0 && slotInfo.occupied >= slotInfo.total
+  }, [slotInfo, exams])
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">

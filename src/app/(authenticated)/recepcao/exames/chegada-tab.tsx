@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { CheckSquare, Clock, MapPin, Key, Loader2, Users, Trash, Search, ChevronDown, ChevronRight, X, Send, CreditCard } from "lucide-react"
+import { CheckSquare, Clock, MapPin, Key, Loader2, Users, Trash, Search, ChevronDown, ChevronRight, X, Send, CreditCard, Activity, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -105,8 +105,12 @@ export default function ChegadaTab() {
     city: "São Luís",
     chave_sisreg: "",
     priority: "Sem Prioridade",
-    receptionist_name: ""
+    receptionist_name: "",
+    is_encaixe: false
   })
+
+  const [slotInfo, setSlotInfo] = useState<{ total: number; occupied: number } | null>(null)
+  const [isCheckingSlots, setIsCheckingSlots] = useState(false)
 
   const { user } = useAuth()
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
@@ -213,8 +217,67 @@ export default function ChegadaTab() {
       city: masterData?.municipio || appt.municipio || "São Luís",
       chave_sisreg: appt.chave_sisreg || "",
       priority: "Sem Prioridade",
-      receptionist_name: user?.name || ""
+      receptionist_name: user?.name || "",
+      is_encaixe: false
     })
+    setSlotInfo(null)
+  }
+
+  const handleEncaixe = async (appt: any) => {
+    setSelectedAppt(appt)
+    setConfirmedIds(appt.ids || [appt.id])
+    setIsCheckingSlots(true)
+
+    try {
+      // 1. Check Slots
+      const { data: slotData } = await supabase
+        .from("exam_slots")
+        .select("total_slots")
+        .eq("exam_date", appt.exam_date)
+        .eq("procedure_name", appt.procedure_name)
+        .maybeSingle()
+
+      const { count } = await supabase
+        .from("exam_appointments")
+        .select("*", { count: 'exact', head: true })
+        .eq("exam_date", appt.exam_date)
+        .eq("procedure_name", appt.procedure_name)
+        .neq("status", "cancelado")
+
+      const info = { total: slotData?.total_slots || 0, occupied: count || 0 }
+      setSlotInfo(info)
+
+      if (info.total > 0 && info.occupied >= info.total) {
+        alert(`ATENÇÃO: Não há vagas disponíveis para ${appt.procedure_name} nesta data (${info.occupied}/${info.total}).`)
+      }
+
+      // 2. Fetch Master Data
+      let masterData: any = null
+      if (appt.cpf || appt.sus) {
+        const { data: masterPatient } = await supabase
+          .from("master_patients")
+          .select("*")
+          .or(`cpf.eq.${appt.cpf},sus.eq.${appt.sus}`)
+          .maybeSingle()
+        masterData = masterPatient
+      }
+
+      setFormData({
+        origin_id: origins[0]?.id || "",
+        new_origin_name: "",
+        cpf: appt.cpf || masterData?.cpf || "",
+        sus: appt.sus || masterData?.sus || "",
+        birth_date: masterData?.data_nascimento || appt.birth_date || "",
+        state: masterData?.estado || appt.estado || "MA",
+        city: masterData?.municipio || appt.municipio || "São Luís",
+        chave_sisreg: appt.chave_sisreg || "",
+        priority: "Sem Prioridade",
+        receptionist_name: user?.name || "",
+        is_encaixe: true
+      })
+    } finally {
+      setIsCheckingSlots(false)
+    }
   }
 
   const handleDeleteOrigin = async (e: any, id: string) => {
@@ -320,8 +383,23 @@ export default function ChegadaTab() {
               <Button variant="ghost" size="icon" onClick={() => setSelectedAppt(null)} className="h-10 w-10 text-white hover:bg-white/10 rounded-full"><X className="h-6 w-6" /></Button>
             </div>
             <h3 className="text-2xl font-black font-space uppercase tracking-tight">Protocolo de Entrada</h3>
-            <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1 line-clamp-1">Paciente: {selectedAppt?.patient_name}</p>
+            <div className="flex items-center gap-3">
+              <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1 line-clamp-1">Paciente: {selectedAppt?.patient_name}</p>
+              {formData.is_encaixe && (
+                <span className="bg-amber-400 text-amber-900 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter animate-pulse">MODO ENCAIXE</span>
+              )}
+            </div>
           </div>
+
+          {formData.is_encaixe && slotInfo && (
+            <div className={`p-4 flex items-center justify-between border-b ${slotInfo.total > 0 && slotInfo.occupied >= slotInfo.total ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Disponibilidade de Vagas:</span>
+              </div>
+              <span className="text-xs font-black">{slotInfo.total === 0 ? "Sem Limite" : `${slotInfo.occupied} / ${slotInfo.total}`}</span>
+            </div>
+          )}
 
           <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
             <form id="arrival-form" onSubmit={handleSubmit} className="space-y-8 pb-10">
@@ -447,9 +525,14 @@ export default function ChegadaTab() {
           </div>
 
           <div className="p-8 border-t bg-slate-50/50">
-            <Button form="arrival-form" type="submit" disabled={isLoading} className="w-full h-16 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-emerald-500/20 gap-4 transition-all active:scale-95 group">
+            <Button 
+              form="arrival-form" 
+              type="submit" 
+              disabled={isLoading || (formData.is_encaixe && slotInfo && slotInfo.total > 0 && slotInfo.occupied >= slotInfo.total)} 
+              className={`w-full h-16 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl gap-4 transition-all active:scale-95 group ${formData.is_encaixe && slotInfo && slotInfo.total > 0 && slotInfo.occupied >= slotInfo.total ? 'bg-slate-300 shadow-none' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20'}`}
+            >
               {isLoading ? <Loader2 className="animate-spin h-6 w-6" /> : <Send className="h-6 w-6 group-hover:translate-x-1 transition-transform" />}
-              Confirmar Chegada
+              {formData.is_encaixe ? "Confirmar Encaixe" : "Confirmar Chegada"}
             </Button>
           </div>
         </div>
@@ -535,13 +618,23 @@ export default function ChegadaTab() {
                         <span className="text-xs font-black text-slate-500 tabular-nums lowercase">{a.cpf ? 'cpf: ' + a.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : 'sus: ' + a.sus}</span>
                       </div>
 
-                      <Button
-                        onClick={() => handleSelectAppt(a)}
-                        className={`h-14 px-8 rounded-2xl gap-3 font-black uppercase text-xs tracking-widest transition-all ${selectedAppt?.id === a.id ? 'bg-emerald-700 text-white shadow-none' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/10 hover:shadow-emerald-500/30'}`}
-                      >
-                        {selectedAppt?.id === a.id ? <ChevronRight className="h-5 w-5 animate-bounce-horizontal" /> : <CheckSquare className="h-5 w-5" />}
-                        {selectedAppt?.id === a.id ? "Editando..." : "Registrar Entrada"}
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() => handleSelectAppt(a)}
+                          className={`h-14 px-6 rounded-2xl gap-3 font-black uppercase text-[10px] tracking-widest transition-all ${selectedAppt?.id === a.id && !formData.is_encaixe ? 'bg-emerald-700 text-white shadow-none' : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/30'}`}
+                        >
+                          {selectedAppt?.id === a.id && !formData.is_encaixe ? <ChevronRight className="h-5 w-5 animate-bounce-horizontal" /> : <CheckSquare className="h-5 w-5" />}
+                          {selectedAppt?.id === a.id && !formData.is_encaixe ? "Editando..." : "Registrar"}
+                        </Button>
+
+                        <Button
+                          onClick={() => handleEncaixe(a)}
+                          className={`h-14 px-6 rounded-2xl gap-3 font-black uppercase text-[10px] tracking-widest transition-all ${selectedAppt?.id === a.id && formData.is_encaixe ? 'bg-amber-600 text-white shadow-none' : 'bg-white border-2 border-amber-500 text-amber-600 hover:bg-amber-50 shadow-lg shadow-amber-500/5 hover:shadow-amber-500/20'}`}
+                        >
+                          {isCheckingSlots && selectedAppt?.id === a.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Activity className="h-4 w-4" />}
+                          Encaixe
+                        </Button>
+                      </div>
 
                       {user?.role === "admin" && (
                         <Button
