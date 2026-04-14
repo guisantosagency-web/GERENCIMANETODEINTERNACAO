@@ -12,6 +12,7 @@ import { upsertMasterPatient } from "@/lib/patient-search"
 export default function SisregTab() {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [imports, setImports] = useState<any[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [processingId, setProcessingId] = useState<string | null>(null)
   
@@ -111,6 +112,15 @@ export default function SisregTab() {
 
   useEffect(() => { loadImports() }, [date])
 
+  const filteredImports = useMemo(() => {
+    if (!searchTerm) return imports
+    const s = searchTerm.toUpperCase()
+    return imports.filter(item => 
+      item.patient_name.toUpperCase().includes(s) || 
+      item.cns.includes(s)
+    )
+  }, [imports, searchTerm])
+
   return (
     <div className="h-full flex gap-8 relative overflow-hidden animate-in fade-in duration-500">
       
@@ -133,9 +143,25 @@ export default function SisregTab() {
                 <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-3">Filtrar Data SISREG</Label>
                 <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-14 bg-slate-50 border-none rounded-2xl text-sm font-black w-48 shadow-inner" />
               </div>
-              <Button onClick={loadImports} className="h-14 rounded-2xl px-10 bg-slate-900 hover:bg-black text-white font-black uppercase text-xs tracking-widest gap-3 transition-all active:scale-95">
-                <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} /> Sincronizar
-              </Button>
+
+              <div className="space-y-1 flex-1 min-w-[300px]">
+                <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-3">Pesquisar Paciente</Label>
+                <div className="relative group/search">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-hover/search:text-blue-500 transition-colors" />
+                  <Input 
+                    placeholder="BUSCAR NOME OU CNS..." 
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="h-14 pl-14 pr-6 bg-slate-50 border-none rounded-2xl text-sm font-black shadow-inner uppercase" 
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-end h-full">
+                <Button onClick={loadImports} className="h-14 rounded-2xl px-10 bg-slate-900 hover:bg-black text-white font-black uppercase text-xs tracking-widest gap-3 transition-all active:scale-95">
+                  <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} /> Sincronizar
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -151,9 +177,9 @@ export default function SisregTab() {
               <tbody>
                 {isLoading && imports.length === 0 ? (
                   <tr><td colSpan={3} className="py-32 text-center"><div className="flex flex-col items-center gap-4"><Loader2 className="h-12 w-12 animate-spin text-blue-500" /><span className="text-[10px] font-black uppercase tracking-widest text-slate-400 animate-pulse">Carregando triagem...</span></div></td></tr>
-                ) : imports.length === 0 ? (
+                ) : filteredImports.length === 0 ? (
                   <tr><td colSpan={3} className="py-32 text-center"><div className="flex flex-col items-center gap-4 opacity-20"><Search className="h-20 w-20 text-slate-400" /><p className="text-lg font-black uppercase tracking-widest text-slate-500">Nenhum registro encontrado</p></div></td></tr>
-                ) : imports.map((item, idx) => {
+                ) : filteredImports.map((item, idx) => {
                   const isConfirmed = item.status === 'confirmed'
                   return (
                     <tr key={idx} className={`bg-white group rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all border-2 border-transparent ${isConfirmed ? 'bg-emerald-50/20 border-emerald-100 hover:border-emerald-200' : 'hover:border-blue-100'}`}>
