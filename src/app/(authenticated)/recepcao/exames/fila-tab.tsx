@@ -10,6 +10,7 @@ export default function FilaTab() {
   const [appointments, setAppointments] = useState<any[]>([])
   const [originsData, setOriginsData] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const { user } = useAuth()
 
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
@@ -27,6 +28,7 @@ export default function FilaTab() {
       const { data } = await supabase
         .from("exam_appointments")
         .select("*")
+        .eq("exam_date", selectedDate)
         .in("status", ["aguardando", "presente", "falta"])
         .order("arrival_time", { ascending: true })
 
@@ -101,7 +103,7 @@ export default function FilaTab() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [selectedDate])
 
   const handleStatusChange = async (ids: string[], newStatus: string, firstAppt: any) => {
     try {
@@ -156,10 +158,27 @@ export default function FilaTab() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="glass-premium rounded-[2.5rem] p-6 lg:p-8 shadow-premium">
-        <h2 className="text-2xl font-black font-space uppercase tracking-tight mb-8 flex items-center gap-3">
-          <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-2xl shadow-lg shadow-purple-500/20"><Play className="h-6 w-6" /></div>
-          Fila de Realização <span className="text-muted-foreground font-medium text-base">(Painel de Chamada)</span>
-        </h2>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+          <h2 className="text-2xl font-black font-space uppercase tracking-tight flex items-center gap-3">
+            <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-2xl shadow-lg shadow-purple-500/20"><Play className="h-6 w-6" /></div>
+            Fila de Realização <span className="text-muted-foreground font-medium text-base">(Painel de Chamada)</span>
+          </h2>
+
+          <div className="flex items-center gap-4 bg-white/50 backdrop-blur-md border border-slate-100 p-2 pl-5 rounded-[1.5rem] shadow-sm">
+             <div className="flex flex-col">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">DATA DE REFERÊNCIA</span>
+                <input 
+                  type="date" 
+                  value={selectedDate} 
+                  onChange={e => setSelectedDate(e.target.value)}
+                  className="bg-transparent border-none text-sm font-black text-purple-600 focus:ring-0 p-0 uppercase"
+                />
+             </div>
+             <Button onClick={loadData} variant="ghost" size="icon" className="h-10 w-10 text-slate-300 hover:text-purple-500 rounded-xl">
+                <Clock className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+             </Button>
+          </div>
+        </div>
         {isLoading ? (
            <div className="h-64 flex items-center justify-center">
              <Loader2 className="h-8 w-8 animate-spin text-purple-500" />

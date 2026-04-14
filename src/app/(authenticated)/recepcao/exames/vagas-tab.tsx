@@ -7,14 +7,18 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
+import { useAuth } from "@/lib/auth-context"
+import { ExamManagerModal } from "@/components/exam-manager-modal"
+import { Settings2, Loader2 } from "lucide-react"
 
 const FALLBACK_SLOT_PROCEDURES = [
   "Ultrassom",
   "Ecocardiograma",
-  "Tomografia sem Contraste",
+  "Tomografia",
   "Tomografia com Contraste",
-  "Angiotomografia",
-  "Laboratoriais"
+  "Laboratoriais",
+  "Raio X",
+  "Eletrocardiograma"
 ]
 
 export default function VagasTab() {
@@ -26,6 +30,10 @@ export default function VagasTab() {
   const [dynamicProcedures, setDynamicProcedures] = useState<string[]>(FALLBACK_SLOT_PROCEDURES)
   const [newProcedure, setNewProcedure] = useState(FALLBACK_SLOT_PROCEDURES[0])
   const [newTotalSlots, setNewTotalSlots] = useState("")
+  const [isManagerOpen, setIsManagerOpen] = useState(false)
+
+  const { user } = useAuth()
+  const isAdmin = user?.role === "admin"
 
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
 
@@ -101,10 +109,23 @@ export default function VagasTab() {
   return (
     <div className="space-y-6">
       <div className="glass-card !bg-card/40 border-none rounded-[2.5rem] p-8 max-w-6xl mx-auto shadow-sm">
-        <h2 className="text-2xl font-black font-space uppercase tracking-tight mb-8 flex items-center gap-3">
-          <div className="p-3 bg-amber-500/10 text-amber-500 rounded-xl"><CalendarIcon className="h-6 w-6" /></div>
-          Gestão de Vagas Interativa
-        </h2>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+          <h2 className="text-2xl font-black font-space uppercase tracking-tight flex items-center gap-3">
+            <div className="p-3 bg-amber-500/10 text-amber-500 rounded-xl"><CalendarIcon className="h-6 w-6" /></div>
+            Gestão de Vagas Interativa
+          </h2>
+          {isAdmin && (
+            <Button 
+              type="button"
+              onClick={() => setIsManagerOpen(true)}
+              variant="outline"
+              className="h-12 px-6 rounded-2xl bg-white border-amber-100 text-amber-600 hover:bg-amber-50 font-black uppercase text-[10px] tracking-widest gap-2 shadow-sm"
+            >
+              <Settings2 className="h-4 w-4" />
+              Gerenciar Procedimentos
+            </Button>
+          )}
+        </div>
 
         <div className="grid lg:grid-cols-[1fr_400px] gap-12">
            {/* Esquerda: Calendário e Configuração */}
@@ -215,26 +236,14 @@ export default function VagasTab() {
            </div>
         </div>
       </div>
+      <ExamManagerModal 
+        isOpen={isManagerOpen} 
+        onOpenChange={setIsManagerOpen} 
+        onUpdate={loadProcedures} 
+      />
     </div>
   )
 }
 
-function Loader2(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-    </svg>
-  )
-}
+
 

@@ -8,11 +8,11 @@ import { Label } from "@/components/ui/label"
 import { format, parseISO } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
 import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
+import { ExamManagerModal } from "@/components/exam-manager-modal"
 
 const FALLBACK_PROCEDURES = [
-  "Tomografia sem Contraste",
+  "Tomografia",
   "Tomografia com Contraste",
-  "Angiotomografia",
   "Ultrassom",
   "Ecocardiograma",
   "Raio X",
@@ -21,9 +21,8 @@ const FALLBACK_PROCEDURES = [
 ]
 
 const FALLBACK_TYPES: Record<string, string[]> = {
-  "Tomografia sem Contraste": ["Crânio", "Abdome Total", "Tórax", "Coluna Cervical", "Coluna Lombar", "Outros"],
+  "Tomografia": ["Crânio", "Abdome Total", "Tórax", "Coluna Cervical", "Coluna Lombar", "Angio Cerebral", "Angio Abdominal", "Angio Membros", "Angio Aorta", "Outros"],
   "Tomografia com Contraste": ["Crânio com Contraste", "Abdome com Contraste", "Tórax com Contraste", "Outros"],
-  "Angiotomografia": ["Cerebral", "Abdominal", "Membros", "Aorta"],
   "Ultrassom": ["Abdominal Total", "Pélvico", "Articulações", "Transvaginal", "Outros"],
   "Ecocardiograma": ["Transtorácico", "Transesofágico"],
   "Raio X": ["Tórax", "Membros", "Coluna", "Bacia"],
@@ -33,7 +32,7 @@ const FALLBACK_TYPES: Record<string, string[]> = {
 
 // PREMIUM 3D HUMAN MODEL
 const HumanModel = ({ procedure }: { procedure: string }) => {
-  const isHead = (procedure || "").includes("Tomografia") || (procedure || "").includes("Angiotomografia")
+  const isHead = (procedure || "").includes("Tomografia")
   const isChest = procedure === "Ecocardiograma" || procedure === "Eletrocardiograma" || procedure === "Raio X"
   const isAbdomen = (procedure || "").includes("Ultrassom") || (procedure || "").includes("Abdome")
   const isLimbs = procedure === "Raio X" || (procedure || "").includes("Membros")
@@ -164,14 +163,16 @@ const SearchableAdder = ({
   options, 
   placeholder, 
   label, 
-  onAddNew 
+  onAddNew,
+  canAdd = true 
 }: { 
   value: string, 
   onSelect: (v: string) => void, 
   options: string[], 
   placeholder: string, 
   label: string,
-  onAddNew: (v: string) => Promise<void>
+  onAddNew: (v: string) => Promise<void>,
+  canAdd?: boolean
 }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState("")
@@ -240,7 +241,7 @@ const SearchableAdder = ({
                 {value === opt && <Check className="h-3.5 w-3.5 text-blue-500" />}
               </button>
             ))}
-            {showAdd && (
+            {showAdd && canAdd && (
               <button
                 disabled={isAdding}
                 onClick={handleAdd}
@@ -254,6 +255,16 @@ const SearchableAdder = ({
                   <p className="text-xs font-black text-emerald-700 uppercase">CADASTRAR "{search}"</p>
                 </div>
               </button>
+            )}
+            {showAdd && !canAdd && (
+              <div className="p-6 bg-red-50 border-t border-red-100 flex items-center gap-4">
+                <div className="h-8 w-8 flex-shrink-0 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                  <AlertCircle className="h-4 w-4" />
+                </div>
+                <p className="text-[9px] font-black text-red-600 uppercase leading-tight tracking-tight">
+                  voce digitou errado ou procedimento não esta cadastrado, por favor se for cadastrar, chame o admininistrador do sistema
+                </p>
+              </div>
             )}
             {filtered.length === 0 && !showAdd && (
               <div className="p-8 text-center opacity-30">
@@ -281,6 +292,9 @@ export default function AgendamentoTab() {
   const [dateAppointments, setDateAppointments] = useState<any[]>([])
   const [lastSaved, setLastSaved] = useState<any>(null)
   const [selectedAgendadoDate, setSelectedAgendadoDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
+  const [isManagerOpen, setIsManagerOpen] = useState(false)
+
+  const isAdmin = user?.role === "admin"
 
   const [dynamicProcedures, setDynamicProcedures] = useState<string[]>(FALLBACK_PROCEDURES)
   const [dynamicTypes, setDynamicTypes] = useState<Record<string, string[]>>(FALLBACK_TYPES)
@@ -736,17 +750,29 @@ export default function AgendamentoTab() {
                     Novo Agendamento
                   </h2>
                 </div>
-                {(exams[0] && exams[0].procedure_name !== "Raio X") && (
-                  <div className={`px-8 py-5 rounded-[2rem] border-2 flex items-center gap-5 shadow-inner ${noSlotsAtAll ? 'bg-red-50 border-red-100 text-red-600' : 'bg-blue-50/50 border-blue-100 text-blue-700'}`}>
-                    {isCheckingSlots ? <Loader2 className="h-6 w-6 animate-spin" /> : <AlertCircle className="h-7 w-7" />}
-                    <div className="text-right">
-                      <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Status Vagas</p>
-                      <p className="text-2xl font-black font-space">
-                        {slotInfo === null ? "SEM CONFIG." : noSlotsAtAll ? "LOTADO" : `${slotInfo.occupied} / ${slotInfo.total}`}
-                      </p>
+                <div className="flex items-center gap-4">
+                  {isAdmin && (
+                    <Button 
+                      type="button"
+                      onClick={() => setIsManagerOpen(true)}
+                      className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-600 hover:bg-slate-200 font-black uppercase text-xs tracking-widest gap-3 shadow-inner"
+                    >
+                      <Settings2 className="h-5 w-5" />
+                      Gerenciar
+                    </Button>
+                  )}
+                  {(exams[0] && exams[0].procedure_name !== "Raio X") && (
+                    <div className={`px-8 py-5 rounded-[2rem] border-2 flex items-center gap-5 shadow-inner ${noSlotsAtAll ? 'bg-red-50 border-red-100 text-red-600' : 'bg-blue-50/50 border-blue-100 text-blue-700'}`}>
+                      {isCheckingSlots ? <Loader2 className="h-6 w-6 animate-spin" /> : <AlertCircle className="h-7 w-7" />}
+                      <div className="text-right">
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Status Vagas</p>
+                        <p className="text-2xl font-black font-space">
+                          {slotInfo === null ? "SEM CONFIG." : noSlotsAtAll ? "LOTADO" : `${slotInfo.occupied} / ${slotInfo.total}`}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-10">
@@ -813,6 +839,7 @@ export default function AgendamentoTab() {
                               label="Procedimento"
                               placeholder="Selecione..."
                               value={exam.procedure_name}
+                              canAdd={isAdmin}
                               options={dynamicProcedures}
                               onSelect={(v) => updateExam(exam.id, 'procedure_name', v)}
                               onAddNew={handleAddNewProcedure}
@@ -821,6 +848,7 @@ export default function AgendamentoTab() {
                               label="Especificação"
                               placeholder="Selecione..."
                               value={exam.exam_type}
+                              canAdd={true}
                               options={dynamicTypes[exam.procedure_name] || []}
                               onSelect={(v) => updateExam(exam.id, 'exam_type', v)}
                               onAddNew={(v) => handleAddNewType(v, exam.procedure_name)}
@@ -962,6 +990,11 @@ export default function AgendamentoTab() {
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
       `}</style>
+      <ExamManagerModal 
+        isOpen={isManagerOpen} 
+        onOpenChange={setIsManagerOpen} 
+        onUpdate={loadConfig} 
+      />
     </div>
   )
 }
