@@ -367,6 +367,13 @@ export default function ChegadaTab() {
       return
     }
 
+    // Validação Chave SISREG obrigatória para origem SISREG
+    const selectedOrigin = origins.find(o => o.id === formData.origin_id)
+    if (selectedOrigin?.name?.toUpperCase() === "SISREG" && !formData.chave_sisreg.trim()) {
+      alert("Chave SISREG deve ser informada")
+      return
+    }
+
     setIsLoading(true)
     try {
       let finalOriginId = formData.origin_id
