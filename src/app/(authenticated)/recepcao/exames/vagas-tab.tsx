@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { Calendar as CalendarIcon, Save, Plus, Search, Trash2 } from "lucide-react"
+import { Calendar as CalendarIcon, Save, Plus, Search, Trash2, Settings2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,7 +9,6 @@ import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
 import { useAuth } from "@/lib/auth-context"
 import { ExamManagerModal } from "@/components/exam-manager-modal"
-import { Settings2, Loader2 } from "lucide-react"
 
 const FALLBACK_SLOT_PROCEDURES = [
   "Ultrassom",
