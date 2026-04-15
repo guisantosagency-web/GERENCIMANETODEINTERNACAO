@@ -959,7 +959,16 @@ export default function ChegadaTab() {
               <Loader2 className="h-12 w-12 animate-spin text-emerald-500" />
               <span className="text-[10px] font-black uppercase tracking-widest animate-pulse">Consultando Banco...</span>
             </div>
-          ) : appointments.length === 0 ? (
+          ) : (queueView === 'waiting' ? appointments : forwardedAppointments).filter(a => 
+            a.patient_name.toLowerCase().includes(searchFilter.toLowerCase()) || 
+            (a.cpf && a.cpf.includes(searchFilter)) || 
+            (a.sus && a.sus.includes(searchFilter))
+          ).length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 text-slate-300">
+              <Search className="h-12 w-12" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Nenhum paciente encontrado</span>
+            </div>
+          ) : (
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-10">
               <div className="grid grid-cols-1 gap-4">
                 {(queueView === 'waiting' ? appointments : forwardedAppointments)
@@ -997,11 +1006,17 @@ export default function ChegadaTab() {
 
                       <div className="flex items-center gap-2">
                         <Button
-                          onClick={() => handleSelectAppt(a)}
-                          className={`h-14 px-8 rounded-2xl gap-3 font-black uppercase text-xs tracking-widest transition-all ${selectedAppt?.id === a.id && !formData.is_encaixe ? 'bg-emerald-700 text-white shadow-none' : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/30'}`}
+                          onClick={() => queueView === 'waiting' ? handleSelectAppt(a) : handleEditForwarded(a)}
+                          className={`h-14 px-8 rounded-2xl gap-3 font-black uppercase text-xs tracking-widest transition-all ${selectedAppt?.id === a.id && !formData.is_encaixe ? 'bg-emerald-700 text-white shadow-none' : (queueView === 'waiting' ? 'bg-emerald-600' : 'bg-blue-600') + ' text-white shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/30'}`}
                         >
-                          {selectedAppt?.id === a.id && !formData.is_encaixe ? <ChevronRight className="h-5 w-5 animate-bounce-horizontal" /> : <CheckSquare className="h-5 w-5" />}
-                          {selectedAppt?.id === a.id && !formData.is_encaixe ? "Editando..." : "Registrar Entrada"}
+                          {selectedAppt?.id === a.id && !formData.is_encaixe ? (
+                            <ChevronRight className="h-5 w-5 animate-bounce-horizontal" />
+                          ) : queueView === 'waiting' ? (
+                            <CheckSquare className="h-5 w-5" />
+                          ) : (
+                            <Edit className="h-5 w-5" />
+                          )}
+                          {selectedAppt?.id === a.id && !formData.is_encaixe ? "Editando..." : queueView === 'waiting' ? "Registrar Entrada" : "Editar Recepção"}
                         </Button>
                       </div>
 
