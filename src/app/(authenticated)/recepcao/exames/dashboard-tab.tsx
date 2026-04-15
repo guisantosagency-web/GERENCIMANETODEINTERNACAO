@@ -24,32 +24,36 @@ const MONTHS_NAMES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ]
 
-function LiquidCard({ title, value, label, icon: Icon, gradient, trend }: any) {
+function LiquidCard({ title, value, label, icon: Icon, gradient, trend, total }: any) {
+  const percentage = total > 0 ? ((value / total) * 100).toFixed(0) : 0
+  
   return (
-    <div className={`group relative overflow-hidden rounded-[2rem] p-5 text-white shadow-xl transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl ${gradient}`}>
-      {/* Liquid Overlay Effect */}
-      <div className="absolute -right-4 -top-4 h-32 w-32 rounded-full bg-white/10 blur-3xl transition-all duration-700 group-hover:scale-150 group-hover:bg-white/20" />
-      <div className="absolute -bottom-8 -left-8 h-40 w-40 rounded-full bg-black/5 blur-3xl" />
+    <div className={`group relative overflow-hidden rounded-2xl p-4 text-white shadow-lg transition-all duration-500 hover:scale-[1.02] hover:shadow-xl ${gradient} h-[130px]`}>
+      {/* Liquid Overlay Effect - Scaled down */}
+      <div className="absolute -right-2 -top-2 h-24 w-24 rounded-full bg-white/10 blur-2xl transition-all duration-700 group-hover:scale-125 hover:bg-white/20" />
       
       <div className="relative z-10 flex flex-col h-full justify-between">
-        <div className="flex items-center justify-between mb-4">
-          <div className="rounded-xl bg-white/20 p-2.5 backdrop-blur-md border border-white/20 shadow-inner">
-            <Icon className="h-5 w-5" />
+        <div className="flex items-center justify-between">
+          <div className="rounded-lg bg-white/20 p-2 backdrop-blur-md border border-white/20 shadow-inner">
+            <Icon className="h-4 w-4" />
           </div>
-          <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-black/10 px-3 py-1 rounded-full backdrop-blur-sm border border-white/5">{title}</span>
+          <div className="flex flex-col items-end">
+            <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-black/10 px-2 py-0.5 rounded-full backdrop-blur-sm border border-white/5">{title}</span>
+            {total > 0 && <span className="text-[10px] font-black mt-1 text-white/60">{percentage}% do total</span>}
+          </div>
         </div>
         
-        <div>
+        <div className="mt-2">
           <div className="flex items-baseline gap-1">
-             <h4 className="text-4xl font-black font-space tracking-tight">{value}</h4>
-             {trend && <span className="text-[10px] font-bold opacity-70 mb-1">{trend}</span>}
+             <h4 className="text-3xl font-black font-space tracking-tight">{value}</h4>
+             {trend && <span className="text-[10px] font-bold bg-white/20 px-1.5 py-0.5 rounded-md backdrop-blur-sm ml-1">{trend}</span>}
           </div>
-          <p className="text-[10px] font-bold uppercase tracking-widest opacity-80 mt-1 line-clamp-1">{label}</p>
+          <p className="text-[9px] font-bold uppercase tracking-widest opacity-80 mt-0.5 line-clamp-1">{label}</p>
         </div>
 
-        {/* Mini Fluid Progress */}
-        <div className="mt-4 h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
-           <div className="h-full bg-white/40 rounded-full animate-pulse-slow" style={{ width: '65%' }} />
+        {/* Improved Mini Progress Bar */}
+        <div className="mt-auto h-1 w-full bg-black/10 rounded-full overflow-hidden">
+           <div className="h-full bg-white/50 rounded-full" style={{ width: total > 0 ? `${(value/total)*100}%` : '0%' }} />
         </div>
       </div>
     </div>
@@ -206,13 +210,14 @@ export default function ExamesDashboardTab() {
       </div>
 
       {/* KPI GRID - FLUID & GLASS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <LiquidCard 
           title="Volume" 
           value={stats.total} 
           label="Total de Procedimentos" 
           icon={BarChart3} 
           gradient="bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 shadow-blue-500/25"
+          total={stats.total}
         />
         <LiquidCard 
           title="Atendimento" 
@@ -221,6 +226,7 @@ export default function ExamesDashboardTab() {
           icon={CheckCircle2} 
           gradient="bg-gradient-to-br from-emerald-500 via-emerald-400 to-teal-500 shadow-emerald-500/25"
           trend={`${stats.rate}%`}
+          total={stats.total}
         />
         <LiquidCard 
           title="Absenteísmo" 
@@ -229,6 +235,7 @@ export default function ExamesDashboardTab() {
           icon={CalendarX2} 
           gradient="bg-gradient-to-br from-rose-500 via-rose-400 to-pink-500 shadow-rose-500/25"
           trend={`${stats.absenteeRate}%`}
+          total={stats.total}
         />
         <LiquidCard 
           title="Fila" 
@@ -236,6 +243,7 @@ export default function ExamesDashboardTab() {
           label="Aguardando Atendimento" 
           icon={Clock3} 
           gradient="bg-gradient-to-br from-amber-500 via-orange-400 to-orange-500 shadow-amber-500/25"
+          total={stats.total}
         />
       </div>
 
@@ -245,74 +253,74 @@ export default function ExamesDashboardTab() {
         {/* EFFICIENCY & TRENDS */}
         <div className="xl:col-span-4 grid grid-cols-1 gap-4">
            {/* Compact Efficiency Card */}
-           <div className="glass-card bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-6">
-              <div className="space-y-1">
-                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Eficiência Geral</p>
-                 <h4 className="text-sm font-black text-slate-700 uppercase">Taxa de Presença</h4>
-                 <div className="flex items-center gap-3 mt-4">
-                    <span className="text-4xl font-black font-space text-emerald-600">{stats.rate}%</span>
-                    <div className="h-10 w-[2px] bg-slate-100 rounded-full" />
-                    <div className="text-[10px] font-bold text-slate-400 leading-tight">
+            <div className="glass-card bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4 h-[110px]">
+              <div className="space-y-0.5">
+                 <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Eficiência Geral</p>
+                 <h4 className="text-[10px] font-black text-slate-700 uppercase">Taxa de Presença</h4>
+                 <div className="flex items-center gap-2 mt-2">
+                    <span className="text-2xl font-black font-space text-emerald-600">{stats.rate}%</span>
+                    <div className="h-6 w-[1px] bg-slate-100 rounded-full" />
+                    <div className="text-[8px] font-bold text-slate-400 leading-none">
                        {stats.presentes} ATENDIMENTOS<br/>REALIZADOS
                     </div>
                  </div>
               </div>
-              <div className="relative h-20 w-20 flex items-center justify-center">
+              <div className="relative h-14 w-14 flex items-center justify-center">
                  <svg className="h-full w-full -rotate-90">
-                    <circle cx="40" cy="40" r="34" className="fill-none stroke-slate-100 stroke-[6]" />
+                    <circle cx="28" cy="28" r="24" className="fill-none stroke-slate-100 stroke-[4]" />
                     <circle 
-                      cx="40" cy="40" r="34" 
-                      className="fill-none stroke-emerald-500 stroke-[8] transition-all duration-1000 ease-out" 
-                      strokeDasharray={`${2 * Math.PI * 34}`}
-                      strokeDashoffset={`${2 * Math.PI * 34 * (1 - parseFloat(stats.rate) / 100)}`}
+                      cx="28" cy="28" r="24" 
+                      className="fill-none stroke-emerald-500 stroke-[5] transition-all duration-1000 ease-out" 
+                      strokeDasharray={`${2 * Math.PI * 24}`}
+                      strokeDashoffset={`${2 * Math.PI * 24 * (1 - parseFloat(stats.rate) / 100)}`}
                       strokeLinecap="round"
                     />
                  </svg>
-                 <Zap className="absolute h-6 w-6 text-emerald-500 opacity-20" />
+                 <Zap className="absolute h-4 w-4 text-emerald-500 opacity-20" />
               </div>
            </div>
 
-           <div className="glass-card bg-slate-900 border-none rounded-[2rem] p-5 text-white shadow-xl shadow-slate-900/10 flex flex-col justify-between overflow-hidden relative group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 opacity-10 blur-3xl rounded-full" />
+           <div className="glass-card bg-slate-900 border-none rounded-2xl p-4 text-white shadow-xl shadow-slate-900/10 flex flex-col justify-between overflow-hidden relative group h-[110px]">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500 opacity-10 blur-2xl rounded-full" />
               <div className="flex items-center justify-between relative z-10">
                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-white/40">Hoje · {format(new Date(), "dd 'de' MMM", { locale: ptBR })}</p>
-                    <h4 className="text-sm font-black uppercase mt-1">Status do Dia</h4>
+                    <p className="text-[8px] font-black uppercase tracking-widest text-white/40">Hoje · {format(new Date(), "dd 'de' MMM", { locale: ptBR })}</p>
+                    <h4 className="text-[10px] font-black uppercase mt-0.5">Status do Dia</h4>
                  </div>
-                 <CalendarDays className="h-5 w-5 text-blue-400" />
+                 <CalendarDays className="h-4 w-4 text-blue-400" />
               </div>
-
-              <div className="grid grid-cols-3 gap-2 mt-6 relative z-10">
+ 
+              <div className="grid grid-cols-3 gap-2 mt-2 relative z-10">
                  {[
-                   { l: "Agend", v: stats.todayAgendados, c: "bg-blue-500/10 text-blue-400" },
-                   { l: "Presens", v: stats.todayPresentes, c: "bg-emerald-500/10 text-emerald-400" },
-                   { l: "Faltas", v: stats.todayFaltas, c: "bg-rose-500/10 text-rose-400" }
+                    { l: "Agend", v: stats.todayAgendados, c: "bg-blue-500/10 text-blue-400" },
+                    { l: "Presens", v: stats.todayPresentes, c: "bg-emerald-500/10 text-emerald-400" },
+                    { l: "Faltas", v: stats.todayFaltas, c: "bg-rose-500/10 text-rose-400" }
                  ].map(s => (
-                   <div key={s.l} className={`${s.c} rounded-2xl p-3 text-center border border-white/5`}>
-                      <span className="text-2xl font-black font-space">{s.v}</span>
-                      <p className="text-[8px] font-bold uppercase tracking-widest opacity-60 mt-0.5">{s.l}</p>
-                   </div>
+                    <div key={s.l} className={`${s.c} rounded-xl p-1.5 text-center border border-white/5`}>
+                       <span className="text-lg font-black font-space leading-none">{s.v}</span>
+                       <p className="text-[7px] font-bold uppercase tracking-widest opacity-60 mt-0.5 leading-none">{s.l}</p>
+                    </div>
                  ))}
               </div>
            </div>
 
            {/* New Procedure Summary Card */}
-           <div className="glass-card bg-white border border-slate-100 rounded-[2rem] p-5 shadow-sm overflow-hidden flex flex-col relative group">
-             <div className="flex items-center justify-between mb-4">
+           <div className="glass-card bg-white border border-slate-100 rounded-[2rem] p-4 shadow-sm overflow-hidden flex flex-col relative group h-[180px]">
+             <div className="flex items-center justify-between mb-3">
                 <div>
-                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Distribuição</p>
-                   <h4 className="text-sm font-black uppercase text-slate-700">Por Procedimento</h4>
+                   <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Distribuição</p>
+                   <h4 className="text-[10px] font-black uppercase text-slate-700">Por Procedimento</h4>
                 </div>
-                <Activity className="h-4 w-4 text-purple-500" />
+                <Activity className="h-3 w-3 text-purple-500" />
              </div>
              
-             <div className="flex-1 space-y-2 overflow-y-auto max-h-[160px] custom-scrollbar pr-1">
+             <div className="flex-1 space-y-1.5 overflow-y-auto custom-scrollbar pr-1">
                 {stats.procedureTops.length === 0 ? (
-                  <p className="text-[10px] font-bold text-slate-300 uppercase text-center py-4">Sem registros...</p>
+                  <p className="text-[9px] font-bold text-slate-300 uppercase text-center py-4">Sem registros...</p>
                 ) : stats.procedureTops.map(([name, qty]) => (
-                  <div key={name} className="flex items-center justify-between p-2.5 bg-slate-50/50 rounded-xl border border-slate-50 hover:border-purple-100 transition-colors">
-                    <span className="text-[9px] font-black text-slate-600 uppercase truncate max-w-[150px]">{name}</span>
-                    <span className="px-2.5 py-1 bg-white border border-slate-100 rounded-lg text-xs font-black text-purple-600 shadow-sm">{qty}</span>
+                  <div key={name} className="flex items-center justify-between p-2 bg-slate-50/50 rounded-xl border border-slate-50 hover:border-purple-100 transition-colors">
+                    <span className="text-[8px] font-black text-slate-600 uppercase truncate max-w-[130px]">{name}</span>
+                    <span className="px-2 py-0.5 bg-white border border-slate-100 rounded text-[10px] font-black text-purple-600 shadow-sm">{qty}</span>
                   </div>
                 ))}
              </div>

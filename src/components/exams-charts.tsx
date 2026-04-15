@@ -101,17 +101,17 @@ export function ExamsCharts({ records, onFilterChange }: { records: any[], onFil
               Proporção Geral
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4 px-4">
-            <div className="h-[230px] w-full flex flex-col items-center">
-              <ResponsiveContainer width="100%" height="85%">
+          <CardContent className="pt-2 px-3 pb-3">
+            <div className="h-[210px] w-full flex flex-col items-center relative">
+              <ResponsiveContainer width="100%" height="90%">
                 <PieChart>
                   <Pie 
                     data={chartData.globalPie} 
                     cx="50%" 
                     cy="50%" 
-                    innerRadius={60} 
+                    innerRadius={65} 
                     outerRadius={85} 
-                    paddingAngle={5} 
+                    paddingAngle={3} 
                     dataKey="value" 
                     stroke="none"
                     animationBegin={0}
@@ -128,12 +128,12 @@ export function ExamsCharts({ records, onFilterChange }: { records: any[], onFil
                     content={(props: any) => {
                       const { payload } = props;
                       return (
-                        <div className="flex flex-wrap justify-center gap-2 mt-2">
+                        <div className="flex flex-wrap justify-center gap-2 mt-1">
                           {payload.map((entry: any, index: number) => (
-                            <div key={index} className="flex items-center gap-1.5 bg-background/40 backdrop-blur-md px-2 py-1 rounded-xl border border-white/5 shadow-sm group/item">
-                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                              <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest whitespace-nowrap">
-                                {entry.value}: <span className="text-foreground ml-1 font-black">{chartData.globalPie[index].value}</span>
+                            <div key={index} className="flex items-center gap-1 bg-background/40 backdrop-blur-md px-1.5 py-0.5 rounded-lg border border-white/5 shadow-sm">
+                              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                              <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest whitespace-nowrap">
+                                {entry.value}: <span className="text-foreground font-black">{chartData.globalPie[index].value}</span>
                               </span>
                             </div>
                           ))}
@@ -144,6 +144,14 @@ export function ExamsCharts({ records, onFilterChange }: { records: any[], onFil
                 </PieChart>
               </ResponsiveContainer>
               
+              {/* Central Total Label */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mb-6">
+                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground">Total</span>
+                <span className="text-2xl font-black font-space text-foreground">
+                  {chartData.globalPie.reduce((acc: number, curr: any) => acc + curr.value, 0)}
+                </span>
+              </div>
+
               {chartData.globalPie.every((d: any) => d.value === 0) && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <p className="font-space font-black text-[10px] uppercase tracking-[0.2em] opacity-30">Sem Dados</p>
@@ -163,22 +171,22 @@ export function ExamsCharts({ records, onFilterChange }: { records: any[], onFil
               Volume por Exame
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4 px-4">
-            <div className="h-[230px] w-full transition-all duration-500 flex flex-col">
+          <CardContent className="pt-2 px-3 pb-3">
+            <div className="h-[210px] w-full transition-all duration-500 flex flex-col">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData.examData} layout="vertical" margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
+                <BarChart data={chartData.examData} layout="vertical" margin={{ top: 5, right: 30, left: 0, bottom: 0 }} barSize={12}>
                   <XAxis type="number" hide />
                   <YAxis 
                     dataKey="name" 
                     type="category" 
-                    width={100} 
-                    tick={{ fontSize: 9, fontWeight: 900, fill: "hsl(var(--foreground))", fontFamily: 'var(--font-space)' }} 
+                    width={90} 
+                    tick={{ fontSize: 8, fontWeight: 900, fill: "hsl(var(--foreground))", fontFamily: 'var(--font-space)' }} 
                     axisLine={false} 
                     tickLine={false} 
                   />
-                  <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 10 }} content={<CustomTooltip />} />
+                  <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)', radius: 6 }} content={<CustomTooltip />} />
                   <Bar dataKey="presentes" name="Presentes" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} onClick={(data) => onFilterChange?.('procedure', data.name)} className="cursor-pointer" />
-                  <Bar dataKey="faltas" name="Faltas" stackId="a" fill="#ef4444" radius={[0, 10, 10, 0]} onClick={(data) => onFilterChange?.('procedure', data.name)} className="cursor-pointer" />
+                  <Bar dataKey="faltas" name="Faltas" stackId="a" fill="#ef4444" radius={[0, 6, 6, 0]} onClick={(data) => onFilterChange?.('procedure', data.name)} className="cursor-pointer" />
                 </BarChart>
               </ResponsiveContainer>
               {chartData.examData.length === 0 && (
@@ -201,15 +209,15 @@ export function ExamsCharts({ records, onFilterChange }: { records: any[], onFil
             Histórico Mensal
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-4 px-4">
-          <div className="h-[200px] w-full transition-all duration-500 flex flex-col">
+        <CardContent className="pt-2 px-3 pb-3">
+          <div className="h-[160px] w-full transition-all duration-500 flex flex-col">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData.monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
-                <XAxis dataKey="month" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+              <BarChart data={chartData.monthlyData} margin={{ top: 5, right: 30, left: 0, bottom: 0 }} barSize={30}>
+                <XAxis dataKey="month" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
                 <YAxis hide />
-                <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 10 }} content={<CustomTooltip />} />
+                <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)', radius: 6 }} content={<CustomTooltip />} />
                 <Bar dataKey="presentes" name="Presentes" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} onClick={(data) => onFilterChange?.('month', data.month.substring(5,7))} className="cursor-pointer" />
-                <Bar dataKey="faltas" name="Faltas" stackId="a" fill="#ef4444" radius={[6, 6, 0, 0]} onClick={(data) => onFilterChange?.('month', data.month.substring(5,7))} className="cursor-pointer" />
+                <Bar dataKey="faltas" name="Faltas" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} onClick={(data) => onFilterChange?.('month', data.month.substring(5,7))} className="cursor-pointer" />
               </BarChart>
             </ResponsiveContainer>
             {chartData.monthlyData.length === 0 && (
