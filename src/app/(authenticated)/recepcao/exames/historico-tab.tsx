@@ -281,8 +281,6 @@ export default function HistoricoTab() {
               icon={Filter}
             />
 
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Atendente</Label>
               <select 
                 value={selectedReceptionist} 
                 onChange={e => setSelectedReceptionist(e.target.value)}
@@ -292,6 +290,17 @@ export default function HistoricoTab() {
                 {receptionists.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
+
+            {/* Quantitative Summary Card */}
+            {(selectedProcedures.length > 0 || selectedStatuses.length > 0 || searchTerm) && (
+              <div className="xl:col-span-1 border-2 border-dashed border-purple-100 rounded-[2rem] p-4 bg-purple-50/30 flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
+                <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-1">Total Filtrado</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black font-space text-purple-600">{filteredAppointments.length}</span>
+                  <span className="text-[10px] font-bold text-purple-400 uppercase">Res.</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
