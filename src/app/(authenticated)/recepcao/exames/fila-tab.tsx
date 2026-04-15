@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { Play, Check, X, Edit, Loader2, AlertCircle, Clock, CheckCircle2, UserX, Trash, Printer, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { differenceInYears, parseISO, format, parse } from "date-fns"
+import { differenceInYears, parseISO, format } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
 
 export default function FilaTab() {

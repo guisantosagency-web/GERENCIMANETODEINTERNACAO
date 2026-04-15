@@ -105,6 +105,23 @@ export default function ExamesDashboardTab() {
     })
   }, [appointments, selectedDay, selectedMonth, selectedYear, selectedProcedure, selectedStatus, selectedMunicipio])
 
+  const stats = useMemo(() => {
+    let presentes = 0, faltas = 0, agendados = 0
+    filteredRecords.forEach(a => {
+      if (a.status === 'presente') presentes++
+      if (a.status === 'falta') faltas++
+      if (a.status === 'agendado') agendados++
+    })
+    const concluded = presentes + faltas
+    const rate = concluded > 0 ? ((presentes / concluded) * 100) : 0
+    const absenteeRate = concluded > 0 ? ((faltas / concluded) * 100) : 0
+    
+    const today = format(new Date(), 'yyyy-MM-dd')
+    const todayRecords = appointments.filter(a => a.exam_date === today)
+    const todayPresentes = todayRecords.filter(a => a.status === 'presente').length
+    const todayFaltas = todayRecords.filter(a => a.status === 'falta').length
+    const todayAgendados = todayRecords.filter(a => a.status === 'agendado').length
+
     const procedureCounts: Record<string, number> = {}
     filteredRecords.forEach(a => {
       const name = a.procedure_name || "NÃO INFORMADO"
