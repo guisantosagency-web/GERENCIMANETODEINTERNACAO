@@ -158,7 +158,10 @@ export default function FilaTab() {
   const normalizeProcedureName = (name: string) => {
     if (!name) return "NÃO INFORMADO"
     const n = name.toUpperCase()
-    if (n.includes("TOMOGRAFIA") && !n.includes("COM CONTRASTE")) return "TOMOGRAFIA"
+    if (n.includes("TOMOGRAFIA")) {
+      if (n.includes("COM CONTRASTE")) return "TOMOGRAFIA COM CONTRASTE"
+      return "TOMOGRAFIA"
+    }
     return n
   }
 

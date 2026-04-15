@@ -125,9 +125,11 @@ export default function ExamesDashboardTab() {
     const procedureCounts: Record<string, number> = {}
     filteredRecords.forEach(a => {
       const name = a.procedure_name || "NÃO INFORMADO"
-      const norm = (name.toUpperCase().includes("TOMOGRAFIA") && !name.toUpperCase().includes("COM CONTRASTE")) 
-        ? "TOMOGRAFIA" 
-        : name.toUpperCase()
+      const n = name.toUpperCase()
+      let norm = n
+      if (n.includes("TOMOGRAFIA")) {
+        norm = n.includes("COM CONTRASTE") ? "TOMOGRAFIA COM CONTRASTE" : "TOMOGRAFIA"
+      }
       procedureCounts[norm] = (procedureCounts[norm] || 0) + 1
     })
 
