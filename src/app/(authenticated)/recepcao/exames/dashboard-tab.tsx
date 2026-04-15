@@ -6,7 +6,7 @@ import { createBrowserClient } from "@supabase/ssr"
 import {
   TrendingUp, Loader2, RefreshCw, Info,
   CheckCircle2, CalendarX2, Clock3, BarChart3,
-  CalendarDays, TrendingDown, Target, Zap
+  CalendarDays, TrendingDown, Target, Zap, Activity
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
