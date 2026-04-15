@@ -1,9 +1,9 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { Play, Check, X, Edit, Loader2, AlertCircle, Clock, CheckCircle2, UserX, Trash } from "lucide-react"
+import { Play, Check, X, Edit, Loader2, AlertCircle, Clock, CheckCircle2, UserX, Trash, Printer, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { differenceInYears, parseISO, format } from "date-fns"
+import { differenceInYears, parseISO, format, parse } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
 
 export default function FilaTab() {
@@ -155,6 +155,126 @@ export default function FilaTab() {
     }
   }
 
+  const normalizeProcedureName = (name: string) => {
+    if (!name) return "NÃO INFORMADO"
+    const n = name.toUpperCase()
+    if (n.includes("TOMOGRAFIA") && !n.includes("COM CONTRASTE")) return "TOMOGRAFIA"
+    return n
+  }
+
+  const generateRelatorio = () => {
+    const printWindow = window.open("", "_blank")
+    if (!printWindow) return
+
+    // Collect all patients across categories
+    const allPatients: any[] = []
+    Object.values(appointments).forEach((cat: any) => {
+      allPatients.push(...cat)
+    })
+
+    // Calculate totals by normalized procedure
+    const totals: Record<string, number> = {}
+    allPatients.forEach(p => {
+      p.exams.forEach((ex: any) => {
+        const norm = normalizeProcedureName(ex.procedure)
+        totals[norm] = (totals[norm] || 0) + 1
+      })
+    })
+
+    const logoHtml = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+        <div style="display: flex; gap: 20px; height: 60px;">
+          <img src="/logo-hto.png" style="height: 100%;"/>
+          <img src="/logo-instituto.png" style="height: 100%;"/>
+          <img src="/logo-maranhao.png" style="height: 100%;"/>
+          <img src="/logo-sus.png" style="height: 100%;"/>
+        </div>
+        <div style="text-align: right; font-size: 8pt; font-weight: bold; opacity: 0.6;">
+          EMITIDO EM ${format(new Date(), 'dd/MM/yyyy HH:mm')}
+        </div>
+      </div>
+    `
+
+    const content = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Relatório de Fila - ${format(parseISO(selectedDate), 'dd/MM/yyyy')}</title>
+        <style>
+          @page { size: A4 portrait; margin: 10mm; }
+          body { font-family: sans-serif; color: #000; line-height: 1.4; margin: 0; padding: 0; }
+          h1 { font-size: 14pt; font-weight: 900; text-align: center; text-transform: uppercase; margin-bottom: 5mm; }
+          h2 { font-size: 11pt; font-weight: 800; text-transform: uppercase; margin-top: 8mm; margin-bottom: 3mm; border-bottom: 1px solid #eee; }
+          table { width: 100%; border-collapse: collapse; border: 1px solid #000; margin-bottom: 5mm; font-size: 7.5pt; }
+          th { background-color: #f0f0f0; border: 1px solid #000; padding: 1.5mm; text-transform: uppercase; font-weight: 800; text-align: left; }
+          td { border: 1px solid #000; padding: 1.5mm; text-transform: uppercase; word-break: break-word; }
+          .summary-table { width: 50%; margin-top: 5mm; }
+          .summary-table td { font-weight: bold; }
+          .footer { margin-top: 15mm; border-top: 1px solid #000; padding-top: 5mm; text-align: center; font-size: 8pt; font-weight: bold; opacity: 0.5; }
+        </style>
+      </head>
+      <body>
+        ${logoHtml}
+        <h1>Relatório Diário de Atendimento - Fila de Realização</h1>
+        <p style="text-align: center; font-size: 9pt; margin-bottom: 6mm;"><strong>DATA DE REFERÊNCIA: ${format(parseISO(selectedDate), 'dd/MM/yyyy')}</strong></p>
+        
+        <h2>Resumo por Procedimento</h2>
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>Procedimento</th>
+              <th style="text-align: center;">Qtde</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${Object.entries(totals).sort((a,b) => b[1] - a[1]).map(([name, qty]) => `
+              <tr>
+                <td>${name}</td>
+                <td style="text-align: center;">${qty}</td>
+              </tr>
+            `).join('')}
+            <tr style="background-color: #f9f9f9;">
+              <td><strong>TOTAL GERAL DE EXAMES</strong></td>
+              <td style="text-align: center;"><strong>${Object.values(totals).reduce((a,b) => a+b, 0)}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>Lista de Pacientes na Fila</h2>
+        <table>
+          <thead>
+            <tr>
+              <th width="10%">Horário</th>
+              <th width="35%">Paciente</th>
+              <th width="40%">Exames</th>
+              <th width="15%">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${allPatients.sort((a,b) => (a.arrival_time || '').localeCompare(b.arrival_time || '')).map(p => `
+              <tr>
+                <td style="text-align: center;">${p.arrival_time ? format(new Date(p.arrival_time), 'HH:mm') : '--:--'}</td>
+                <td><strong>${p.patient_name}</strong></td>
+                <td>${p.exams.map((ex: any) => `${ex.procedure} (${ex.type})`).join('<br/>')}</td>
+                <td style="text-align: center;">${p.status}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">DESENVOLVIDO POR GUILHERME SANTOS - AVERO AGENCY</div>
+        <script>
+          window.onload = function() {
+            setTimeout(function() { window.print(); }, 500);
+          };
+        </script>
+      </body>
+      </html>
+    `
+    printWindow.document.write(content)
+    printWindow.document.close()
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="glass-premium rounded-[2.5rem] p-6 lg:p-8 shadow-premium">
@@ -164,18 +284,29 @@ export default function FilaTab() {
             Fila de Realização <span className="text-muted-foreground font-medium text-base">(Painel de Chamada)</span>
           </h2>
 
-          <div className="flex items-center gap-4 bg-white/50 backdrop-blur-md border border-slate-100 p-2 pl-5 rounded-[1.5rem] shadow-sm">
-             <div className="flex flex-col">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">DATA DE REFERÊNCIA</span>
-                <input 
-                  type="date" 
-                  value={selectedDate} 
-                  onChange={e => setSelectedDate(e.target.value)}
-                  className="bg-transparent border-none text-sm font-black text-purple-600 focus:ring-0 p-0 uppercase"
-                />
+          <div className="flex items-center gap-3">
+             <div className="flex items-center gap-4 bg-white/50 backdrop-blur-md border border-slate-100 p-2 pl-5 rounded-[1.5rem] shadow-sm">
+                <div className="flex flex-col">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">DATA DE REFERÊNCIA</span>
+                    <input 
+                      type="date" 
+                      value={selectedDate} 
+                      onChange={e => setSelectedDate(e.target.value)}
+                      className="bg-transparent border-none text-sm font-black text-purple-600 focus:ring-0 p-0 uppercase"
+                    />
+                </div>
+                <Button onClick={loadData} variant="ghost" size="icon" className="h-10 w-10 text-slate-300 hover:text-purple-500 rounded-xl">
+                    <Clock className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                </Button>
              </div>
-             <Button onClick={loadData} variant="ghost" size="icon" className="h-10 w-10 text-slate-300 hover:text-purple-500 rounded-xl">
-                <Clock className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+
+             <Button 
+                onClick={generateRelatorio}
+                disabled={isLoading || Object.keys(appointments).length === 0}
+                className="h-[52px] px-6 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase text-[10px] tracking-widest gap-2.5 hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10"
+             >
+                <Printer className="h-4 w-4" />
+                Relatório de Fila
              </Button>
           </div>
         </div>

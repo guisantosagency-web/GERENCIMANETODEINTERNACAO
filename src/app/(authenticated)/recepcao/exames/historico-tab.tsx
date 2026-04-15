@@ -2,14 +2,62 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { Search, Calendar, User, Activity, FileText, Download, Filter, Loader2, Clock, Trash2 } from "lucide-react"
+import { Search, Calendar, User, Activity, FileText, Download, Filter, Loader2, Clock, Trash2, Check, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format, parseISO, startOfMonth, endOfMonth } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useAuth } from "@/lib/auth-context"
+
+function MultiSelect({ label, options, selected, onChange, icon: Icon }: any) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">{label}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="w-full h-12 bg-white border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-tight justify-between px-4 hover:bg-slate-50 transition-all shadow-sm">
+            <div className="flex items-center gap-2 truncate">
+              {Icon && <Icon className="h-3.5 w-3.5 text-slate-400" />}
+              {selected.length === 0 ? "TODOS" : selected.length === 1 ? selected[0] : `${selected.length} SELECIONADOS`}
+            </div>
+            <ChevronDown className="h-4 w-4 text-slate-300" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-2 rounded-2xl shadow-2xl border-slate-100 bg-white/95 backdrop-blur-md z-50">
+          <div className="max-h-[300px] overflow-y-auto custom-scrollbar space-y-1">
+             <button 
+              onClick={() => onChange([])}
+              className="w-full text-left px-3 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-slate-100 transition-colors flex items-center justify-between group"
+            >
+              <span>TODOS</span>
+              {selected.length === 0 && <Check className="h-3.5 w-3.5 text-emerald-500" />}
+            </button>
+            <div className="h-px bg-slate-100 my-1" />
+            {options.map((opt: string) => {
+              const isSelected = selected.includes(opt)
+              return (
+                <button 
+                  key={opt}
+                  onClick={() => {
+                    if (isSelected) onChange(selected.filter((s: string) => s !== opt))
+                    else onChange([...selected, opt])
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-between group ${isSelected ? 'bg-blue-50 text-blue-600' : 'hover:bg-slate-50 text-slate-500'}`}
+                >
+                  <span className="truncate pr-4">{opt}</span>
+                  {isSelected && <Check className="h-3.5 w-3.5" />}
+                </button>
+              )
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
 
 export default function HistoricoTab() {
   const { user } = useAuth()
@@ -21,7 +69,8 @@ export default function HistoricoTab() {
   const [searchTerm, setSearchTerm] = useState("")
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"))
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"))
-  const [selectedProcedure, setSelectedProcedure] = useState("")
+  const [selectedProcedures, setSelectedProcedures] = useState<string[]>([])
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
   const [selectedReceptionist, setSelectedReceptionist] = useState("")
 
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
@@ -53,24 +102,36 @@ export default function HistoricoTab() {
     loadAppointments()
   }, [startDate, endDate])
 
+  const normalizeProcedureName = (name: string) => {
+    if (!name) return "NÃO INFORMADO"
+    const n = name.toUpperCase()
+    if (n.includes("TOMOGRAFIA") && !n.includes("COM CONTRASTE")) return "TOMOGRAFIA"
+    return n
+  }
+
   const filteredAppointments = useMemo(() => {
     return appointments.filter(appt => {
-      // Search term (Name, CPF, SUS)
       const searchLower = searchTerm.toLowerCase()
       const matchesSearch = !searchTerm || 
         appt.patient_name.toLowerCase().includes(searchLower) ||
         (appt.cpf && appt.cpf.includes(searchTerm)) ||
         (appt.sus && appt.sus.includes(searchTerm))
 
-      // Other Filters
-      const matchesProcedure = !selectedProcedure || appt.procedure_name === selectedProcedure
+      const matchesProcedure = selectedProcedures.length === 0 || selectedProcedures.includes(normalizeProcedureName(appt.procedure_name))
+      const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(appt.status)
       const matchesReceptionist = !selectedReceptionist || appt.receptionist_name === selectedReceptionist
 
-      return matchesSearch && matchesProcedure && matchesReceptionist
+      return matchesSearch && matchesProcedure && matchesStatus && matchesReceptionist
     })
-  }, [appointments, searchTerm, selectedProcedure, selectedReceptionist])
+  }, [appointments, searchTerm, selectedProcedures, selectedStatuses, selectedReceptionist])
 
-  const procedures = useMemo(() => Array.from(new Set(appointments.map(a => a.procedure_name))), [appointments])
+  const groupedProcedures = useMemo(() => {
+    const set = new Set<string>()
+    appointments.forEach(a => set.add(normalizeProcedureName(a.procedure_name)))
+    return Array.from(set).sort()
+  }, [appointments])
+
+  const availableStatuses = useMemo(() => Array.from(new Set(appointments.map(a => a.status).filter(Boolean))), [appointments])
   const receptionists = useMemo(() => Array.from(new Set(appointments.map(a => a.receptionist_name).filter(Boolean))), [appointments])
 
   const generateRelatorioPDF = () => {
@@ -201,26 +262,30 @@ export default function HistoricoTab() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Procedimento</Label>
-              <select 
-                value={selectedProcedure} 
-                onChange={e => setSelectedProcedure(e.target.value)}
-                className="w-full appearance-none h-12 bg-white border border-slate-100 px-4 rounded-2xl text-xs font-black uppercase cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-              >
-                <option value="">Todos</option>
-                {procedures.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
+            <MultiSelect 
+              label="Procedimento" 
+              options={groupedProcedures} 
+              selected={selectedProcedures} 
+              onChange={setSelectedProcedures} 
+              icon={Activity}
+            />
+
+            <MultiSelect 
+              label="Status" 
+              options={availableStatuses} 
+              selected={selectedStatuses} 
+              onChange={setSelectedStatuses} 
+              icon={Filter}
+            />
 
             <div className="space-y-1.5">
               <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Atendente</Label>
               <select 
                 value={selectedReceptionist} 
                 onChange={e => setSelectedReceptionist(e.target.value)}
-                className="w-full appearance-none h-12 bg-white border border-slate-100 px-4 rounded-2xl text-xs font-black uppercase cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                className="w-full appearance-none h-12 bg-white border border-slate-100 px-4 rounded-2xl text-[10px] font-black uppercase cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-500/10 shadow-sm"
               >
-                <option value="">Todos</option>
+                <option value="">TODOS OS ATENDENTES</option>
                 {receptionists.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
@@ -325,9 +390,19 @@ export default function HistoricoTab() {
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
               Total de registros filtrados: <span className="text-slate-800">{filteredAppointments.length}</span>
             </div>
-            <Button variant="ghost" onClick={generateRelatorioPDF} className="rounded-xl text-[10px] font-black uppercase tracking-widest gap-2 hover:bg-white shadow-sm border border-transparent hover:border-slate-100 transition-all">
-              <Download className="h-4 w-4" /> Exportar Relatório
-            </Button>
+            <div className="flex items-center gap-3">
+              {(selectedProcedures.length > 0 || selectedStatuses.length > 0 || searchTerm) && (
+                <button 
+                  onClick={() => { setSelectedProcedures([]); setSelectedStatuses([]); setSearchTerm("") }}
+                  className="text-[10px] font-black uppercase text-rose-500 hover:text-rose-600 transition-colors px-4"
+                >
+                  LIMPAR FILTROS ✕
+                </button>
+              )}
+              <Button variant="ghost" onClick={generateRelatorioPDF} className="rounded-xl text-[10px] font-black uppercase tracking-widest gap-2 hover:bg-white shadow-sm border border-transparent hover:border-slate-100 transition-all">
+                <Download className="h-4 w-4" /> Exportar Relatório
+              </Button>
+            </div>
           </div>
         </div>
       )}

@@ -105,27 +105,20 @@ export default function ExamesDashboardTab() {
     })
   }, [appointments, selectedDay, selectedMonth, selectedYear, selectedProcedure, selectedStatus, selectedMunicipio])
 
-  const stats = useMemo(() => {
-    let presentes = 0, faltas = 0, agendados = 0
+    const procedureCounts: Record<string, number> = {}
     filteredRecords.forEach(a => {
-      if (a.status === 'presente') presentes++
-      if (a.status === 'falta') faltas++
-      if (a.status === 'agendado') agendados++
+      const name = a.procedure_name || "NÃO INFORMADO"
+      const norm = (name.toUpperCase().includes("TOMOGRAFIA") && !name.toUpperCase().includes("COM CONTRASTE")) 
+        ? "TOMOGRAFIA" 
+        : name.toUpperCase()
+      procedureCounts[norm] = (procedureCounts[norm] || 0) + 1
     })
-    const concluded = presentes + faltas
-    const rate = concluded > 0 ? ((presentes / concluded) * 100) : 0
-    const absenteeRate = concluded > 0 ? ((faltas / concluded) * 100) : 0
-    
-    const today = format(new Date(), 'yyyy-MM-dd')
-    const todayRecords = appointments.filter(a => a.exam_date === today)
-    const todayPresentes = todayRecords.filter(a => a.status === 'presente').length
-    const todayFaltas = todayRecords.filter(a => a.status === 'falta').length
-    const todayAgendados = todayRecords.filter(a => a.status === 'agendado').length
 
     return {
       presentes, faltas, agendados, total: filteredRecords.length, concluded,
       rate: rate.toFixed(1), absenteeRate: absenteeRate.toFixed(1),
-      todayPresentes, todayFaltas, todayAgendados, todayTotal: todayRecords.length
+      todayPresentes, todayFaltas, todayAgendados, todayTotal: todayRecords.length,
+      procedureTops: Object.entries(procedureCounts).sort((a,b) => b[1] - a[1])
     }
   }, [filteredRecords, appointments])
 
@@ -260,7 +253,6 @@ export default function ExamesDashboardTab() {
               </div>
            </div>
 
-           {/* Today Smart Overview - Deep Dark */}
            <div className="glass-card bg-slate-900 border-none rounded-[2rem] p-5 text-white shadow-xl shadow-slate-900/10 flex flex-col justify-between overflow-hidden relative group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 opacity-10 blur-3xl rounded-full" />
               <div className="flex items-center justify-between relative z-10">
@@ -283,6 +275,28 @@ export default function ExamesDashboardTab() {
                    </div>
                  ))}
               </div>
+           </div>
+
+           {/* New Procedure Summary Card */}
+           <div className="glass-card bg-white border border-slate-100 rounded-[2rem] p-5 shadow-sm overflow-hidden flex flex-col relative group">
+             <div className="flex items-center justify-between mb-4">
+                <div>
+                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Distribuição</p>
+                   <h4 className="text-sm font-black uppercase text-slate-700">Por Procedimento</h4>
+                </div>
+                <Activity className="h-4 w-4 text-purple-500" />
+             </div>
+             
+             <div className="flex-1 space-y-2 overflow-y-auto max-h-[160px] custom-scrollbar pr-1">
+                {stats.procedureTops.length === 0 ? (
+                  <p className="text-[10px] font-bold text-slate-300 uppercase text-center py-4">Sem registros...</p>
+                ) : stats.procedureTops.map(([name, qty]) => (
+                  <div key={name} className="flex items-center justify-between p-2.5 bg-slate-50/50 rounded-xl border border-slate-50 hover:border-purple-100 transition-colors">
+                    <span className="text-[9px] font-black text-slate-600 uppercase truncate max-w-[150px]">{name}</span>
+                    <span className="px-2.5 py-1 bg-white border border-slate-100 rounded-lg text-xs font-black text-purple-600 shadow-sm">{qty}</span>
+                  </div>
+                ))}
+             </div>
            </div>
         </div>
 
