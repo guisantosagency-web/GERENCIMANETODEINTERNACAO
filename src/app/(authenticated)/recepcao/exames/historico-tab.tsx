@@ -281,6 +281,8 @@ export default function HistoricoTab() {
               icon={Filter}
             />
 
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Atendente</Label>
               <select 
                 value={selectedReceptionist} 
                 onChange={e => setSelectedReceptionist(e.target.value)}
