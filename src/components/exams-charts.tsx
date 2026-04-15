@@ -43,10 +43,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null
 }
 
-export function ExamsCharts({ records, onFilterChange }: { records: any[], onFilterChange?: (type: string, val: string | null) => void }) {
+export function ExamsCharts({ records, slots, onFilterChange }: { records: any[], slots?: any[], onFilterChange?: (type: string, val: string | null) => void }) {
   const chartData = useMemo(() => {
     let totalPresentes = 0
     let totalFaltas = 0
+    let totalAgendados = 0
 
     const examBreakdown: Record<string, { name: string, presentes: number, faltas: number }> = {}
     const monthlyBreakdown: Record<string, { month: string, presentes: number, faltas: number }> = {}
@@ -55,9 +56,11 @@ export function ExamsCharts({ records, onFilterChange }: { records: any[], onFil
       // records are raw exam_appointments
       const isPresent = r.status === 'presente'
       const isFalta = r.status === 'falta'
+      const isAgendado = r.status === 'agendado'
 
       if (isPresent) totalPresentes++
       if (isFalta) totalFaltas++
+      if (isAgendado) totalAgendados++
 
       // Exam Breakdown
       if (!examBreakdown[r.procedure_name]) {
@@ -85,8 +88,21 @@ export function ExamsCharts({ records, onFilterChange }: { records: any[], onFil
     const examData = Object.values(examBreakdown).sort((a, b) => (b.presentes + b.faltas) - (a.presentes + a.faltas))
     const monthlyData = Object.values(monthlyBreakdown).sort((a, b) => a.month.localeCompare(b.month))
 
-    return { globalPie, examData, monthlyData }
-  }, [records])
+    // Ocupação Estratégica
+    const occupancyData = slots ? Object.entries(
+      slots.reduce((acc: any, s: any) => {
+        if (!acc[s.procedure_name]) acc[s.procedure_name] = 0
+        acc[s.procedure_name] += s.total_slots
+        return acc
+      }, {})
+    ).map(([name, total]: [string, any]) => {
+      const used = records.filter(r => r.procedure_name === name).length
+      const rate = total > 0 ? (used / total) * 100 : 0
+      return { name, total, used, rate: Math.min(rate, 100).toFixed(0) }
+    }).sort((a: any, b: any) => b.used - a.used).slice(0, 5) : []
+
+    return { globalPie, examData, monthlyData, occupancyData }
+  }, [records, slots])
 
   return (
     <>
@@ -199,35 +215,65 @@ export function ExamsCharts({ records, onFilterChange }: { records: any[], onFil
         </Card>
       </div>
 
-      {/* Histórico Mensal */}
-      <Card className="glass-card !bg-card/40 border-none rounded-[2rem] overflow-hidden group transition-all duration-500 hover:shadow-xl hover:bg-card/50 mt-6">
-        <CardHeader className="py-3 px-6 border-b border-border/10">
-          <CardTitle className="flex items-center gap-3 text-lg font-black font-space uppercase tracking-tight">
-            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500">
-              <Activity className="h-5 w-5" />
-            </div>
-            Histórico Mensal
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-2 px-3 pb-3">
-          <div className="h-[160px] w-full transition-all duration-500 flex flex-col">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData.monthlyData} margin={{ top: 5, right: 30, left: 0, bottom: 0 }} barSize={30}>
-                <XAxis dataKey="month" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
-                <YAxis hide />
-                <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)', radius: 6 }} content={<CustomTooltip />} />
-                <Bar dataKey="presentes" name="Presentes" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} onClick={(data) => onFilterChange?.('month', data.month.substring(5,7))} className="cursor-pointer" />
-                <Bar dataKey="faltas" name="Faltas" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} onClick={(data) => onFilterChange?.('month', data.month.substring(5,7))} className="cursor-pointer" />
-              </BarChart>
-            </ResponsiveContainer>
-            {chartData.monthlyData.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <p className="font-space font-black text-[10px] uppercase tracking-[0.2em] opacity-30">Nenhum histórico</p>
+      {/* Histórico e Ocupação */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* Histórico Mensal */}
+        <Card className="glass-card !bg-card/40 border-none rounded-[2rem] overflow-hidden group transition-all duration-500 hover:shadow-xl hover:bg-card/50">
+          <CardHeader className="py-3 px-6 border-b border-border/10">
+            <CardTitle className="flex items-center gap-3 text-sm font-black font-space uppercase tracking-tight">
+              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500">
+                <Activity className="h-4 w-4" />
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              Histórico Operacional
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-2 px-3 pb-3">
+            <div className="h-[160px] w-full transition-all duration-500 flex flex-col">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData.monthlyData} margin={{ top: 5, right: 30, left: 0, bottom: 0 }} barSize={30}>
+                  <XAxis dataKey="month" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+                  <YAxis hide />
+                  <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)', radius: 6 }} content={<CustomTooltip />} />
+                  <Bar dataKey="presentes" name="Presentes" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} className="cursor-pointer" />
+                  <Bar dataKey="faltas" name="Faltas" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} className="cursor-pointer" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Taxa de Ocupação Real */}
+        <Card className="glass-card !bg-card/40 border-none rounded-[2rem] overflow-hidden group transition-all duration-500 hover:shadow-xl hover:bg-card/50">
+          <CardHeader className="py-3 px-6 border-b border-border/10">
+            <CardTitle className="flex items-center gap-3 text-sm font-black font-space uppercase tracking-tight">
+              <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-500">
+                <Beaker className="h-4 w-4" />
+              </div>
+              Taxa de Ocupação Real
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-2 px-4 pb-4">
+            <div className="space-y-3 mt-1">
+               {chartData.occupancyData.length === 0 ? (
+                 <div className="h-[140px] flex items-center justify-center text-[10px] font-black uppercase text-muted-foreground/30">Sem metas configuradas</div>
+               ) : chartData.occupancyData.map((d: any) => (
+                 <div key={d.name} className="space-y-1">
+                    <div className="flex justify-between items-center text-[9px] font-black uppercase">
+                       <span className="text-slate-600 truncate max-w-[150px]">{d.name}</span>
+                       <span className="text-indigo-600 font-space">{d.rate}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+                       <div 
+                         className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000" 
+                         style={{ width: `${d.rate}%` }} 
+                       />
+                    </div>
+                 </div>
+               ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </>
   )
 }

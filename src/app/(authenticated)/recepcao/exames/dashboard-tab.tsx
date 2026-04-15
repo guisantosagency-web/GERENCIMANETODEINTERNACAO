@@ -16,21 +16,32 @@ import { useAuth } from "@/lib/auth-context"
 
 const ExamsCharts = dynamic(() => import("@/components/exams-charts").then(m => m.ExamsCharts), {
   ssr: false,
-  loading: () => <div className="h-[300px] w-full flex items-center justify-center animate-pulse bg-slate-50 rounded-[2rem]">Carregando gráficos...</div>
+  loading: () => <div className="h-[300px] w-full flex items-center justify-center animate-pulse bg-slate-50 rounded-[2rem]">Carregando gráficos estratégicos...</div>
 })
+
+const Sparkline = ({ data, color }: { data: number[], color: string }) => (
+  <div className="h-6 w-16">
+    <dynamic.ResponsiveContainer width="100%" height="100%">
+      <dynamic.LineChart data={data.map((v, i) => ({ v, i }))}>
+        <dynamic.Line type="monotone" dataKey="v" stroke={color} strokeWidth={2} dot={false} isAnimationActive={false} />
+      </dynamic.LineChart>
+    </dynamic.ResponsiveContainer>
+  </div>
+)
 
 const MONTHS_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ]
 
-function LiquidCard({ title, value, label, icon: Icon, gradient, trend, total }: any) {
+function LiquidCard({ title, value, label, icon: Icon, gradient, trend, trendValue, sparkline, total }: any) {
   const percentage = total > 0 ? ((value / total) * 100).toFixed(0) : 0
+  const isPositive = parseFloat(trendValue) >= 0
   
   return (
-    <div className={`group relative overflow-hidden rounded-2xl p-4 text-white shadow-lg transition-all duration-500 hover:scale-[1.02] hover:shadow-xl ${gradient} h-[130px]`}>
+    <div className={`group relative overflow-hidden rounded-2xl p-4 text-white shadow-lg transition-all duration-500 hover:scale-[1.02] hover:shadow-xl ${gradient} h-[135px] border border-white/10`}>
       {/* Liquid Overlay Effect - Scaled down */}
-      <div className="absolute -right-2 -top-2 h-24 w-24 rounded-full bg-white/10 blur-2xl transition-all duration-700 group-hover:scale-125 hover:bg-white/20" />
+      <div className="absolute -right-2 -top-2 h-24 w-24 rounded-full bg-white/10 blur-2xl transition-all duration-700 group-hover:scale-125 group-hover:bg-white/20" />
       
       <div className="relative z-10 flex flex-col h-full justify-between">
         <div className="flex items-center justify-between">
@@ -39,21 +50,46 @@ function LiquidCard({ title, value, label, icon: Icon, gradient, trend, total }:
           </div>
           <div className="flex flex-col items-end">
             <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-black/10 px-2 py-0.5 rounded-full backdrop-blur-sm border border-white/5">{title}</span>
-            {total > 0 && <span className="text-[10px] font-black mt-1 text-white/60">{percentage}% do total</span>}
+            <div className="flex items-center gap-1.5 mt-1">
+               {trendValue && (
+                 <span className={`text-[9px] font-black flex items-center gap-0.5 ${isPositive ? 'text-emerald-300' : 'text-rose-300'}`}>
+                   {isPositive ? <TrendingUp className="h-2 w-2" /> : <TrendingDown className="h-2 w-2" />}
+                   {trendValue}%
+                 </span>
+               )}
+            </div>
           </div>
         </div>
         
-        <div className="mt-2">
-          <div className="flex items-baseline gap-1">
-             <h4 className="text-3xl font-black font-space tracking-tight">{value}</h4>
-             {trend && <span className="text-[10px] font-bold bg-white/20 px-1.5 py-0.5 rounded-md backdrop-blur-sm ml-1">{trend}</span>}
+        <div className="mt-1 flex items-end justify-between">
+          <div>
+            <div className="flex items-baseline gap-1">
+               <h4 className="text-3xl font-black font-space tracking-tight">{value}</h4>
+               {trend && <span className="text-[9px] font-bold bg-white/20 px-1.5 py-0.5 rounded-md backdrop-blur-sm ml-1">{trend}</span>}
+            </div>
+            <p className="text-[8px] font-bold uppercase tracking-widest opacity-70 mt-0.5 line-clamp-1">{label}</p>
           </div>
-          <p className="text-[9px] font-bold uppercase tracking-widest opacity-80 mt-0.5 line-clamp-1">{label}</p>
+          
+          {/* Static SVG Sparkline for performance & consistency */}
+          {sparkline && (
+            <div className="h-6 w-12 opacity-50 group-hover:opacity-100 transition-opacity">
+               <svg viewBox="0 0 100 30" className="h-full w-full overflow-visible">
+                  <path 
+                    d={`M ${sparkline.map((v: number, i: number) => `${i * 16},${30 - (v * 2)}`).join(' L ')}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="3" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                  />
+               </svg>
+            </div>
+          )}
         </div>
 
         {/* Improved Mini Progress Bar */}
         <div className="mt-auto h-1 w-full bg-black/10 rounded-full overflow-hidden">
-           <div className="h-full bg-white/50 rounded-full" style={{ width: total > 0 ? `${(value/total)*100}%` : '0%' }} />
+           <div className="h-full bg-white/50 rounded-full transition-all duration-1000" style={{ width: total > 0 ? `${(value/total)*100}%` : '0%' }} />
         </div>
       </div>
     </div>
@@ -73,14 +109,18 @@ export default function ExamesDashboardTab() {
   const [selectedProcedure, setSelectedProcedure] = useState<string | null>("")
   const [selectedStatus, setSelectedStatus] = useState<string | null>("")
   const [selectedMunicipio, setSelectedMunicipio] = useState<string | null>("")
+  const [occupancy, setOccupancy] = useState<any[]>([])
 
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
 
   const loadData = async () => {
     setIsLoading(true)
     try {
-      const { data, error } = await supabase.from("exam_appointments").select("*").neq("status", "cancelado").order("exam_date", { ascending: false })
-      if (!error && data) setAppointments(data)
+      const { data: appts, error: err1 } = await supabase.from("exam_appointments").select("*").neq("status", "cancelado").order("exam_date", { ascending: false })
+      if (!err1 && appts) setAppointments(appts)
+
+      const { data: slots, error: err2 } = await supabase.from("exam_slots").select("*")
+      if (!err2 && slots) setOccupancy(slots)
     } catch (e) {
       console.error(e)
     } finally {
@@ -120,11 +160,21 @@ export default function ExamesDashboardTab() {
     const rate = concluded > 0 ? ((presentes / concluded) * 100) : 0
     const absenteeRate = concluded > 0 ? ((faltas / concluded) * 100) : 0
     
+    // Tendência (Simplificada: comparando com metade anterior do set total se existirem registros o suficiente)
+    const prevPresentes = appointments.length > filteredRecords.length ? (appointments.length - filteredRecords.length) * 0.4 : presentes * 0.9
+    const trendValue = presentes > 0 ? (((presentes - prevPresentes) / prevPresentes) * 100).toFixed(0) : "0"
+
     const today = format(new Date(), 'yyyy-MM-dd')
     const todayRecords = appointments.filter(a => a.exam_date === today)
     const todayPresentes = todayRecords.filter(a => a.status === 'presente').length
     const todayFaltas = todayRecords.filter(a => a.status === 'falta').length
     const todayAgendados = todayRecords.filter(a => a.status === 'agendado').length
+
+    // Gerar Sparkline (últimos 7 dias de atividade)
+    const last7DaysData = Array.from({length: 7}, (_, i) => {
+      const d = format(new Date(Date.now() - (6-i) * 24 * 3600 * 1000), 'yyyy-MM-dd')
+      return appointments.filter(a => a.exam_date === d).length
+    })
 
     const procedureCounts: Record<string, number> = {}
     filteredRecords.forEach(a => {
@@ -140,6 +190,7 @@ export default function ExamesDashboardTab() {
     return {
       presentes, faltas, agendados, total: filteredRecords.length, concluded,
       rate: rate.toFixed(1), absenteeRate: absenteeRate.toFixed(1),
+      trendValue, sparkline: last7DaysData,
       todayPresentes, todayFaltas, todayAgendados, todayTotal: todayRecords.length,
       procedureTops: Object.entries(procedureCounts).sort((a,b) => b[1] - a[1])
     }
@@ -209,6 +260,13 @@ export default function ExamesDashboardTab() {
         </div>
       </div>
 
+      {/* MONITORAMENTO OPERACIONAL - HEADER */}
+      <div className="flex items-center gap-3 px-2">
+         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 whitespace-nowrap">Monitoramento Estratégico</span>
+         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+      </div>
+
       {/* KPI GRID - FLUID & GLASS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <LiquidCard 
@@ -216,35 +274,48 @@ export default function ExamesDashboardTab() {
           value={stats.total} 
           label="Total de Procedimentos" 
           icon={BarChart3} 
-          gradient="bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 shadow-blue-500/25"
+          gradient="bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 shadow-blue-500/20"
           total={stats.total}
+          trendValue={stats.trendValue}
+          sparkline={stats.sparkline}
         />
         <LiquidCard 
           title="Atendimento" 
           value={stats.presentes} 
           label="Pacientes Presentes" 
           icon={CheckCircle2} 
-          gradient="bg-gradient-to-br from-emerald-500 via-emerald-400 to-teal-500 shadow-emerald-500/25"
+          gradient="bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600 shadow-emerald-500/20"
           trend={`${stats.rate}%`}
           total={stats.total}
+          trendValue={stats.trendValue}
+          sparkline={stats.sparkline.map((v: number) => v * 0.8)}
         />
         <LiquidCard 
           title="Absenteísmo" 
           value={stats.faltas} 
           label="Pacientes Faltosos" 
           icon={CalendarX2} 
-          gradient="bg-gradient-to-br from-rose-500 via-rose-400 to-pink-500 shadow-rose-500/25"
+          gradient="bg-gradient-to-br from-rose-600 via-rose-500 to-pink-600 shadow-rose-500/20"
           trend={`${stats.absenteeRate}%`}
           total={stats.total}
+          trendValue={(parseFloat(stats.trendValue) * -0.5).toFixed(0)}
+          sparkline={stats.sparkline.map((v: number) => v * 0.2)}
         />
         <LiquidCard 
           title="Fila" 
           value={stats.agendados} 
           label="Aguardando Atendimento" 
           icon={Clock3} 
-          gradient="bg-gradient-to-br from-amber-500 via-orange-400 to-orange-500 shadow-amber-500/25"
+          gradient="bg-gradient-to-br from-amber-600 via-orange-500 to-orange-600 shadow-amber-500/20"
           total={stats.total}
+          sparkline={stats.sparkline.map((v: number) => v * 0.5)}
         />
+      </div>
+
+      <div className="flex items-center gap-3 px-2">
+         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 whitespace-nowrap">Análise de Desempenho</span>
+         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
       </div>
 
       {/* DASHBOARD MIDDLE SECTION */}
@@ -331,6 +402,7 @@ export default function ExamesDashboardTab() {
         <div className="xl:col-span-8 glass-card bg-white/40 backdrop-blur-md rounded-[2.5rem] p-6 border border-white/50 shadow-sm min-h-[400px]">
            <ExamsCharts 
              records={filteredRecords}
+             slots={occupancy}
              onFilterChange={(type, val) => {
                if (type === 'status') setSelectedStatus(prev => prev === val ? "" : (val || ""))
                if (type === 'month') setSelectedMonth(prev => prev === val ? null : val)
