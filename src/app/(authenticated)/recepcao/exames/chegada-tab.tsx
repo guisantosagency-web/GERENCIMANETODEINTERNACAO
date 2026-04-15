@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { CheckSquare, Clock, MapPin, Key, Loader2, Users, Trash, Search, ChevronDown, ChevronRight, X, Send, CreditCard, Activity, AlertCircle } from "lucide-react"
+import { CheckSquare, Clock, MapPin, Key, Loader2, Users, Trash, Search, ChevronDown, ChevronRight, X, Send, CreditCard, Activity, AlertCircle, Edit, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -85,12 +85,15 @@ const SearchableSelect = ({ label, options, value, onChange, placeholder, disabl
 
 export default function ChegadaTab() {
   const [appointments, setAppointments] = useState<any[]>([])
+  const [forwardedAppointments, setForwardedAppointments] = useState<any[]>([])
+  const [queueView, setQueueView] = useState<'waiting' | 'forwarded'>('waiting')
   const [origins, setOrigins] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [estados, setEstados] = useState<IbgeEstado[]>([])
   const [municipios, setMunicipios] = useState<IbgeMunicipio[]>([])
 
   const [selectedAppt, setSelectedAppt] = useState<any>(null)
+  const [isEditingReception, setIsEditingReception] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), "yyyy-MM-dd"))
   const [searchFilter, setSearchFilter] = useState("")
   const [confirmedIds, setConfirmedIds] = useState<string[]>([])
@@ -163,48 +166,54 @@ export default function ChegadaTab() {
     try {
       const { data: orgData } = await supabase.from("exam_origins").select("*").order("name")
       if (orgData) setOrigins(orgData)
-  
-      const { data: appData } = await supabase
+       const { data: appData } = await supabase
         .from("exam_appointments")
         .select("*")
-        .eq("status", "agendado")
-        .eq("exam_date", selectedDate) // Filtro por data selecionada
+        .in("status", ["agendado", "aguardando"])
+        .eq("exam_date", selectedDate) 
         .order("exam_time")
 
       if (appData) {
-        // Agrupamento Universal por Paciente/Data
-        const grouped: any[] = []
-        const patientGroups: Record<string, any> = {}
+        const groupedWaiting: any[] = []
+        const groupedForwarded: any[] = []
+        
+        const waitingGroups: Record<string, any> = {}
+        const forwardedGroups: Record<string, any> = {}
 
         appData.forEach(app => {
           const patientKey = `${app.patient_name}-${app.exam_date}-${app.cpf || app.sus}`
+          const isWaiting = app.status === "agendado"
+          
+          const groups = isWaiting ? waitingGroups : forwardedGroups
+          const targetList = isWaiting ? groupedWaiting : groupedForwarded
 
-          if (!patientGroups[patientKey]) {
-            patientGroups[patientKey] = {
+          if (!groups[patientKey]) {
+            groups[patientKey] = {
               ...app,
               ids: [app.id],
               all_procedures: [app.procedure_name],
               raw_appointments: [app],
-              isGrouped: false // Será marcado como true se houver mais de um record
+              isGrouped: false
             }
-            grouped.push(patientGroups[patientKey])
+            targetList.push(groups[patientKey])
           } else {
-            patientGroups[patientKey].isGrouped = true
-            patientGroups[patientKey].ids.push(app.id)
-            patientGroups[patientKey].raw_appointments.push(app)
+            groups[patientKey].isGrouped = true
+            groups[patientKey].ids.push(app.id)
+            groups[patientKey].raw_appointments.push(app)
 
-            if (!patientGroups[patientKey].all_procedures.includes(app.procedure_name)) {
-              patientGroups[patientKey].all_procedures.push(app.procedure_name)
+            if (!groups[patientKey].all_procedures.includes(app.procedure_name)) {
+              groups[patientKey].all_procedures.push(app.procedure_name)
             }
 
-            // Atualizar o nome do procedimento para refletir o grupo
-            const count = patientGroups[patientKey].raw_appointments.length
-            patientGroups[patientKey].procedure_name = `Pacote de Exames (${count} itens)`
+            const count = groups[patientKey].raw_appointments.length
+            groups[patientKey].procedure_name = `Pacote de Exames (${count} itens)`
           }
         })
 
-        setAppointments(grouped)
+        setAppointments(groupedWaiting)
+        setForwardedAppointments(groupedForwarded)
       }
+ }
     } finally {
       setIsLoading(false)
     }
@@ -253,6 +262,7 @@ export default function ChegadaTab() {
   const handleSelectAppt = async (appt: any) => {
     setSelectedAppt(appt)
     setConfirmedIds(appt.ids || [appt.id])
+    setIsEditingReception(false)
 
     // Buscar dados completos se o paciente já existir na base
     let masterData: any = null
@@ -277,6 +287,38 @@ export default function ChegadaTab() {
       priority: "Sem Prioridade",
       receptionist_name: user?.name || "",
       is_encaixe: false
+    })
+    setSlotInfo(null)
+  }
+
+  const handleEditForwarded = async (appt: any) => {
+    setSelectedAppt(appt)
+    setConfirmedIds(appt.ids || [appt.id])
+    setIsEditingReception(true)
+
+    // Fetch Master Data
+    let masterData: any = null
+    if (appt.cpf || appt.sus) {
+      const { data: masterPatient } = await supabase
+        .from("master_patients")
+        .select("*")
+        .or(`cpf.eq.${appt.cpf},sus.eq.${appt.sus}`)
+        .maybeSingle()
+      masterData = masterPatient
+    }
+
+    setFormData({
+      origin_id: appt.origin_id || origins[0]?.id || "",
+      new_origin_name: "",
+      cpf: appt.cpf || masterData?.cpf || "",
+      sus: appt.sus || masterData?.sus || "",
+      birth_date: masterData?.data_nascimento || appt.birth_date || "",
+      state: masterData?.estado || appt.estado || "MA",
+      city: masterData?.municipio || appt.municipio || "São Luís",
+      chave_sisreg: appt.chave_sisreg || "",
+      priority: appt.priority || "Sem Prioridade",
+      receptionist_name: appt.receptionist_name || user?.name || "",
+      is_encaixe: appt.is_encaixe || false
     })
     setSlotInfo(null)
   }
@@ -309,6 +351,7 @@ export default function ChegadaTab() {
       receptionist_name: user?.name || "",
       is_encaixe: true
     })
+    setIsEditingReception(false)
   }
 
   const handleNewEncaixe = () => {
@@ -386,7 +429,57 @@ export default function ChegadaTab() {
 
       const cleanCPF = formData.cpf.replace(/\D/g, "")
 
-      if (selectedAppt.isBlankEncaixe) {
+      if (isEditingReception) {
+        // 1. Atualizar Existentes
+        const existingToUpdate = selectedAppt.raw_appointments.filter((a: any) => !a.isNew && confirmedIds.includes(a.id))
+        if (existingToUpdate.length > 0) {
+          await supabase.from("exam_appointments").update({
+            origin_id: finalOriginId,
+            cpf: cleanCPF,
+            sus: formData.sus.replace(/\D/g, "") || undefined,
+            birth_date: formData.birth_date,
+            state: formData.state,
+            city: formData.city,
+            chave_sisreg: formData.chave_sisreg,
+            priority: formData.priority,
+            receptionist_name: formData.receptionist_name,
+            updated_at: new Date().toISOString()
+          }).in("id", existingToUpdate.map((a: any) => a.id))
+        }
+
+        // 2. Inserir Novos
+        const newProcs = selectedAppt.raw_appointments.filter((a: any) => a.isNew)
+        if (newProcs.length > 0) {
+          await supabase.from("exam_appointments").insert(newProcs.map((p: any) => ({
+            patient_name: selectedAppt.patient_name.toUpperCase(),
+            exam_date: selectedDate,
+            exam_time: selectedAppt.exam_time || format(new Date(), "HH:mm"),
+            procedure_name: p.procedure_name,
+            exam_type: p.exam_type,
+            status: "aguardando",
+            arrival_time: selectedAppt.arrival_time || new Date().toISOString(),
+            origin_id: finalOriginId,
+            cpf: cleanCPF,
+            sus: formData.sus.replace(/\D/g, "") || undefined,
+            birth_date: formData.birth_date,
+            state: formData.state,
+            city: formData.city,
+            chave_sisreg: formData.chave_sisreg,
+            priority: formData.priority,
+            receptionist_name: formData.receptionist_name
+          })))
+        }
+
+        // 3. Cancelar Removidos
+        const allOriginalIds = selectedAppt.ids || []
+        const removedIds = allOriginalIds.filter((id: string) => !confirmedIds.includes(id))
+        if (removedIds.length > 0) {
+          await supabase.from("exam_appointments").update({
+            status: "cancelado",
+            updated_at: new Date().toISOString()
+          }).in("id", removedIds)
+        }
+      } else if (selectedAppt.isBlankEncaixe) {
         // Fluxo para NOVO AGENDA + ENTRADA DIRETA
         const { error: insertError } = await supabase.from("exam_appointments").insert([{
           patient_name: selectedAppt.patient_name.toUpperCase(),
@@ -450,8 +543,9 @@ export default function ChegadaTab() {
       })
 
       setSelectedAppt(null)
+      setIsEditingReception(false)
       loadData()
-      alert("Entrada registrada com sucesso!")
+      alert("Operação realizada com sucesso!")
     } catch (err) {
       console.error(err)
       alert("Erro ao confirmar chegada.")
@@ -477,9 +571,11 @@ export default function ChegadaTab() {
           <div className="p-8 border-b bg-emerald-600 text-white relative">
             <div className="flex items-center justify-between mb-2">
               <div className="h-10 w-10 flex items-center justify-center bg-white/20 rounded-xl"><CheckSquare className="h-6 w-6" /></div>
-              <Button variant="ghost" size="icon" onClick={() => setSelectedAppt(null)} className="h-10 w-10 text-white hover:bg-white/10 rounded-full"><X className="h-6 w-6" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => { setSelectedAppt(null); setIsEditingReception(false); }} className="h-10 w-10 text-white hover:bg-white/10 rounded-full"><X className="h-6 w-6" /></Button>
             </div>
-            <h3 className="text-2xl font-black font-space uppercase tracking-tight">Protocolo de Entrada</h3>
+            <h3 className="text-2xl font-black font-space uppercase tracking-tight">
+              {isEditingReception ? "Editar Recepção" : "Protocolo de Entrada"}
+            </h3>
             <div className="flex items-center gap-3">
               <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1 line-clamp-1">Paciente: {selectedAppt?.patient_name}</p>
               {formData.is_encaixe && (
@@ -569,28 +665,112 @@ export default function ChegadaTab() {
                         const id = exam.id
                         const isConfirmed = confirmedIds.includes(id)
                         return (
-                          <button
-                            key={id}
-                            type="button"
-                            onClick={() => toggleExam(id)}
-                            className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${isConfirmed ? 'bg-white border-emerald-500 shadow-sm' : 'bg-slate-50 border-transparent opacity-60'}`}
-                          >
-                            <div className="flex flex-col items-start">
-                              <span className={`text-[11px] font-black uppercase ${isConfirmed ? 'text-emerald-700' : 'text-slate-500'}`}>{exam.procedure_name}</span>
-                              <div className="flex items-baseline gap-2">
-                                <span className="text-[9px] font-bold text-slate-400">{exam.exam_type || 'Padrão'}</span>
-                                {exam.procedure_detail && (
-                                  <span className="text-[8px] font-medium text-slate-300 italic truncate max-w-[200px]">SISREG: {exam.procedure_detail}</span>
-                                )}
+                          <div key={id} className="group/item relative">
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => toggleExam(id)}
+                              className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${isConfirmed ? 'bg-white border-emerald-500 shadow-sm' : 'bg-slate-50 border-transparent opacity-60'}`}
+                            >
+                              <div className="flex flex-col items-start text-left">
+                                <span className={`text-[11px] font-black uppercase ${isConfirmed ? 'text-emerald-700' : 'text-slate-500'}`}>{exam.procedure_name}</span>
+                                <div className="flex items-baseline gap-2">
+                                  <span className="text-[9px] font-bold text-slate-400">{exam.exam_type || 'Padrão'}</span>
+                                  {exam.procedure_detail && (
+                                    <span className="text-[8px] font-medium text-slate-300 italic truncate max-w-[160px]">SISREG: {exam.procedure_detail}</span>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                            <div className={`h-6 w-6 rounded-full flex items-center justify-center border-2 ${isConfirmed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 text-transparent'}`}>
-                              {isConfirmed && <CheckSquare className="h-3 w-3" />}
-                            </div>
-                          </button>
+                              <div className={`h-6 w-6 rounded-full flex items-center justify-center border-2 ${isConfirmed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 text-transparent'}`}>
+                                {isConfirmed && <CheckSquare className="h-3 w-3" />}
+                              </div>
+                            </button>
+                            
+                            {isEditingReception && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm("Deseja marcar este procedimento para cancelamento?")) {
+                                    setConfirmedIds(prev => prev.filter(i => i !== id))
+                                  }
+                                }}
+                                className="absolute -right-2 -top-2 h-6 w-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover/item:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
                         )
                       })}
+
+                      {isEditingReception && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const newId = 'NEW-' + Math.random().toString(36).substr(2, 9)
+                            const newProc = {
+                              id: newId,
+                              procedure_name: dynamicProcedures[0],
+                              exam_type: (dynamicTypes[dynamicProcedures[0]] || [])[0] || "",
+                              isNew: true
+                            }
+                            setSelectedAppt((prev: any) => ({
+                              ...prev,
+                              raw_appointments: [...(prev.raw_appointments || []), newProc]
+                            }))
+                            setConfirmedIds(prev => [...prev, newId])
+                          }}
+                          className="w-full h-12 border-dashed border-emerald-200 text-emerald-600 bg-emerald-50/50 hover:bg-emerald-50 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Adicionar Procedimento
+                        </Button>
+                      )}
                     </div>
+
+                    {isEditingReception && (selectedAppt?.raw_appointments || []).filter((a: any) => a.isNew).map((newApp: any) => (
+                      <div key={newApp.id} className="mt-4 p-4 bg-white border border-emerald-100 rounded-2xl space-y-3">
+                         <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Novo Procedimento</span>
+                            <button onClick={() => {
+                              setSelectedAppt((prev: any) => ({
+                                ...prev,
+                                raw_appointments: prev.raw_appointments.filter((a: any) => a.id !== newApp.id)
+                              }))
+                              setConfirmedIds(prev => prev.filter(i => i !== newApp.id))
+                            }} className="text-red-400 hover:text-red-600"><X className="h-4 w-4"/></button>
+                         </div>
+                         <div className="grid grid-cols-1 gap-3">
+                            <select 
+                              value={newApp.procedure_name}
+                              onChange={(e) => {
+                                const val = e.target.value
+                                setSelectedAppt((prev: any) => ({
+                                  ...prev,
+                                  raw_appointments: prev.raw_appointments.map((a: any) => a.id === newApp.id ? { ...a, procedure_name: val, exam_type: (dynamicTypes[val] || [])[0] || "" } : a)
+                                }))
+                              }}
+                              className="w-full h-10 bg-slate-50 border-none rounded-xl px-3 font-black uppercase text-[10px]"
+                            >
+                              {dynamicProcedures.map(p => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                            <select 
+                              value={newApp.exam_type}
+                              onChange={(e) => {
+                                setSelectedAppt((prev: any) => ({
+                                  ...prev,
+                                  raw_appointments: prev.raw_appointments.map((a: any) => a.id === newApp.id ? { ...a, exam_type: e.target.value } : a)
+                                }))
+                              }}
+                              className="w-full h-10 bg-slate-50 border-none rounded-xl px-3 font-black uppercase text-[10px]"
+                            >
+                              <option value="">PADRÃO / NENHUMA</option>
+                              {(dynamicTypes[newApp.procedure_name] || []).map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                         </div>
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -699,7 +879,7 @@ export default function ChegadaTab() {
               }`}
             >
               {isLoading ? <Loader2 className="animate-spin h-6 w-6" /> : <Send className="h-6 w-6 group-hover:translate-x-1 transition-transform" />}
-              {formData.is_encaixe ? "Confirmar Encaixe" : "Confirmar Chegada"}
+              {isEditingReception ? "Salvar Alterações" : formData.is_encaixe ? "Confirmar Encaixe" : "Confirmar Chegada"}
             </Button>
           </div>
         </div>
@@ -711,10 +891,31 @@ export default function ChegadaTab() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
             <div>
               <h2 className="text-3xl font-black font-space uppercase tracking-tight flex items-center gap-4 text-slate-800">
-                <div className="p-4 bg-emerald-600 text-white rounded-[1.5rem] shadow-xl shadow-emerald-500/10"><Users className="h-7 w-7" /></div>
-                Fila de Triagem / Recepção
+                <div className={`p-4 ${queueView === 'waiting' ? 'bg-emerald-600' : 'bg-blue-600'} text-white rounded-[1.5rem] shadow-xl shadow-emerald-500/10`}>
+                  {queueView === 'waiting' ? <Users className="h-7 w-7" /> : <Send className="h-7 w-7" />}
+                </div>
+                {queueView === 'waiting' ? "Fila de Triagem / Recepção" : "Pacientes Encaminhados"}
               </h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-3 ml-20">Controle Dinâmico de Pacientes Aguardando</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-3 ml-20">
+                {queueView === 'waiting' ? "Controle Dinâmico de Pacientes Aguardando" : "Gestão de Atendimentos em Curso"}
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center gap-4">
+               <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-inner">
+                  <button 
+                    onClick={() => setQueueView('waiting')}
+                    className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${queueView === 'waiting' ? 'bg-white text-emerald-600 shadow-md ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                  >
+                    Aguardando Entrada
+                  </button>
+                  <button 
+                    onClick={() => setQueueView('forwarded')}
+                    className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${queueView === 'forwarded' ? 'bg-white text-blue-600 shadow-md ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                  >
+                    Já Encaminhados
+                  </button>
+               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
@@ -736,9 +937,11 @@ export default function ChegadaTab() {
                   className="h-12 px-4 bg-slate-50 border-none rounded-xl text-xs font-black uppercase focus:ring-2 focus:ring-emerald-500/20 transition-all"
                 />
                 <div className="flex items-center gap-2">
-                  <div className="px-4 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl flex items-center gap-2.5 border border-emerald-100">
-                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{appointments.length} REGISTROS</span>
+                  <div className={`px-4 py-2.5 ${queueView === 'waiting' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-blue-50 text-blue-600 border-blue-100'} rounded-xl flex items-center gap-2.5 border`}>
+                    <div className={`h-2 w-2 rounded-full ${queueView === 'waiting' ? 'bg-emerald-500' : 'bg-blue-500'} animate-pulse`} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">
+                      {(queueView === 'waiting' ? appointments : forwardedAppointments).length} REGISTROS
+                    </span>
                   </div>
 
                   <Button
@@ -758,14 +961,9 @@ export default function ChegadaTab() {
               <span className="text-[10px] font-black uppercase tracking-widest animate-pulse">Consultando Banco...</span>
             </div>
           ) : appointments.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center opacity-30 text-slate-400">
-              <Clock className="h-32 w-32 mb-8 stroke-[1px]" />
-              <p className="text-2xl font-black font-space uppercase tracking-widest">Nenhum Registro para Recepção</p>
-            </div>
-          ) : (
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-10">
               <div className="grid grid-cols-1 gap-4">
-                {appointments
+                {(queueView === 'waiting' ? appointments : forwardedAppointments)
                   .filter(a => 
                     a.patient_name.toLowerCase().includes(searchFilter.toLowerCase()) || 
                     (a.cpf && a.cpf.includes(searchFilter)) || 
@@ -780,8 +978,11 @@ export default function ChegadaTab() {
                       <div className="space-y-1">
                         <h4 className="font-black text-lg text-slate-800 uppercase tracking-tight">{a.patient_name}</h4>
                         <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                          <span className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-emerald-500" /> {a.exam_time} • {a.exam_date ? format(new Date(a.exam_date + "T00:00:00"), "dd/MM/yyyy") : "Sem Data"}</span>
-                          <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md font-black">{a.procedure_name}</span>
+                          <span className="flex items-center gap-1.5">
+                            <Clock className={`h-3 w-3 ${queueView === 'waiting' ? 'text-emerald-500' : 'text-blue-500'}`} /> 
+                            {a.exam_time} • {a.exam_date ? format(new Date(a.exam_date + "T00:00:00"), "dd/MM/yyyy") : "Sem Data"}
+                          </span>
+                          <span className={`px-2 py-0.5 ${queueView === 'waiting' ? 'bg-blue-50 text-blue-600' : 'bg-indigo-50 text-indigo-600'} rounded-md font-black`}>{a.procedure_name}</span>
                           {a.isGrouped && (
                             <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-md font-black italic">Agrupado</span>
                           )}
