@@ -213,7 +213,6 @@ export default function ChegadaTab() {
         setAppointments(groupedWaiting)
         setForwardedAppointments(groupedForwarded)
       }
- }
     } finally {
       setIsLoading(false)
     }
