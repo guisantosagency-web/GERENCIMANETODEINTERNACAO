@@ -281,24 +281,28 @@ export default function HistoricoTab() {
                 type="date"
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
+                className="h-14 px-6 bg-[#161B22] border-white/5 rounded-2xl text-xs font-black text-white uppercase focus:border-[#FF6B35]/50 shadow-xl"
+              />
+            </div>
+
+            <div className="xl:col-span-2 space-y-2">
+              <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-2">Atendente</Label>
+              <select
+                value={selectedReceptionist}
                 onChange={e => setSelectedReceptionist(e.target.value)}
-                className="w-full appearance-none h-12 bg-white border border-slate-100 px-4 rounded-2xl text-[10px] font-black uppercase cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-500/10 shadow-sm"
+                className="w-full h-14 bg-[#161B22] border border-white/5 px-6 rounded-2xl text-[10px] font-black uppercase text-white shadow-xl focus:border-[#FF6B35]/50 outline-none appearance-none"
               >
-                <option value="">TODOS OS ATENDENTES</option>
+                <option value="">TODOS</option>
                 {receptionists.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
 
-            {/* Quantitative Summary Card */}
-            {(selectedProcedures.length > 0 || selectedTypes.length > 0 || selectedStatuses.length > 0 || selectedReceptionist || searchTerm) && (
-              <div className="xl:col-span-1 border-2 border-dashed border-purple-100 rounded-[2rem] p-4 bg-purple-50/30 flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
-                <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-1">Total Filtrado</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black font-space text-purple-600">{filteredAppointments.length}</span>
-                  <span className="text-[10px] font-bold text-purple-400 uppercase">Res.</span>
-                </div>
+            <div className="xl:col-span-2 flex items-end">
+              <div className="w-full h-14 bg-[#FF6B35]/5 rounded-2xl border border-[#FF6B35]/10 flex flex-col items-center justify-center">
+                <p className="text-[8px] font-black text-[#FF6B35]/60 uppercase tracking-widest">Registros</p>
+                <p className="text-xl font-black text-[#FF6B35] leading-none">{filteredAppointments.length}</p>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
