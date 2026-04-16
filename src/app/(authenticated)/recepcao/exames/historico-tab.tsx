@@ -70,6 +70,7 @@ export default function HistoricoTab() {
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"))
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"))
   const [selectedProcedures, setSelectedProcedures] = useState<string[]>([])
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([])
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
   const [selectedReceptionist, setSelectedReceptionist] = useState("")
 
@@ -121,18 +122,27 @@ export default function HistoricoTab() {
         (appt.sus && appt.sus.includes(searchTerm))
 
       const matchesProcedure = selectedProcedures.length === 0 || selectedProcedures.includes(normalizeProcedureName(appt.procedure_name))
+      const matchesType = selectedTypes.length === 0 || selectedTypes.includes(appt.exam_type)
       const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(appt.status)
       const matchesReceptionist = !selectedReceptionist || appt.receptionist_name === selectedReceptionist
 
-      return matchesSearch && matchesProcedure && matchesStatus && matchesReceptionist
+      return matchesSearch && matchesProcedure && matchesType && matchesStatus && matchesReceptionist
     })
-  }, [appointments, searchTerm, selectedProcedures, selectedStatuses, selectedReceptionist])
+  }, [appointments, searchTerm, selectedProcedures, selectedTypes, selectedStatuses, selectedReceptionist])
 
   const groupedProcedures = useMemo(() => {
     const set = new Set<string>()
     appointments.forEach(a => set.add(normalizeProcedureName(a.procedure_name)))
     return Array.from(set).sort()
   }, [appointments])
+
+  const availableTypes = useMemo(() => {
+    const filteredByType = selectedProcedures.length === 0 
+      ? appointments 
+      : appointments.filter(a => selectedProcedures.includes(normalizeProcedureName(a.procedure_name)))
+    
+    return Array.from(new Set(filteredByType.map(a => a.exam_type).filter(Boolean))).sort()
+  }, [appointments, selectedProcedures])
 
   const availableStatuses = useMemo(() => Array.from(new Set(appointments.map(a => a.status).filter(Boolean))), [appointments])
   const receptionists = useMemo(() => Array.from(new Set(appointments.map(a => a.receptionist_name).filter(Boolean))), [appointments])
@@ -268,8 +278,19 @@ export default function HistoricoTab() {
               label="Procedimento" 
               options={groupedProcedures} 
               selected={selectedProcedures} 
-              onChange={setSelectedProcedures} 
+              onChange={(val: string[]) => {
+                setSelectedProcedures(val)
+                setSelectedTypes([]) // Reset types when procedure changes
+              }} 
               icon={Activity}
+            />
+
+            <MultiSelect 
+              label="Tipo de Exame" 
+              options={availableTypes} 
+              selected={selectedTypes} 
+              onChange={setSelectedTypes} 
+              icon={Search}
             />
 
             <MultiSelect 
@@ -293,7 +314,7 @@ export default function HistoricoTab() {
             </div>
 
             {/* Quantitative Summary Card */}
-            {(selectedProcedures.length > 0 || selectedStatuses.length > 0 || searchTerm) && (
+            {(selectedProcedures.length > 0 || selectedTypes.length > 0 || selectedStatuses.length > 0 || selectedReceptionist || searchTerm) && (
               <div className="xl:col-span-1 border-2 border-dashed border-purple-100 rounded-[2rem] p-4 bg-purple-50/30 flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
                 <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-1">Total Filtrado</p>
                 <div className="flex items-baseline gap-1">
