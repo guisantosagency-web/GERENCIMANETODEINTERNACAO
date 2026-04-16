@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import {
-  LayoutDashboard, Users, Settings, LogOut, Menu, X, Hospital,
+  LayoutDashboard, LayoutGrid, Users, Settings, LogOut, Menu, X, Hospital,
   ChevronLeft, ChevronRight, Activity, ShieldCheck, ClipboardCheck,
   PhoneCall, UserCircle2, PackageCheck
 } from "lucide-react"
