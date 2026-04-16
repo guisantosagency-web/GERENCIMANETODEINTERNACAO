@@ -281,52 +281,41 @@ export default function FilaTab() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="glass-premium rounded-[2.5rem] p-6 lg:p-8 shadow-premium">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-          <h2 className="text-2xl font-black font-space uppercase tracking-tight flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-2xl shadow-lg shadow-purple-500/20"><Play className="h-6 w-6" /></div>
-            Fila de Realização <span className="text-muted-foreground font-medium text-base">(Painel de Chamada)</span>
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000 relative pb-32">
+      {/* HEADER CONTROL TERMINAL */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 pb-10 border-b border-white/5">
+        <div className="space-y-1">
+          <h2 className="text-4xl font-black font-space uppercase tracking-tight text-white flex items-center gap-5">
+            <div className="p-4 bg-gradient-to-br from-[#FF6B35] to-[#FF8C00] text-white rounded-3xl shadow-[0_10px_30px_rgba(255,107,53,0.3)]">
+              <Play className="h-8 w-8" />
+            </div>
+            Fila de Realização
           </h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#7E8C9A] ml-24">Terminal de Chamada Operacional</p>
+        </div>
 
-          <div className="flex items-center gap-3">
-             <div className="flex items-center gap-4 bg-white/50 backdrop-blur-md border border-slate-100 p-2 pl-5 rounded-[1.5rem] shadow-sm">
-                <div className="flex flex-col">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">DATA DE REFERÊNCIA</span>
-                    <input 
-                      type="date" 
-                      value={selectedDate} 
-                      onChange={e => setSelectedDate(e.target.value)}
-                      className="bg-transparent border-none text-sm font-black text-purple-600 focus:ring-0 p-0 uppercase"
-                    />
-                </div>
-                <Button onClick={loadData} variant="ghost" size="icon" className="h-10 w-10 text-slate-300 hover:text-purple-500 rounded-xl">
-                    <Clock className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
-                </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5 bg-[#161B22] border border-white/5 p-2 pl-6 rounded-[2rem] shadow-2xl transition-all hover:border-white/10 group">
+             <div className="flex flex-col">
+                <span className="text-[8px] font-black text-[#7E8C9A] uppercase tracking-widest leading-none mb-1">Data de Referência</span>
+                <input 
+                  type="date" 
+                  value={selectedDate} 
+                  onChange={e => setSelectedDate(e.target.value)}
+                  className="bg-transparent border-none text-sm font-black text-white focus:ring-0 p-0 uppercase cursor-pointer"
+                />
              </div>
-
+             <div className="h-10 w-[1px] bg-white/5 mx-2" />
              <Button 
-                onClick={generateRelatorio}
-                disabled={isLoading || Object.keys(appointments).length === 0}
-                className="h-[52px] px-6 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase text-[10px] tracking-widest gap-2.5 hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10"
+              variant="ghost" 
+              onClick={() => generateRelatorio()} 
+              className="h-14 px-6 rounded-2xl bg-white/[0.03] text-[#00D9FF] hover:bg-[#00D9FF] hover:text-white transition-all duration-500 font-black uppercase text-[10px] tracking-widest gap-3"
              >
-                <Printer className="h-4 w-4" />
-                Relatório de Fila
+               <Printer className="h-5 w-5" />
+               Gerar Relatório
              </Button>
           </div>
         </div>
-        {isLoading ? (
-           <div className="h-64 flex items-center justify-center">
-             <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
-           </div>
-        ) : Object.keys(appointments).length === 0 ? (
-           <div className="h-64 flex flex-col items-center justify-center opacity-40">
-             <Play className="h-12 w-12 mb-4" />
-             <p className="font-space font-bold tracking-widest uppercase">Nenhum paciente aguardando.</p>
-           </div>
-        ) : (
-           <div className="space-y-12 pb-12">
-              {Object.keys(appointments).map(category => (
                   <div key={category} className="space-y-4">
                      <div className="flex items-center gap-4 px-2">
                         <div className="relative">

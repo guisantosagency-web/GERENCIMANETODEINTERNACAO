@@ -125,153 +125,175 @@ export default function ResultadosTab() {
   }, [appointments])
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Stats Cards */}
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 relative pb-32">
+      {/* HUD DASHBOARD SECTION */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-card bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5">
-          <div className="h-14 w-14 bg-blue-500/10 text-blue-600 rounded-2xl flex items-center justify-center">
-            <ClipboardCheck className="h-7 w-7" />
-          </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Geral</p>
-            <p className="text-2xl font-black text-slate-800 tracking-tight">{stats.total}</p>
-          </div>
-        </div>
-        <div className="glass-card bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5">
-          <div className="h-14 w-14 bg-amber-500/10 text-amber-600 rounded-2xl flex items-center justify-center">
-            <Clock className="h-7 w-7" />
-          </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Aguardando Entrega</p>
-            <p className="text-2xl font-black text-slate-800 tracking-tight">{stats.pendentes}</p>
+        <div className="card-csgo p-8 rounded-[3rem] border-white/5 shadow-2xl relative overflow-hidden group">
+          <div className="absolute inset-0 bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors" />
+          <div className="relative z-10 flex items-center gap-8">
+            <div className="h-20 w-20 bg-[#161B22] border border-white/10 text-[#00D9FF] rounded-[1.8rem] flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-500">
+              <ClipboardCheck className="h-10 w-10" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#7E8C9A] mb-1">Total Scan</p>
+              <p className="text-4xl font-black text-white tracking-tighter font-space">{stats.total}</p>
+            </div>
           </div>
         </div>
-        <div className="glass-card bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5">
-          <div className="h-14 w-14 bg-emerald-500/10 text-emerald-600 rounded-2xl flex items-center justify-center">
-            <UserCheck className="h-7 w-7" />
+
+        <div className="card-csgo p-8 rounded-[3rem] border-white/5 shadow-2xl relative overflow-hidden group">
+          <div className="absolute inset-0 bg-[#FF6B35]/5 group-hover:bg-[#FF6B35]/10 transition-colors" />
+          <div className="relative z-10 flex items-center gap-8">
+            <div className="h-20 w-20 bg-[#161B22] border border-white/10 text-[#FF6B35] rounded-[1.8rem] flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-500">
+              <Clock className="h-10 w-10 animate-pulse text-[#FF6B35]" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#7E8C9A] mb-1">Queued Results</p>
+              <p className="text-4xl font-black text-white tracking-tighter font-space">{stats.pendentes}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Resultados Entregues</p>
-            <p className="text-2xl font-black text-slate-800 tracking-tight">{stats.entregues}</p>
+        </div>
+
+        <div className="card-csgo p-8 rounded-[3rem] border-white/5 shadow-2xl relative overflow-hidden group">
+          <div className="absolute inset-0 bg-[#00FF88]/5 group-hover:bg-[#00FF88]/10 transition-colors" />
+          <div className="relative z-10 flex items-center gap-8">
+            <div className="h-20 w-20 bg-[#161B22] border border-white/10 text-[#00FF88] rounded-[1.8rem] flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-500">
+              <UserCheck className="h-10 w-10" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#7E8C9A] mb-1">Released Files</p>
+              <p className="text-4xl font-black text-white tracking-tighter font-space">{stats.entregues}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="glass-card bg-white/40 border-none rounded-[3.5rem] p-8 lg:p-12 shadow-2xl relative overflow-hidden backdrop-blur-xl">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-12">
+      {/* SEARCH COMMAND CENTER */}
+      <div className="card-csgo rounded-[4rem] p-10 lg:p-14 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#00D9FF] to-transparent" />
+        
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12 mb-14">
           <div>
-            <h2 className="text-4xl font-black font-space uppercase tracking-tight text-slate-800 flex items-center gap-4">
-               <div className="p-4 bg-purple-600 text-white rounded-2xl shadow-lg shadow-purple-500/20"><PackageCheck className="h-8 w-8" /></div>
-               Entrega de Resultados
-            </h2>
-            <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mt-3 ml-20">Controle e Registro de Retirada de Exames</p>
+            <div className="flex items-center gap-6 mb-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-[#00D9FF] blur-2xl opacity-20" />
+                <div className="p-5 bg-gradient-to-br from-[#00D9FF] to-[#0088FF] text-white rounded-[1.8rem] shadow-2xl relative border border-white/20">
+                  <PackageCheck className="h-8 w-8" />
+                </div>
+              </div>
+              <h2 className="text-5xl font-black font-space uppercase tracking-tight text-white leading-tight">Delivery Hub</h2>
+            </div>
+            <p className="text-[#7E8C9A] text-[10px] font-black uppercase tracking-[0.6em] ml-24">MEDICAL RESULT RELEASE PROTOCOL • ACTIVE MONITORING</p>
           </div>
 
-          <div className="flex items-center gap-4">
-             <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100">
+          <div className="flex items-center gap-3 bg-[#161B22] p-2 rounded-[2rem] border border-white/5">
+             {[
+               { id: 'todos', label: 'All Files', color: 'text-white' },
+               { id: 'pendentes', label: 'Pending', color: 'text-[#FF6B35]' },
+               { id: 'entregues', label: 'Released', color: 'text-[#00FF88]' }
+             ].map((t) => (
                <button 
-                 onClick={() => setFilter("todos")}
-                 className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === 'todos' ? 'bg-white text-slate-800 shadow-sm scale-105' : 'text-slate-400 hover:text-slate-600'}`}
+                 key={t.id}
+                 onClick={() => setFilter(t.id as any)}
+                 className={`px-8 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${filter === t.id ? `bg-white ${t.color.replace('text-', 'text-[#0F1419]')} shadow-2xl scale-105` : 'text-[#7E8C9A] hover:text-white'}`}
                >
-                 Todos
+                 {t.label}
                </button>
-               <button 
-                 onClick={() => setFilter("pendentes")}
-                 className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === 'pendentes' ? 'bg-white text-amber-600 shadow-sm scale-105' : 'text-slate-400 hover:text-slate-600'}`}
-               >
-                 Pendentes
-               </button>
-               <button 
-                 onClick={() => setFilter("entregues")}
-                 className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === 'entregues' ? 'bg-white text-emerald-600 shadow-sm scale-105' : 'text-slate-400 hover:text-slate-600'}`}
-               >
-                 Entregues
-               </button>
-             </div>
+             ))}
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative mb-8">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-300" />
+        {/* SEARCH BAR TERMINAL */}
+        <div className="relative mb-14 group">
+          <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-7 w-7 text-[#7E8C9A] group-focus-within:text-[#00D9FF] transition-all" />
           <Input 
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            placeholder="PESQUISAR PACIENTE POR NOME OU CPF..."
-            className="h-20 pl-16 pr-8 text-xl font-black uppercase rounded-3xl bg-slate-50 border-none shadow-inner tracking-tight placeholder:text-slate-300"
+            placeholder="SCANNING PATIENT NAME, CPF OR DATABASE ID..."
+            className="h-24 pl-20 pr-10 text-[13px] font-black uppercase tracking-[0.2em] rounded-[2.5rem] bg-[#161B22] border-white/5 shadow-2xl text-white placeholder:text-white/10 transition-all focus:border-[#00D9FF]/40"
           />
         </div>
 
-        {/* Patients List */}
-        <div className="space-y-4">
+        {/* RESULTS FLOW */}
+        <div className="space-y-6">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <div className="h-10 w-10 border-4 border-purple-500/30 border-t-purple-600 rounded-full animate-spin" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 animate-pulse">Consultando Registros...</p>
+            <div className="flex flex-col items-center justify-center py-40 gap-8 animate-pulse">
+              <div className="h-16 w-16 border-[6px] border-[#00D9FF]/20 border-t-[#00D9FF] rounded-full animate-spin shadow-[0_0_30px_rgba(0,217,255,0.2)]" />
+              <p className="text-[11px] font-black uppercase tracking-[0.8em] text-[#7E8C9A]">Accessing Encrypted Records...</p>
             </div>
           ) : filteredData.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 opacity-30">
-              <SearchX className="h-24 w-24 text-slate-400 mb-6 stroke-[1px]" />
-              <p className="text-xl font-black font-space uppercase tracking-widest text-slate-400">Nenhum resultado encontrado</p>
+            <div className="flex flex-col items-center justify-center py-40 opacity-30">
+              <div className="w-40 h-40 rounded-[3rem] bg-[#161B22] border border-dashed border-white/10 flex items-center justify-center mb-10 overflow-hidden relative">
+                 <div className="absolute inset-0 bg-gradient-to-br from-transparent via-[#00D9FF]/5 to-transparent rotate-45 animate-pulse" />
+                 <SearchX className="h-20 w-20 text-white relative z-10" />
+              </div>
+              <p className="text-2xl font-black font-space uppercase tracking-[0.5em] text-[#7E8C9A]">No Data Matches Found</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-6">
               {filteredData.map(a => (
                 <div 
                   key={a.id} 
-                  className={`group p-6 rounded-[2.5rem] border-2 transition-all duration-500 flex flex-col md:flex-row md:items-center justify-between gap-6 ${a.result_delivered ? 'bg-emerald-50/30 border-emerald-100 hover:bg-emerald-50' : 'bg-white border-slate-100 hover:border-purple-200 hover:shadow-xl hover:-translate-y-1'}`}
+                  className={`p-8 lg:p-10 rounded-[4rem] border transition-all duration-700 flex flex-col xl:flex-row xl:items-center justify-between gap-10 group relative overflow-hidden ${a.result_delivered ? 'bg-[#00FF88]/5 border-[#00FF88]/20' : 'card-csgo border-white/5 hover:border-[#00D9FF]/40 shadow-2xl'}`}
                 >
-                  <div className="flex items-center gap-6">
-                    <div className={`h-16 w-16 rounded-3xl flex items-center justify-center font-black text-2xl transition-all duration-500 ${a.result_delivered ? 'bg-emerald-600 text-white' : 'bg-slate-50 text-slate-400 group-hover:bg-purple-100 group-hover:text-purple-600'}`}>
+                   <div className="absolute top-0 right-0 p-12 opacity-[0.01] group-hover:opacity-[0.05] group-hover:scale-125 transition-all text-white pointer-events-none">
+                      <History className="h-64 w-64" />
+                   </div>
+
+                  <div className="flex flex-1 items-center gap-10 relative z-10">
+                    <div className={`h-24 w-24 rounded-[2.5rem] flex items-center justify-center font-black text-4xl transition-all duration-700 border shadow-2xl shrink-0 ${a.result_delivered ? 'bg-[#00FF88] text-white border-white/20' : 'bg-[#161B22] text-[#7E8C9A] border-white/5 group-hover:text-[#00D9FF] group-hover:border-[#00D9FF]/30'}`}>
                       {a.patient_name.charAt(0)}
                     </div>
-                    <div>
-                      <h4 className="font-black text-lg text-slate-800 uppercase tracking-tight">{a.patient_name}</h4>
-                      <div className="flex flex-wrap items-center gap-y-2 gap-x-4 mt-1">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                          <Calendar className="h-3 w-3" /> {format(parseISO(a.exam_date), 'dd/MM/yyyy')}
-                        </span>
-                        <span className="px-3 py-1 bg-purple-50 text-purple-600 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                    <div className="space-y-4">
+                      <h4 className="font-black text-3xl text-white uppercase tracking-tight group-hover:text-[#00D9FF] transition-colors leading-tight">{a.patient_name}</h4>
+                      <div className="flex flex-wrap items-center gap-6">
+                        <div className="flex items-center gap-3 px-5 py-2 rounded-2xl bg-[#161B22] border border-white/5">
+                          <Calendar className="h-4 w-4 text-[#FF6B35]" />
+                          <span className="text-[10px] font-black text-white uppercase tracking-widest">{format(parseISO(a.exam_date), 'dd/MM/yyyy')}</span>
+                        </div>
+                        <div className="flex items-center gap-3 px-5 py-2 rounded-2xl bg-[#161B22] border border-white/5">
+                          <Truck className="h-4 w-4 text-[#FF1493]" />
+                          <span className="text-[10px] font-black text-white uppercase tracking-widest">{a.exam_type}</span>
+                        </div>
+                        <div className="px-5 py-2 bg-white/[0.03] text-white/50 border border-white/5 rounded-2xl text-[9px] font-black uppercase tracking-widest group-hover:text-[#00D9FF] group-hover:border-[#00D9FF]/20 transition-all">
                           {a.procedure_name}
-                        </span>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                          {a.exam_type}
-                        </span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10">
+                  <div className="flex flex-col lg:flex-row items-center gap-12 shrink-0 relative z-10">
                     {a.result_delivered && (
-                      <div className="flex flex-col items-end animate-in fade-in slide-in-from-right-4 duration-500">
-                        <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-100 px-2 py-0.5 rounded-full mb-1 flex items-center gap-1">
-                          <CheckCircle className="h-2 w-2" /> Entregue
-                        </span>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase">Por: {a.result_delivered_by}</span>
-                        <span className="text-[8px] font-medium text-slate-300 italic">{format(parseISO(a.result_delivered_at), 'dd/MM/yy HH:mm')}</span>
+                      <div className="flex flex-col items-center lg:items-end animate-in fade-in slide-in-from-right-10 duration-700">
+                        <div className="px-6 py-2 bg-[#00FF88]/10 text-[#00FF88] rounded-full mb-3 flex items-center gap-3 border border-[#00FF88]/20 shadow-xl">
+                          <div className="w-2 h-2 rounded-full bg-[#00FF88] animate-ping" />
+                          <span className="text-[9px] font-black uppercase tracking-[0.2em]">FILE RELEASED</span>
+                        </div>
+                        <span className="text-[11px] font-black text-white uppercase tracking-wider mb-1">BY: {a.result_delivered_by || "AUTHORIZED SYSTEM"}</span>
+                        <span className="text-[9px] font-bold text-[#7E8C9A] uppercase tracking-widest">{format(parseISO(a.result_delivered_at), 'dd/MM/yy • HH:mm')}</span>
                       </div>
                     )}
 
-                    <div className="w-full md:w-auto">
+                    <div className="w-full lg:w-auto">
                       {a.result_delivered ? (
                         <Button 
                           variant="ghost" 
                           disabled={isUpdating === a.id}
                           onClick={() => handleDelivery(a.id, false)}
-                          className="h-14 w-full md:w-auto px-8 rounded-2xl text-red-400 hover:bg-red-50 hover:text-red-500 font-black uppercase text-[10px] tracking-widest gap-2"
+                          className="h-16 w-full lg:w-48 rounded-[1.5rem] bg-white/5 text-[#7E8C9A] hover:bg-[#FF1493] hover:text-white transition-all duration-500 font-black uppercase text-[10px] tracking-widest gap-4 border border-white/5"
                         >
-                          {isUpdating === a.id ? <div className="h-4 w-4 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" /> : <XCircle className="h-4 w-4" />}
-                          Cancelar Entrega
+                          {isUpdating === a.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <XCircle className="h-5 w-5" />}
+                          Rollback
                         </Button>
                       ) : (
                         <Button 
                           disabled={isUpdating === a.id}
                           onClick={() => handleDelivery(a.id, true)}
-                          className="h-14 w-full md:w-auto px-10 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-500/20 gap-3 group/btn"
+                          className="h-16 w-full lg:w-auto px-12 rounded-[1.5rem] bg-white text-[#0F1419] hover:bg-[#00D9FF] hover:text-white transition-all duration-500 font-black uppercase text-[11px] tracking-[0.2em] shadow-2xl gap-4 group/btn"
                         >
-                          {isUpdating === a.id ? <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
-                          Registrar Entrega
-                          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                          {isUpdating === a.id ? <Loader2 className="h-6 w-6 animate-spin text-[#00D9FF]" /> : <CheckCircle2 className="h-6 w-6 group-hover:scale-125 transition-transform" />}
+                          Authorize Entry
+                          <ArrowRight className="h-5 w-5 group-hover:translate-x-3 transition-transform duration-500" />
                         </Button>
                       )}
                     </div>
@@ -285,3 +307,4 @@ export default function ResultadosTab() {
     </div>
   )
 }
+

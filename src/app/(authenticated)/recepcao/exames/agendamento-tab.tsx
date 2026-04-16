@@ -30,7 +30,7 @@ const FALLBACK_TYPES: Record<string, string[]> = {
   "Eletrocardiograma": ["Padrão"]
 }
 
-// PREMIUM 3D HUMAN MODEL
+// PREMIUM 3D HUMAN MODEL - DARK EDITION
 const HumanModel = ({ procedure }: { procedure: string }) => {
   const isHead = (procedure || "").includes("Tomografia")
   const isChest = procedure === "Ecocardiograma" || procedure === "Eletrocardiograma" || procedure === "Raio X"
@@ -39,24 +39,24 @@ const HumanModel = ({ procedure }: { procedure: string }) => {
   const isLaboratorial = procedure === "Laboratoriais"
 
   return (
-    <div className="relative w-full h-[450px] flex items-center justify-center bg-gradient-to-b from-slate-50 to-white rounded-[3rem] border border-slate-200/50 shadow-inner overflow-hidden group [perspective:1200px]">
-      <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#64748b 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+    <div className="relative w-full h-[450px] flex items-center justify-center bg-[#161B22] rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden group [perspective:1200px]">
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#FF6B35 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
       
       {/* Scanning Line Animation */}
-      <div className="absolute inset-x-0 w-full h-[2px] bg-gradient-to-r from-transparent via-blue-500 to-transparent z-10 animate-scan pointer-events-none shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+      <div className="absolute inset-x-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#FF6B35] to-transparent z-10 animate-scan pointer-events-none shadow-[0_0_15px_rgba(255,107,53,0.5)]" />
 
       <div className="relative transition-all duration-1000 ease-out group-hover:[transform:rotateY(10deg)_rotateX(5deg)] transform-gpu h-full w-full flex items-center justify-center">
-        <svg viewBox="0 0 200 500" className="h-[90%] w-auto filter drop-shadow-[0_25px_50px_rgba(0,0,0,0.15)] transition-all duration-700">
+        <svg viewBox="0 0 200 500" className="h-[90%] w-auto filter drop-shadow-[0_25px_50px_rgba(0,0,0,0.3)] transition-all duration-700">
           <defs>
             <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" style={{ stopColor: '#f1f5f9' }} />
-              <stop offset="50%" style={{ stopColor: '#e2e8f0' }} />
-              <stop offset="100%" style={{ stopColor: '#f1f5f9' }} />
+              <stop offset="0%" style={{ stopColor: '#1F2937' }} />
+              <stop offset="50%" style={{ stopColor: '#374151' }} />
+              <stop offset="100%" style={{ stopColor: '#1F2937' }} />
             </linearGradient>
             <linearGradient id="activeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" style={{ stopColor: '#3b82f6' }} />
-              <stop offset="50%" style={{ stopColor: '#60a5fa' }} />
-              <stop offset="100%" style={{ stopColor: '#3b82f6' }} />
+              <stop offset="0%" style={{ stopColor: '#FF6B35' }} />
+              <stop offset="50%" style={{ stopColor: '#FF8C00' }} />
+              <stop offset="100%" style={{ stopColor: '#FF6B35' }} />
             </linearGradient>
             <filter id="neonGlow" x="-25%" y="-25%" width="150%" height="150%">
               <feGaussianBlur stdDeviation="6" result="blur" />
@@ -65,12 +65,12 @@ const HumanModel = ({ procedure }: { procedure: string }) => {
           </defs>
 
           {/* Sombra de Profundidade */}
-          <ellipse cx="100" cy="485" rx="50" ry="10" className="fill-slate-200/40" />
+          <ellipse cx="100" cy="485" rx="50" ry="10" className="fill-black/40" />
 
           {/* Cabeça */}
           <g className={`transition-all duration-700 ${isHead ? 'scale-110 origin-center' : ''}`}>
             <circle cx="100" cy="60" r="35" 
-              className={`transition-all duration-500 ${isHead ? 'fill-[url(#activeGradient)]' : isLaboratorial ? 'fill-blue-100' : 'fill-[url(#bodyGradient)]'}`} 
+              className={`transition-all duration-500 ${isHead ? 'fill-[url(#activeGradient)]' : isLaboratorial ? 'fill-[#00D9FF]/20' : 'fill-[url(#bodyGradient)]'}`} 
               style={{ filter: isHead ? 'url(#neonGlow)' : 'none' }} 
             />
             {isHead && <circle cx="100" cy="60" r="15" className="fill-white/40 animate-pulse" />}
@@ -80,9 +80,9 @@ const HumanModel = ({ procedure }: { procedure: string }) => {
           <path 
             d="M65 110 L135 110 Q145 250 135 320 L65 320 Q55 250 65 110 Z" 
             className={`transition-all duration-500 ${
-              isChest ? 'fill-blue-400' : 
-              isAbdomen ? 'fill-blue-300' : 
-              isLaboratorial ? 'fill-blue-100 animate-pulse' : 
+              isChest ? 'fill-[#FF1493]' : 
+              isAbdomen ? 'fill-[#00FF88]' : 
+              isLaboratorial ? 'fill-[#00D9FF]/30 animate-pulse' : 
               'fill-[url(#bodyGradient)]'
             }`} 
             style={{ filter: (isChest || isAbdomen) ? 'url(#neonGlow)' : 'none' }} 
@@ -91,8 +91,8 @@ const HumanModel = ({ procedure }: { procedure: string }) => {
           {/* Coração (Específico para Cardios) */}
           {(procedure === "Ecocardiograma" || procedure === "Eletrocardiograma") && (
             <g transform="translate(105, 160) scale(0.6)">
-              <path d="M0 -30 Q20 -50 40 -30 T0 30 T-40 -30 Q-20 -50 0 -30" fill="#ef4444" className="animate-ping opacity-30" />
-              <path d="M0 -30 Q20 -50 40 -30 T0 30 T-40 -30 Q-20 -50 0 -30" fill="#ef4444" className="animate-bounce" />
+              <path d="M0 -30 Q20 -50 40 -30 T0 30 T-40 -30 Q-20 -50 0 -30" fill="#FF1493" className="animate-ping opacity-30" />
+              <path d="M0 -30 Q20 -50 40 -30 T0 30 T-40 -30 Q-20 -50 0 -30" fill="#FF1493" className="animate-bounce" />
             </g>
           )}
 
@@ -100,19 +100,19 @@ const HumanModel = ({ procedure }: { procedure: string }) => {
           <g className="transition-all duration-500">
             {/* Braço Esquerdo */}
             <path d="M65 110 L35 270 L55 275 L75 120 Z" 
-              className={`transition-all duration-500 ${isLimbs ? 'fill-blue-200' : isLaboratorial ? 'fill-blue-100' : 'fill-[url(#bodyGradient)]'}`} 
+              className={`transition-all duration-500 ${isLimbs ? 'fill-[#00D9FF]/40' : isLaboratorial ? 'fill-[#00D9FF]/10' : 'fill-[url(#bodyGradient)]'}`} 
             />
             {/* Braço Direito */}
             <path d="M135 110 L165 270 L145 275 L125 120 Z" 
-              className={`transition-all duration-500 ${isLimbs ? 'fill-blue-200' : isLaboratorial ? 'fill-blue-100' : 'fill-[url(#bodyGradient)]'}`} 
+              className={`transition-all duration-500 ${isLimbs ? 'fill-[#00D9FF]/40' : isLaboratorial ? 'fill-[#00D9FF]/10' : 'fill-[url(#bodyGradient)]'}`} 
             />
             {/* Perna Esquerda */}
             <path d="M70 320 L55 480 L85 480 L95 320 Z" 
-              className={`transition-all duration-500 ${isLimbs ? 'fill-blue-200' : isLaboratorial ? 'fill-blue-100' : 'fill-[url(#bodyGradient)]'}`} 
+              className={`transition-all duration-500 ${isLimbs ? 'fill-[#00D9FF]/40' : isLaboratorial ? 'fill-[#00D9FF]/10' : 'fill-[url(#bodyGradient)]'}`} 
             />
             {/* Perna Direita */}
             <path d="M130 320 L145 480 L115 480 L105 320 Z" 
-              className={`transition-all duration-500 ${isLimbs ? 'fill-blue-200' : isLaboratorial ? 'fill-blue-100' : 'fill-[url(#bodyGradient)]'}`} 
+              className={`transition-all duration-500 ${isLimbs ? 'fill-[#00D9FF]/40' : isLaboratorial ? 'fill-[#00D9FF]/10' : 'fill-[url(#bodyGradient)]'}`} 
             />
           </g>
 
@@ -120,7 +120,7 @@ const HumanModel = ({ procedure }: { procedure: string }) => {
           {isLaboratorial && (
             <g className="animate-pulse" style={{ opacity: 0.6 }}>
               <path d="M100 110 L100 320 M70 150 L40 250 M130 150 L160 250 M80 320 L65 450 M120 320 L135 450" 
-                fill="none" stroke="#2563eb" strokeWidth="3" strokeLinecap="round" className="animate-pulse"
+                fill="none" stroke="#00D9FF" strokeWidth="3" strokeLinecap="round" className="animate-pulse"
               />
             </g>
           )}
@@ -128,14 +128,14 @@ const HumanModel = ({ procedure }: { procedure: string }) => {
       </div>
 
       <div className="absolute top-8 left-8 flex flex-col gap-2">
-        <div className="bg-white/90 backdrop-blur-2xl p-4 border border-slate-100 rounded-3xl shadow-2xl flex items-center gap-4 group-hover:scale-105 transition-transform duration-500">
+        <div className="bg-[#161B22]/80 backdrop-blur-2xl p-4 border border-white/5 rounded-3xl shadow-2xl flex items-center gap-4 group-hover:scale-105 transition-transform duration-500">
           <div className="relative">
-            <div className={`w-3 h-3 rounded-full ${procedure ? 'bg-blue-500' : 'bg-slate-300'}`} />
-            <div className={`absolute inset-0 rounded-full animate-ping ${procedure ? 'bg-blue-500/50' : 'bg-slate-300/50'}`} />
+            <div className={`w-3 h-3 rounded-full ${procedure ? 'bg-[#FF6B35]' : 'bg-white/10'}`} />
+            <div className={`absolute inset-0 rounded-full animate-ping ${procedure ? 'bg-[#FF6B35]/50' : 'bg-white/5'}`} />
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-1">Scanner Ativo</p>
-            <p className="text-sm font-black text-slate-800 uppercase tracking-tight">{procedure || "Aguardando"}</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#7E8C9A] leading-none mb-1">Status Holo-Scan</p>
+            <p className="text-sm font-black text-white uppercase tracking-tight">{procedure || "Ocioso"}</p>
           </div>
         </div>
       </div>
@@ -155,6 +155,7 @@ const HumanModel = ({ procedure }: { procedure: string }) => {
     </div>
   )
 }
+
 
 // SEARCHABLE SELECT COMPONENT WITH ADD OPTION
 const SearchableAdder = ({ 
@@ -827,7 +828,6 @@ export default function AgendamentoTab() {
                     />
                     <FileText className="absolute left-6 bottom-[1.2rem] h-6 w-6 text-purple-500" />
                   </div>
-                  {/* EXAMS LIST */}
                   <div className="md:col-span-2 space-y-6">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                       <h3 className="text-xl font-black font-space uppercase tracking-tight text-slate-700">Lista de Procedimentos</h3>
@@ -855,35 +855,6 @@ export default function AgendamentoTab() {
                             />
                             <SearchableAdder 
                               label="Especificação"
-                              placeholder="Selecione..."
-                              value={exam.exam_type}
-                              canAdd={true}
-                              options={dynamicTypes[exam.procedure_name] || []}
-                              onSelect={(v) => updateExam(exam.id, 'exam_type', v)}
-                              onAddNew={(v) => handleAddNewType(v, exam.procedure_name)}
-                            />
-                            <div className="space-y-1.5">
-                              <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-2">Data</Label>
-                              <Input type="date" value={exam.exam_date} onChange={e => updateExam(exam.id, 'exam_date', e.target.value)} className="h-12 bg-slate-50 border-none rounded-xl text-xs font-black text-center" />
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-2">Hora</Label>
-                              <Input type="time" value={exam.exam_time} onChange={e => updateExam(exam.id, 'exam_time', e.target.value)} className="h-12 bg-slate-50 border-none rounded-xl text-xs font-black text-center" />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-10">
-                    <Button type="submit" disabled={isSubmitting || !hasSlots || isCheckingSlots} className={`h-20 rounded-[2rem] text-white font-black text-xl tracking-widest uppercase shadow-xl transition-all ${hasSlots ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-200 text-slate-400'}`}>
-                      {isSubmitting ? <Loader2 className="animate-spin" /> : "Confirmar Agendamento"}
-                    </Button>
-                    {lastSaved && (
-                      <Button type="button" onClick={() => generatePrintableFicha()} className="rounded-[2rem] bg-emerald-600 text-white h-20 font-black uppercase shadow-xl hover:bg-emerald-700">
-                        <Printer className="mr-2" /> Gerar Ficha (Impressão/PDF)
-                      </Button>
-                    )}
                   </div>
                 </div>
               </form>

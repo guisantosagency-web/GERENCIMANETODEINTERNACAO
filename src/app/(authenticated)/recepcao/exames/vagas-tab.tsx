@@ -107,21 +107,24 @@ export default function VagasTab() {
 
   return (
     <div className="space-y-6">
-      <div className="glass-card !bg-card/40 border-none rounded-[2.5rem] p-8 max-w-6xl mx-auto shadow-sm">
+      <div className="card-csgo rounded-[2.5rem] p-8 max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-          <h2 className="text-2xl font-black font-space uppercase tracking-tight flex items-center gap-3">
-            <div className="p-3 bg-amber-500/10 text-amber-500 rounded-xl"><CalendarIcon className="h-6 w-6" /></div>
-            Gestão de Vagas Interativa
-          </h2>
+          <div className="space-y-1">
+            <h2 className="text-2xl font-black font-space uppercase tracking-tight flex items-center gap-3 text-white">
+              <div className="p-3 bg-[#FF6B35]/10 text-[#FF6B35] rounded-xl shadow-lg shadow-[#FF6B35]/10"><CalendarIcon className="h-6 w-6" /></div>
+              Limite de Vagas
+            </h2>
+            <p className="text-[#7E8C9A] text-[10px] font-black uppercase tracking-[0.2em] ml-16 opacity-60">Configuração de Disponibilidade</p>
+          </div>
           {isAdmin && (
             <Button 
               type="button"
               onClick={() => setIsManagerOpen(true)}
               variant="outline"
-              className="h-12 px-6 rounded-2xl bg-white border-amber-100 text-amber-600 hover:bg-amber-50 font-black uppercase text-[10px] tracking-widest gap-2 shadow-sm"
+              className="h-12 px-6 rounded-2xl bg-[#161B22] border-white/5 text-[#FF6B35] hover:bg-[#FF6B35] hover:text-white font-black uppercase text-[10px] tracking-widest gap-2 shadow-xl transition-all"
             >
               <Settings2 className="h-4 w-4" />
-              Gerenciar Procedimentos
+              Editar Procedimentos
             </Button>
           )}
         </div>
@@ -129,49 +132,64 @@ export default function VagasTab() {
         <div className="grid lg:grid-cols-[1fr_400px] gap-12">
            {/* Esquerda: Calendário e Configuração */}
            <div className="space-y-8">
-              <div className="grid md:grid-cols-[auto_1fr] gap-8 bg-white/50 p-6 rounded-[2.5rem] border border-border/50">
+              <div className="grid md:grid-cols-[auto_1fr] gap-8 bg-white/[0.02] p-6 rounded-[2.5rem] border border-white/5 shadow-inner">
                  <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">1. Selecione os Dias</Label>
-                    <div className="bg-white rounded-2xl border border-border/50 overflow-hidden shadow-sm">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#7E8C9A] ml-2">1. Selecionar Período</Label>
+                    <div className="bg-[#161B22] rounded-2xl border border-white/10 overflow-hidden shadow-2xl p-2 premium-calendar">
                       <Calendar
                         mode="multiple"
                         selected={selectedDates}
                         onSelect={(dates) => dates && setSelectedDates(dates)}
-                        className="p-3"
+                        className="p-3 text-white"
                       />
                     </div>
                     <div className="flex items-center gap-2 justify-center">
-                       <Button variant="ghost" size="sm" onClick={() => setSelectedDates([new Date()])} className="text-[9px] font-black uppercase opacity-60 hover:opacity-100">Resetar Seleção</Button>
+                       <Button variant="ghost" size="sm" onClick={() => setSelectedDates([new Date()])} className="text-[9px] font-black uppercase text-[#7E8C9A] hover:text-white transition-colors">Resetar Seleção</Button>
                     </div>
                  </div>
 
                  <div className="flex flex-col gap-6 pt-2">
                     <div className="space-y-4">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">2. Detalhes da Vaga</Label>
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-[#7E8C9A] ml-2">2. Parâmetros Operacionais</Label>
                       
                       <div className="space-y-2">
-                        <Label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Procedimento</Label>
+                        <Label className="text-[9px] font-bold uppercase text-[#7E8C9A] ml-1">Procedimento Médico</Label>
                         <select 
                             value={newProcedure} 
                             onChange={e => setNewProcedure(e.target.value)}
-                            className="w-full appearance-none h-12 bg-white border border-border/50 px-5 rounded-2xl text-sm font-black shadow-sm focus:ring-2 focus:ring-amber-500/20 transition-all"
+                            className="w-full appearance-none h-14 bg-[#161B22] border border-white/10 px-6 rounded-2xl text-sm font-black text-white shadow-xl focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]/50 transition-all outline-none"
                         >
                           {dynamicProcedures.map((p: any) => <option key={p} value={p}>{p}</option>)}
                         </select>
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Vagas por Dia</Label>
-                        <Input type="number" min="0" value={newTotalSlots} onChange={e => setNewTotalSlots(e.target.value)} required placeholder="Ex: 20" className="font-black bg-white text-xl h-14 rounded-2xl text-center border-border/50" />
+                        <Label className="text-[9px] font-bold uppercase text-[#7E8C9A] ml-1">Total de Vagas</Label>
+                        <Input 
+                          type="number" 
+                          min="0" 
+                          value={newTotalSlots} 
+                          onChange={e => setNewTotalSlots(e.target.value)} 
+                          required 
+                          placeholder="00" 
+                          className="font-black bg-[#161B22] text-white text-3xl h-20 rounded-2xl text-center border-white/10 focus:border-[#FF6B35]/50 transition-all" 
+                        />
                       </div>
                     </div>
 
                     <div className="mt-auto space-y-4">
-                       <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100/50">
-                          <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest text-center">Status: {selectedDates.length} dia(s) selecionados</p>
+                       <div className="p-4 bg-[#FF6B35]/5 rounded-2xl border border-[#FF6B35]/10 flex items-center justify-center gap-3">
+                          <div className="h-1.5 w-1.5 rounded-full bg-[#FF6B35] animate-pulse shadow-[0_0_8px_rgba(255,107,53,0.5)]" />
+                          <p className="text-[10px] font-black text-[#FF6B35] uppercase tracking-widest">
+                            {selectedDates.length} DIA(S) EM FILA
+                          </p>
                        </div>
-                       <Button onClick={handleSave} disabled={isLoading || selectedDates.length === 0} className="w-full rounded-2xl bg-slate-900 hover:bg-black text-white font-black text-sm uppercase tracking-widest h-16 gap-3 shadow-xl transition-all active:scale-95 group">
-                          {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : <><Save className="h-5 w-5 group-hover:scale-110 transition-transform" /> Aplicar em Lote</>}
+                       <Button 
+                        onClick={handleSave} 
+                        disabled={isLoading || selectedDates.length === 0} 
+                        className="w-full rounded-2xl bg-gradient-to-r from-[#FF6B35] to-[#FF8C00] hover:scale-[1.02] active:scale-[0.98] text-white font-black text-sm uppercase tracking-[0.2em] h-16 gap-3 shadow-xl shadow-[#FF6B35]/20 transition-all duration-500 ease-out disabled:opacity-50"
+                       >
+                          {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : <><Save className="h-5 w-5" /> Confirmar Aplicação</>}
                        </Button>
                     </div>
                  </div>
@@ -179,13 +197,16 @@ export default function VagasTab() {
 
               {/* Datas Selecionadas (Visual) */}
               <div className="space-y-3">
-                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">Datas na Lista de Aplicação:</Label>
-                 <div className="flex flex-wrap gap-2 p-4 bg-muted/10 rounded-2xl border border-dashed border-border/30 min-h-[60px]">
-                    {selectedDates.length === 0 && <p className="text-[10px] text-muted-foreground italic font-medium p-2">Clique no calendário para selecionar...</p>}
+                 <Label className="text-[10px] font-black uppercase tracking-widest text-[#7E8C9A] ml-2">Resumo da Seleção:</Label>
+                 <div className="flex flex-wrap gap-2 p-5 bg-white/[0.02] rounded-2xl border border-dashed border-white/10 min-h-[70px]">
+                    {selectedDates.length === 0 && <p className="text-[10px] text-[#7E8C9A] italic font-bold p-2 uppercase tracking-widest opacity-30 mx-auto mt-2">Nenhum dia selecionado no calendário</p>}
                     {selectedDates.sort((a,b) => a.getTime() - b.getTime()).map(d => (
-                      <div key={d.toISOString()} className="bg-white border border-border/50 text-slate-800 px-3 py-1.5 rounded-lg text-[10px] font-black flex items-center gap-2 animate-in zoom-in duration-300 shadow-sm">
-                        {format(d, 'dd/MM')}
-                        <button type="button" onClick={() => setSelectedDates(selectedDates.filter(date => date !== d))} className="text-red-400 hover:text-red-600"><Trash2 className="h-3 w-3" /></button>
+                      <div key={d.toISOString()} className="bg-[#161B22] border border-white/5 text-white px-3 py-2 rounded-xl text-[10px] font-black flex items-center gap-3 animate-in zoom-in duration-300 shadow-lg">
+                        <span className="text-[#FF6B35]">{format(d, 'dd/MM')}</span>
+                        <div className="w-px h-3 bg-white/10" />
+                        <button type="button" onClick={() => setSelectedDates(selectedDates.filter(date => date !== d))} className="text-rose-500 hover:text-rose-400 transition-colors">
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                       </div>
                     ))}
                  </div>
@@ -194,37 +215,54 @@ export default function VagasTab() {
 
            {/* Direita: Visualização do Dia Focado */}
            <div className="space-y-6">
-              <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-border/50 h-full">
-                <div className="space-y-6">
+              <div className="bg-white/[0.02] p-8 rounded-[2.5rem] border border-white/5 h-full shadow-inner">
+                <div className="space-y-8">
                   <div>
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">Visualizar Configuração Existente</Label>
-                    <div className="mt-3 flex items-center justify-between pb-4 border-b border-border/20">
-                      <Input type="date" value={format(date, 'yyyy-MM-dd')} onChange={e => setDate(new Date(e.target.value + 'T00:00:00'))} className="bg-white border-none shadow-sm font-black text-xs h-10 w-[160px] rounded-xl" />
-                      <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-3 py-1 rounded-full uppercase">{format(date, 'dd/MM/yyyy')}</span>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#7E8C9A] ml-2">Monitor do Dia</Label>
+                    <div className="mt-4 flex items-center justify-between pb-6 border-b border-white/10">
+                      <Input 
+                        type="date" 
+                        value={format(date, 'yyyy-MM-dd')} 
+                        onChange={e => setDate(new Date(e.target.value + 'T00:00:00'))} 
+                        className="bg-[#161B22] border border-white/5 text-white shadow-xl font-black text-xs h-12 w-[180px] rounded-xl px-4" 
+                      />
+                      <div className="px-4 py-2 rounded-xl bg-[#FF6B35]/10 border border-[#FF6B35]/20 text-[#FF6B35] font-black text-[10px] uppercase tracking-widest">
+                        {format(date, 'dd MMM yyyy')}
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-4 max-h-[520px] overflow-y-auto pr-2 no-scrollbar">
                     {isLoading ? (
-                      <div className="space-y-3">
-                        {[1, 2].map(i => <div key={i} className="h-20 animate-pulse bg-white rounded-3xl" />)}
+                      <div className="space-y-4">
+                        {[1, 2, 3].map(i => <div key={i} className="h-24 animate-pulse bg-white/5 rounded-3xl" />)}
                       </div>
                     ) : slots.length === 0 ? (
-                      <div className="p-12 text-center">
-                        <Search className="h-10 w-10 text-muted-foreground/20 mx-auto mb-4" />
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-loose text-center">Nenhuma vaga restrita<br/>configurada para este dia.</p>
+                      <div className="py-20 text-center flex flex-col items-center gap-6">
+                        <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center border border-white/5">
+                          <Search className="h-8 w-8 text-white/10" />
+                        </div>
+                        <p className="text-[10px] font-black text-[#7E8C9A] uppercase tracking-[0.3em] leading-loose">
+                          Padrão Sistêmico Ativo<br/>
+                          <span className="text-white/20 mt-2 block">Sem limites manuais</span>
+                        </p>
                       </div>
                     ) : (
                       slots.map(s => (
-                        <div key={s.id} className="flex justify-between items-center p-6 bg-white rounded-3xl border border-border/30 shadow-sm group hover:border-amber-500/20 transition-all">
-                           <div>
-                             <p className="font-black text-slate-800 uppercase tracking-tight text-xs">{s.procedure_name}</p>
-                             <div className="flex items-center gap-2 mt-2">
-                                <span className="px-2 py-0.5 bg-amber-500 text-white rounded-md text-[9px] font-black uppercase">{s.total_slots} VAGAS</span>
+                        <div key={s.id} className="flex justify-between items-center p-6 bg-[#161B22] rounded-[2rem] border border-white/5 shadow-xl group hover:border-[#FF6B35]/40 transition-all duration-500">
+                           <div className="space-y-3">
+                             <p className="font-black text-white uppercase tracking-tight text-xs font-space">{s.procedure_name}</p>
+                             <div className="flex items-center gap-3">
+                                <span className="px-3 py-1 bg-[#FF6B35] text-white rounded-lg text-[9px] font-black uppercase shadow-lg shadow-[#FF6B35]/20">{s.total_slots} VAGAS EM ALVO</span>
                              </div>
                            </div>
-                           <Button variant="ghost" size="icon" onClick={() => handleDelete(s.id)} className="h-10 w-10 rounded-xl text-red-400 hover:bg-red-50 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">
-                             <Trash2 className="h-4 w-4" />
+                           <Button 
+                             variant="ghost" 
+                             size="icon" 
+                             onClick={() => handleDelete(s.id)} 
+                             className="h-12 w-12 rounded-2xl text-rose-500/40 hover:bg-rose-500 hover:text-white transition-all duration-300"
+                           >
+                             <Trash2 className="h-5 w-5" />
                            </Button>
                         </div>
                       ))

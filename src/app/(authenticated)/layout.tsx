@@ -6,8 +6,10 @@ import { useRouter, usePathname } from "next/navigation"
 import { useEffect } from "react"
 import { AuthProvider, useAuth } from "@/lib/auth-context"
 import { Sidebar } from "@/components/sidebar"
+import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { SidebarProvider, useSidebar } from "@/lib/sidebar-context"
+import { TabProvider } from "@/lib/tab-context"
 import { cn } from "@/lib/utils"
 
 const adminRoutes = ["/dashboard", "/internacoes", "/admin", "/triagem", "/recepcao", "/portal", "/pacientes", "/resultados"]
@@ -75,24 +77,26 @@ function AuthenticatedLayoutContent({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[oklch(0.975_0.008_265)] via-[oklch(0.970_0.012_280)] to-[oklch(0.968_0.010_255)]">
-      {/* Premium Ambient Background — orbs flutuantes */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        {/* Orbs de Plasma */}
-        <div className="ambient-orb floating w-[700px] h-[700px] bg-gradient-to-br from-violet-200/50 to-blue-200/30 -top-48 -right-48" />
-        <div className="ambient-orb floating-slow w-[500px] h-[500px] bg-gradient-to-br from-blue-200/40 to-cyan-100/30 top-1/3 -left-32" />
-        <div className="ambient-orb floating-delay w-[400px] h-[400px] bg-gradient-to-br from-purple-100/40 to-pink-100/20 bottom-0 right-1/4" />
-        <div className="ambient-orb glow-pulse-slow w-[300px] h-[300px] bg-gradient-to-br from-indigo-200/30 to-violet-100/20 top-1/4 right-1/3" />
-        {/* Noise Texture Overlay */}
-        <div className="absolute inset-0 opacity-[0.015]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-          backgroundSize: '200px 200px'
-        }} />
-      </div>
+    <TabProvider>
+      <div className="min-h-screen flex flex-col bg-[#0F1419] overflow-x-hidden">
+        {/* Premium Ambient Background — CSGO Orbs */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="ambient-orb floating w-[800px] h-[800px] bg-[#FF6B35]/5 -top-48 -right-48" />
+          <div className="ambient-orb floating-slow w-[600px] h-[600px] bg-[#FF1493]/5 top-1/3 -left-32" />
+          <div className="ambient-orb floating-delay w-[500px] h-[500px] bg-[#00D9FF]/5 bottom-0 right-1/4" />
+          
+          {/* Noise Texture Overlay */}
+          <div className="absolute inset-0 opacity-[0.03]" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+            backgroundSize: '200px 200px'
+          }} />
+        </div>
 
-      <Sidebar />
-      <MainContent>{children}</MainContent>
-    </div>
+        <Sidebar />
+        <Header />
+        <MainContent>{children}</MainContent>
+      </div>
+    </TabProvider>
   )
 }
 
@@ -103,16 +107,16 @@ function MainContent({ children }: { children: React.ReactNode }) {
     <>
       <main
         className={cn(
-          "flex-1 relative z-10 transition-all duration-300 ease-in-out",
-          isCollapsed ? "lg:pl-20" : "lg:pl-64",
+          "flex-1 relative z-10 transition-all duration-300 ease-in-out mt-16",
+          isCollapsed ? "lg:pl-[72px]" : "lg:pl-64",
         )}
       >
-        <div className="p-4 lg:p-8 pt-16 lg:pt-8 max-w-[1600px] mx-auto">{children}</div>
+        <div className="p-4 lg:p-8 max-w-[1800px] mx-auto">{children}</div>
       </main>
       <div
         className={cn(
           "relative z-10 transition-all duration-300 ease-in-out",
-          isCollapsed ? "lg:pl-20" : "lg:pl-64",
+          isCollapsed ? "lg:pl-[72px]" : "lg:pl-64",
         )}
       >
         <Footer />

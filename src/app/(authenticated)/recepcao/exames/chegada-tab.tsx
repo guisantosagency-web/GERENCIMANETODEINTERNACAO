@@ -25,38 +25,38 @@ const SearchableSelect = ({ label, options, value, onChange, placeholder, disabl
 
   return (
     <div className="space-y-2 relative">
-      <Label className="uppercase text-[9px] font-black tracking-widest text-slate-400 ml-2">{label}</Label>
+      <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-2">{label}</Label>
       <div className="relative">
         <button
           type="button"
           disabled={disabled}
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-full flex items-center justify-between bg-slate-50 border-none px-4 h-14 rounded-2xl text-sm font-bold shadow-inner transition-all focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed ${isOpen ? 'ring-2 ring-emerald-500 bg-white' : ''}`}
+          className={`w-full flex items-center justify-between bg-[#161B22] border border-white/5 px-5 h-14 rounded-2xl text-xs font-black shadow-xl transition-all hover:border-[#FF6B35]/30 disabled:opacity-50 disabled:cursor-not-allowed ${isOpen ? 'border-[#FF6B35]/50 ring-4 ring-[#FF6B35]/10' : ''}`}
         >
-          <div className="flex items-center gap-3">
-            {Icon && <Icon className="h-5 w-5 text-emerald-500" />}
-            <span className={selectedOption ? "text-slate-900" : "text-slate-400 font-medium"}>
+          <div className="flex items-center gap-4">
+            {Icon && <Icon className="h-5 w-5 text-[#FF6B35]" />}
+            <span className={selectedOption ? "text-white uppercase tracking-tight" : "text-[#7E8C9A] uppercase tracking-widest font-black"}>
               {selectedOption ? selectedOption.nome : placeholder}
             </span>
           </div>
-          <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`h-5 w-5 text-[#7E8C9A] transition-transform duration-300 ${isOpen ? 'rotate-180 text-white' : ''}`} />
         </button>
 
         {isOpen && (
-          <div className="absolute z-[100] mt-2 w-full bg-white border border-slate-100 rounded-[1.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-3 border-b border-slate-50 sticky top-0 bg-white/90 backdrop-blur-md">
+          <div className="absolute z-[100] mt-3 w-full bg-[#161B22]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-white/5 sticky top-0 bg-[#161B22]/90">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7E8C9A]" />
                 <input
                   autoFocus
-                  className="w-full bg-slate-50 border-none rounded-xl h-10 pl-10 pr-4 text-sm font-bold focus:ring-0"
-                  placeholder="Pesquisar..."
+                  className="w-full bg-white/5 border border-white/5 rounded-xl h-12 pl-12 pr-4 text-xs font-bold text-white focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]/40 outline-none uppercase transition-all"
+                  placeholder="Pesquisar registro..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
-            <div className="max-h-[250px] overflow-y-auto pt-1 pb-1">
+            <div className="max-h-[250px] overflow-y-auto no-scrollbar pt-1 pb-1">
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((opt: any) => (
                   <button
@@ -67,13 +67,14 @@ const SearchableSelect = ({ label, options, value, onChange, placeholder, disabl
                       setIsOpen(false)
                       setSearchTerm("")
                     }}
-                    className={`w-full text-left px-5 py-3 text-sm font-bold transition-colors hover:bg-emerald-50 hover:text-emerald-600 ${value === (opt.sigla || opt.nome) ? 'bg-emerald-50 text-emerald-600' : 'text-slate-600'}`}
+                    className={`w-full text-left px-6 py-4 text-[11px] font-black uppercase transition-colors hover:bg-white/5 flex items-center justify-between group ${value === (opt.sigla || opt.nome) ? 'bg-[#FF6B35]/10 text-[#FF6B35]' : 'text-[#7E8C9A]'}`}
                   >
-                    {opt.nome} {opt.sigla ? `(${opt.sigla})` : ""}
+                    <span>{opt.nome} {opt.sigla ? `(${opt.sigla})` : ""}</span>
+                    {value === (opt.sigla || opt.nome) && <CheckSquare className="h-4 w-4 drop-shadow-[0_0_8px_rgba(255,107,53,0.5)]" />}
                   </button>
                 ))
               ) : (
-                <div className="p-4 text-center text-xs font-bold text-slate-400 italic">Nenhum resultado encontrado</div>
+                <div className="p-10 text-center text-[10px] font-black text-[#7E8C9A] uppercase tracking-widest opacity-40">Nenhum registro encontrado</div>
               )}
             </div>
           </div>
@@ -827,25 +828,6 @@ export default function ChegadaTab() {
                     <Input 
                       type="text" 
                       placeholder="APENAS NÚMEROS..." 
-                      value={formData.chave_sisreg === 'IMPORT_SISREG' ? '' : formData.chave_sisreg} 
-                      onChange={e => {
-                        const v = e.target.value.replace(/\D/g, "")
-                        setFormData(p => ({ ...p, chave_sisreg: v }))
-                      }} 
-                      className="h-14 pl-12 font-black text-center tracking-widest bg-slate-50 border-none rounded-2xl shadow-inner uppercase" 
-                    />
-                    <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-500" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="uppercase text-[10px] font-black tracking-widest text-red-500 ml-2">Classificação de Prioridade</Label>
-                  <select value={formData.priority} onChange={e => setFormData(p => ({ ...p, priority: e.target.value }))} className="w-full h-14 bg-red-50/50 border-red-100 border-2 text-red-600 font-black uppercase text-xs rounded-2xl px-4 cursor-pointer focus:ring-0">
-                    <option value="Sem Prioridade">NORMAL (SEM PRIORIDADE)</option>
-                    <option value="Idoso (+60)">Idoso (+60)</option>
-                    <option value="Gestante / Lactante">Gestante / Lactante</option>
-                    <option value="PcD">Pessoa com Deficiência (PcD)</option>
-                    <option value="Autismo (TEA)">Autismo (TEA)</option>
                     <option value="Criança de Colo">Criança de Colo</option>
                   </select>
                 </div>
