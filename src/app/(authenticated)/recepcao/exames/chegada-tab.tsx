@@ -354,19 +354,27 @@ export default function ChegadaTab() {
   }
 
   const handleNewEncaixe = () => {
+    const defaultProc = dynamicProcedures[0] || ""
+    const newId = 'NEW-' + Math.random().toString(36).substr(2, 9)
     const blankAppt = {
-      id: 'NEW-' + Math.random().toString(36).substr(2, 9),
+      id: 'MASTER-' + Math.random().toString(36).substr(2, 9),
       patient_name: "",
       exam_date: selectedDate,
       exam_time: format(new Date(), "HH:mm"),
-      procedure_name: "",
-      exam_type: "",
       cpf: "",
       sus: "",
-      isBlankEncaixe: true
+      isBlankEncaixe: true,
+      raw_appointments: [
+        {
+          id: newId,
+          procedure_name: defaultProc,
+          exam_type: (dynamicTypes[defaultProc] || [])[0] || "",
+          isNew: true
+        }
+      ]
     }
     setSelectedAppt(blankAppt)
-    setConfirmedIds([blankAppt.id])
+    setConfirmedIds([newId])
     setFormData({
       origin_id: origins[0]?.id || "",
       new_origin_name: "",
@@ -412,7 +420,7 @@ export default function ChegadaTab() {
     // Validação Chave SISREG obrigatória para origem SISREG
     const selectedOrigin = origins.find(o => o.id === formData.origin_id)
     if (selectedOrigin?.name?.toUpperCase() === "SISREG" && !formData.chave_sisreg.trim()) {
-      alert("Chave SISREG deve ser informada")
+      alert("CHAVE SISREG É OBRIGATÓRIA PARA ESTA ORIGEM!")
       return
     }
 
@@ -479,13 +487,19 @@ export default function ChegadaTab() {
           }).in("id", removedIds)
         }
       } else if (selectedAppt.isBlankEncaixe) {
-        // Fluxo para NOVO AGENDA + ENTRADA DIRETA
-        const { error: insertError } = await supabase.from("exam_appointments").insert([{
+        // Fluxo para NOVO AGENDA + ENTRADA DIRETA (Suporta múltiplos)
+        const newProcs = selectedAppt.raw_appointments.filter((a: any) => confirmedIds.includes(a.id))
+        if (newProcs.length === 0) {
+          alert("Por favor, adicione e selecione ao menos um procedimento.")
+          return
+        }
+
+        const { error: insertError } = await supabase.from("exam_appointments").insert(newProcs.map((p: any) => ({
           patient_name: selectedAppt.patient_name.toUpperCase(),
           exam_date: selectedDate,
           exam_time: selectedAppt.exam_time || format(new Date(), "HH:mm"),
-          procedure_name: selectedAppt.procedure_name,
-          exam_type: selectedAppt.exam_type,
+          procedure_name: p.procedure_name,
+          exam_type: p.exam_type,
           status: "aguardando",
           arrival_time: new Date().toISOString(),
           origin_id: finalOriginId,
@@ -497,7 +511,7 @@ export default function ChegadaTab() {
           chave_sisreg: formData.chave_sisreg,
           priority: formData.priority,
           receptionist_name: formData.receptionist_name
-        }])
+        })))
 
         if (insertError) throw insertError
       } else {
@@ -605,7 +619,7 @@ export default function ChegadaTab() {
             <form id="arrival-form" onSubmit={handleSubmit} className="space-y-8 pb-10">
               <div className="space-y-6">
                 
-                {/* BLANK ENCAIXE FIELDS */}
+                {/* BLANK ENCAIXE FIELDS (NAME ONLY) */}
                 {selectedAppt?.isBlankEncaixe && (
                   <div className="space-y-6 animate-in slide-in-from-top-4 duration-500">
                     <div className="space-y-2">
@@ -618,160 +632,134 @@ export default function ChegadaTab() {
                         className="h-14 font-black uppercase bg-blue-50 border-blue-100 rounded-2xl" 
                       />
                     </div>
-
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-2">
-                        <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Procedimento</Label>
-                        <select 
-                          required 
-                          value={selectedAppt.procedure_name} 
-                          onChange={e => {
-                            const val = e.target.value
-                            setSelectedAppt((p: any) => ({ 
-                              ...p, 
-                              procedure_name: val, 
-                              exam_type: (dynamicTypes[val] || [])[0] || "" 
-                            }))
-                          }} 
-                          className="w-full h-14 bg-slate-50 border-none rounded-2xl px-4 font-black uppercase text-xs"
-                        >
-                          <option value="">SELECIONE...</option>
-                          {dynamicProcedures.map(p => <option key={p} value={p}>{p}</option>)}
-                        </select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Especificação</Label>
-                        <select 
-                          value={selectedAppt.exam_type} 
-                          onChange={e => setSelectedAppt((p: any) => ({ ...p, exam_type: e.target.value }))} 
-                          className="w-full h-14 bg-slate-50 border-none rounded-2xl px-4 font-black uppercase text-xs"
-                        >
-                          <option value="">PADRÃO / NENHUMA</option>
-                          {(dynamicTypes[selectedAppt.procedure_name] || []).map(t => <option key={t} value={t}>{t}</option>)}
-                        </select>
-                      </div>
-                    </div>
                   </div>
                 )}
 
-                {/* EXAM CONFIRMATION SECTION (Only for existing appointments) */}
-                {!selectedAppt?.isBlankEncaixe && (
-                  <div className="space-y-3 bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100">
-                    <Label className="uppercase text-[10px] font-black tracking-widest text-emerald-600 ml-2">Confirmar Exames a Realizar</Label>
-                    <div className="space-y-2">
-                      {(selectedAppt?.raw_appointments || []).map((exam: any) => {
-                        const id = exam.id
-                        const isConfirmed = confirmedIds.includes(id)
-                        return (
-                          <div key={id} className="group/item relative">
+                {/* EXAM SELECTION SECTION (Unified for Encaixe and Existing) */}
+                <div className="space-y-3 bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100">
+                  <div className="flex items-center justify-between ml-2">
+                    <Label className="uppercase text-[10px] font-black tracking-widest text-emerald-600">Procedimentos a Realizar</Label>
+                    {!selectedAppt?.isBlankEncaixe && <span className="text-[8px] font-bold text-emerald-400 uppercase tracking-widest">Selecione para Confirmar</span>}
+                  </div>
+                  <div className="space-y-2">
+                    {(selectedAppt?.raw_appointments || []).map((exam: any) => {
+                      const id = exam.id
+                      const isConfirmed = confirmedIds.includes(id)
+                      return (
+                        <div key={id} className="group/item relative">
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => toggleExam(id)}
+                            className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${isConfirmed ? 'bg-white border-emerald-500 shadow-sm' : 'bg-slate-50 border-transparent opacity-60'}`}
+                          >
+                            <div className="flex flex-col items-start text-left">
+                              <span className={`text-[11px] font-black uppercase ${isConfirmed ? 'text-emerald-700' : 'text-slate-500'}`}>{exam.procedure_name}</span>
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-[9px] font-bold text-slate-400">{exam.exam_type || 'Padrão'}</span>
+                                {exam.procedure_detail && (
+                                  <span className="text-[8px] font-medium text-slate-300 italic truncate max-w-[160px]">SISREG: {exam.procedure_detail}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className={`h-6 w-6 rounded-full flex items-center justify-center border-2 ${isConfirmed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 text-transparent'}`}>
+                              {isConfirmed && <CheckSquare className="h-3 w-3" />}
+                            </div>
+                          </button>
+                          
+                          {(isEditingReception || (selectedAppt?.isBlankEncaixe && selectedAppt.raw_appointments.length > 1)) && (
                             <button
-                              key={id}
                               type="button"
-                              onClick={() => toggleExam(id)}
-                              className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${isConfirmed ? 'bg-white border-emerald-500 shadow-sm' : 'bg-slate-50 border-transparent opacity-60'}`}
+                              onClick={() => {
+                                if (confirm("Deseja remover este procedimento?")) {
+                                  setSelectedAppt((prev: any) => ({
+                                    ...prev,
+                                    raw_appointments: prev.raw_appointments.filter((a: any) => a.id !== id)
+                                  }))
+                                  setConfirmedIds(prev => prev.filter(i => i !== id))
+                                }
+                              }}
+                              className="absolute -right-2 -top-2 h-6 w-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover/item:opacity-100 transition-opacity"
                             >
-                              <div className="flex flex-col items-start text-left">
-                                <span className={`text-[11px] font-black uppercase ${isConfirmed ? 'text-emerald-700' : 'text-slate-500'}`}>{exam.procedure_name}</span>
-                                <div className="flex items-baseline gap-2">
-                                  <span className="text-[9px] font-bold text-slate-400">{exam.exam_type || 'Padrão'}</span>
-                                  {exam.procedure_detail && (
-                                    <span className="text-[8px] font-medium text-slate-300 italic truncate max-w-[160px]">SISREG: {exam.procedure_detail}</span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className={`h-6 w-6 rounded-full flex items-center justify-center border-2 ${isConfirmed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 text-transparent'}`}>
-                                {isConfirmed && <CheckSquare className="h-3 w-3" />}
-                              </div>
+                              <X className="h-3 w-3" />
                             </button>
-                            
-                            {isEditingReception && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (confirm("Deseja marcar este procedimento para cancelamento?")) {
-                                    setConfirmedIds(prev => prev.filter(i => i !== id))
-                                  }
-                                }}
-                                className="absolute -right-2 -top-2 h-6 w-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover/item:opacity-100 transition-opacity"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            )}
-                          </div>
-                        )
-                      })}
+                          )}
+                        </div>
+                      )
+                    })}
 
-                      {isEditingReception && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            const newId = 'NEW-' + Math.random().toString(36).substr(2, 9)
-                            const newProc = {
-                              id: newId,
-                              procedure_name: dynamicProcedures[0],
-                              exam_type: (dynamicTypes[dynamicProcedures[0]] || [])[0] || "",
-                              isNew: true
-                            }
+                    {(isEditingReception || selectedAppt?.isBlankEncaixe) && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const newId = 'NEW-' + Math.random().toString(36).substr(2, 9)
+                          const newProc = {
+                            id: newId,
+                            procedure_name: dynamicProcedures[0],
+                            exam_type: (dynamicTypes[dynamicProcedures[0]] || [])[0] || "",
+                            isNew: true
+                          }
+                          setSelectedAppt((prev: any) => ({
+                            ...prev,
+                            raw_appointments: [...(prev.raw_appointments || []), newProc]
+                          }))
+                          setConfirmedIds(prev => [...prev, newId])
+                        }}
+                        className="w-full h-12 border-dashed border-emerald-200 text-emerald-600 bg-emerald-50/50 hover:bg-emerald-50 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Adicionar Procedimento
+                      </Button>
+                    )}
+                  </div>
+
+                  {(isEditingReception || (selectedAppt?.isBlankEncaixe && selectedAppt.raw_appointments.length > 0)) && (selectedAppt?.raw_appointments || []).filter((a: any) => a.isNew).map((newApp: any) => (
+                    <div key={newApp.id} className="mt-4 p-4 bg-white border border-emerald-100 rounded-2xl space-y-3 shadow-inner">
+                       <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                            <Activity className="h-3 w-3" />
+                            Configurar Procedimento
+                          </span>
+                          <button onClick={() => {
                             setSelectedAppt((prev: any) => ({
                               ...prev,
-                              raw_appointments: [...(prev.raw_appointments || []), newProc]
+                              raw_appointments: prev.raw_appointments.filter((a: any) => a.id !== newApp.id)
                             }))
-                            setConfirmedIds(prev => [...prev, newId])
-                          }}
-                          className="w-full h-12 border-dashed border-emerald-200 text-emerald-600 bg-emerald-50/50 hover:bg-emerald-50 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Adicionar Procedimento
-                        </Button>
-                      )}
-                    </div>
-
-                    {isEditingReception && (selectedAppt?.raw_appointments || []).filter((a: any) => a.isNew).map((newApp: any) => (
-                      <div key={newApp.id} className="mt-4 p-4 bg-white border border-emerald-100 rounded-2xl space-y-3">
-                         <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Novo Procedimento</span>
-                            <button onClick={() => {
+                            setConfirmedIds(prev => prev.filter(i => i !== newApp.id))
+                          }} className="text-red-400 hover:text-red-600"><X className="h-4 w-4"/></button>
+                       </div>
+                       <div className="grid grid-cols-1 gap-3">
+                          <select 
+                            value={newApp.procedure_name}
+                            onChange={(e) => {
+                              const val = e.target.value
                               setSelectedAppt((prev: any) => ({
                                 ...prev,
-                                raw_appointments: prev.raw_appointments.filter((a: any) => a.id !== newApp.id)
+                                raw_appointments: prev.raw_appointments.map((a: any) => a.id === newApp.id ? { ...a, procedure_name: val, exam_type: (dynamicTypes[val] || [])[0] || "" } : a)
                               }))
-                              setConfirmedIds(prev => prev.filter(i => i !== newApp.id))
-                            }} className="text-red-400 hover:text-red-600"><X className="h-4 w-4"/></button>
-                         </div>
-                         <div className="grid grid-cols-1 gap-3">
-                            <select 
-                              value={newApp.procedure_name}
-                              onChange={(e) => {
-                                const val = e.target.value
-                                setSelectedAppt((prev: any) => ({
-                                  ...prev,
-                                  raw_appointments: prev.raw_appointments.map((a: any) => a.id === newApp.id ? { ...a, procedure_name: val, exam_type: (dynamicTypes[val] || [])[0] || "" } : a)
-                                }))
-                              }}
-                              className="w-full h-10 bg-slate-50 border-none rounded-xl px-3 font-black uppercase text-[10px]"
-                            >
-                              {dynamicProcedures.map(p => <option key={p} value={p}>{p}</option>)}
-                            </select>
-                            <select 
-                              value={newApp.exam_type}
-                              onChange={(e) => {
-                                setSelectedAppt((prev: any) => ({
-                                  ...prev,
-                                  raw_appointments: prev.raw_appointments.map((a: any) => a.id === newApp.id ? { ...a, exam_type: e.target.value } : a)
-                                }))
-                              }}
-                              className="w-full h-10 bg-slate-50 border-none rounded-xl px-3 font-black uppercase text-[10px]"
-                            >
-                              <option value="">PADRÃO / NENHUMA</option>
-                              {(dynamicTypes[newApp.procedure_name] || []).map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                            }}
+                            className="w-full h-12 bg-slate-50 border-none rounded-xl px-4 font-black uppercase text-xs shadow-inner"
+                          >
+                            {dynamicProcedures.map(p => <option key={p} value={p}>{p}</option>)}
+                          </select>
+                          <select 
+                            value={newApp.exam_type}
+                            onChange={(e) => {
+                              setSelectedAppt((prev: any) => ({
+                                ...prev,
+                                raw_appointments: prev.raw_appointments.map((a: any) => a.id === newApp.id ? { ...a, exam_type: e.target.value } : a)
+                              }))
+                            }}
+                            className="w-full h-12 bg-slate-50 border-none rounded-xl px-4 font-black uppercase text-xs shadow-inner"
+                          >
+                            <option value="">PADRÃO / NENHUMA</option>
+                            {(dynamicTypes[newApp.procedure_name] || []).map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                       </div>
+                    </div>
+                  ))}
+                </div>
 
                 <div className="space-y-2 group">
                   <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Origem do Encaminhamento</Label>
@@ -836,7 +824,16 @@ export default function ChegadaTab() {
                 <div className="space-y-2">
                   <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-2">Chave de Protocolo (SISREG)</Label>
                   <div className="relative">
-                    <Input type="text" placeholder="CHAVE OPCIONAL..." value={formData.chave_sisreg} onChange={e => setFormData(p => ({ ...p, chave_sisreg: e.target.value.toUpperCase() }))} className="h-14 pl-12 font-black text-center tracking-widest bg-slate-50 border-none rounded-2xl shadow-inner uppercase" />
+                    <Input 
+                      type="text" 
+                      placeholder="APENAS NÚMEROS..." 
+                      value={formData.chave_sisreg} 
+                      onChange={e => {
+                        const v = e.target.value.replace(/\D/g, "")
+                        setFormData(p => ({ ...p, chave_sisreg: v }))
+                      }} 
+                      className="h-14 pl-12 font-black text-center tracking-widest bg-slate-50 border-none rounded-2xl shadow-inner uppercase" 
+                    />
                     <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-500" />
                   </div>
                 </div>

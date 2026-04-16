@@ -11,7 +11,7 @@ export default function FilaTab() {
   const [originsData, setOriginsData] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
-  const { user } = useAuth()
+  const { user, logos } = useAuth()
 
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
 
@@ -187,10 +187,10 @@ export default function FilaTab() {
     const logoHtml = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 15px;">
         <div style="display: flex; gap: 20px; height: 60px;">
-          <img src="/logo-hto.png" style="height: 100%;"/>
-          <img src="/logo-instituto.png" style="height: 100%;"/>
-          <img src="/logo-maranhao.png" style="height: 100%;"/>
-          <img src="/logo-sus.png" style="height: 100%;"/>
+          ${logos?.logo_hto ? `<img src="${logos.logo_hto}" style="height: 100%;"/>` : ""}
+          ${logos?.logo_instituto ? `<img src="${logos.logo_instituto}" style="height: 100%;"/>` : ""}
+          ${logos?.logo_maranhao ? `<img src="${logos.logo_maranhao}" style="height: 100%;"/>` : ""}
+          ${logos?.logo_sus ? `<img src="${logos.logo_sus}" style="height: 100%;"/>` : ""}
         </div>
         <div style="text-align: right; font-size: 8pt; font-weight: bold; opacity: 0.6;">
           EMITIDO EM ${format(new Date(), 'dd/MM/yyyy HH:mm')}
@@ -247,10 +247,11 @@ export default function FilaTab() {
         <table>
           <thead>
             <tr>
-              <th width="10%">Horário</th>
-              <th width="35%">Paciente</th>
-              <th width="40%">Exames</th>
-              <th width="15%">Status</th>
+              <th width="8%">Horário</th>
+              <th width="32%">Paciente</th>
+              <th width="15%">Chave SISREG</th>
+              <th width="35%">Exames</th>
+              <th width="10%">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -258,6 +259,7 @@ export default function FilaTab() {
               <tr>
                 <td style="text-align: center;">${p.arrival_time ? format(new Date(p.arrival_time), 'HH:mm') : '--:--'}</td>
                 <td><strong>${p.patient_name}</strong></td>
+                <td style="text-align: center; font-weight: bold; color: #666;">${p.chave_sisreg || '--'}</td>
                 <td>${p.exams.map((ex: any) => `${ex.procedure} (${ex.type})`).join('<br/>')}</td>
                 <td style="text-align: center;">${p.status}</td>
               </tr>

@@ -642,6 +642,7 @@ export default function AgendamentoTab() {
           <div class="info-row"><span class="label">Paciente:</span> <span class="value">${data[0]?.patient_name || data.patient_name}</span></div>
           <div class="info-row"><span class="label">CPF:</span> <span class="value">${maskCPF((data[0]?.cpf || data.cpf) || "")}</span></div>
           <div class="info-row"><span class="label">Cartão SUS:</span> <span class="value">${(data[0]?.sus || data.sus) || "--"}</span></div>
+          <div class="info-row"><span class="label">Chave SISREG:</span> <span class="value">${(data[0]?.chave_sisreg || data.chave_sisreg) || "NÃO INFORMADO"}</span></div>
           <div class="info-row"><span class="label">Atendente:</span> <span class="value">${(data[0]?.receptionist_name || data.receptionist_name) || "NÃO INFORMADO"}</span></div>
         </div>
         <table>
@@ -815,7 +816,15 @@ export default function AgendamentoTab() {
                   </div>
                   <div className="space-y-3 relative">
                     <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">CHAVE SISREG</Label>
-                    <Input placeholder="SI-00000-XX" value={formData.chave_sisreg} onChange={e => setFormData(prev => ({ ...prev, chave_sisreg: e.target.value.toUpperCase() }))} className="pl-16 h-16 font-bold text-center text-lg bg-slate-50 border-none rounded-[1.5rem] uppercase" />
+                    <Input 
+                      placeholder="APENAS NÚMEROS" 
+                      value={formData.chave_sisreg} 
+                      onChange={e => {
+                        const v = e.target.value.replace(/\D/g, "")
+                        setFormData(prev => ({ ...prev, chave_sisreg: v }))
+                      }} 
+                      className="pl-16 h-16 font-bold text-center text-lg bg-slate-50 border-none rounded-[1.5rem] uppercase" 
+                    />
                     <FileText className="absolute left-6 bottom-[1.2rem] h-6 w-6 text-purple-500" />
                   </div>
                   {/* EXAMS LIST */}
