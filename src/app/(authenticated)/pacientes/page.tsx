@@ -363,7 +363,7 @@ export default function PacientesPage() {
                                 <span className="text-[9px] font-bold text-slate-400 flex items-center gap-1">
                                   <FlaskConical className="h-3 w-3" /> {e.exam_type}
                                 </span>
-                                {e.chave_sisreg && (
+                                {e.chave_sisreg && e.chave_sisreg !== 'IMPORT_SISREG' && (
                                   <span className="text-[9px] font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100 uppercase">
                                     SISREG: {e.chave_sisreg}
                                   </span>
