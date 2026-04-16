@@ -12,10 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { format, parseISO } from "date-fns"
 import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
-import dynamic from "next/dynamic"
-
-// Modal dinâmico
-const ExamManagerModal = dynamic(() => import("./exam-manager-modal"), { ssr: false })
+import { ExamManagerModal } from "@/components/exam-manager-modal"
 
 const FALLBACK_PROCEDURES = ["RAIO X", "TOMOGRAFIA", "ULTRASSONOGRAFIA", "MAMOGRAFIA", "ELETROCARDIOGRAMA"]
 const FALLBACK_TYPES: Record<string, string[]> = {
