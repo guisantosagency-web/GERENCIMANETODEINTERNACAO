@@ -827,7 +827,7 @@ export default function ChegadaTab() {
                     <Input 
                       type="text" 
                       placeholder="APENAS NÚMEROS..." 
-                      value={formData.chave_sisreg} 
+                      value={formData.chave_sisreg === 'IMPORT_SISREG' ? '' : formData.chave_sisreg} 
                       onChange={e => {
                         const v = e.target.value.replace(/\D/g, "")
                         setFormData(p => ({ ...p, chave_sisreg: v }))

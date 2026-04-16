@@ -642,7 +642,7 @@ export default function AgendamentoTab() {
           <div class="info-row"><span class="label">Paciente:</span> <span class="value">${data[0]?.patient_name || data.patient_name}</span></div>
           <div class="info-row"><span class="label">CPF:</span> <span class="value">${maskCPF((data[0]?.cpf || data.cpf) || "")}</span></div>
           <div class="info-row"><span class="label">Cartão SUS:</span> <span class="value">${(data[0]?.sus || data.sus) || "--"}</span></div>
-          <div class="info-row"><span class="label">Chave SISREG:</span> <span class="value">${(data[0]?.chave_sisreg || data.chave_sisreg) || "NÃO INFORMADO"}</span></div>
+          <div class="info-row"><span class="label">Chave SISREG:</span> <span class="value">${(data[0]?.chave_sisreg !== 'IMPORT_SISREG' && (data[0]?.chave_sisreg || data.chave_sisreg)) || "--"}</span></div>
           <div class="info-row"><span class="label">Atendente:</span> <span class="value">${(data[0]?.receptionist_name || data.receptionist_name) || "NÃO INFORMADO"}</span></div>
         </div>
         <table>
@@ -818,7 +818,7 @@ export default function AgendamentoTab() {
                     <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-5">CHAVE SISREG</Label>
                     <Input 
                       placeholder="APENAS NÚMEROS" 
-                      value={formData.chave_sisreg} 
+                      value={formData.chave_sisreg === 'IMPORT_SISREG' ? '' : formData.chave_sisreg} 
                       onChange={e => {
                         const v = e.target.value.replace(/\D/g, "")
                         setFormData(prev => ({ ...prev, chave_sisreg: v }))

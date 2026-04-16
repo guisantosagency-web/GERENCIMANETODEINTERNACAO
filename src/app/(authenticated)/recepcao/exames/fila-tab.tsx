@@ -259,7 +259,7 @@ export default function FilaTab() {
               <tr>
                 <td style="text-align: center;">${p.arrival_time ? format(new Date(p.arrival_time), 'HH:mm') : '--:--'}</td>
                 <td><strong>${p.patient_name}</strong></td>
-                <td style="text-align: center; font-weight: bold; color: #666;">${p.chave_sisreg || '--'}</td>
+                <td style="text-align: center; font-weight: bold; color: #666;">${(p.chave_sisreg && p.chave_sisreg !== 'IMPORT_SISREG') ? p.chave_sisreg : '--'}</td>
                 <td>${p.exams.map((ex: any) => `${ex.procedure} (${ex.type})`).join('<br/>')}</td>
                 <td style="text-align: center;">${p.status}</td>
               </tr>

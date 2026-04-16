@@ -70,7 +70,7 @@ export default function SisregTab() {
         exam_type: "SISREG",
         status: 'agendado',
         receptionist_name: user?.name || "SISREG",
-        chave_sisreg: "IMPORT_SISREG"
+        chave_sisreg: ""
       }))
 
       const { error: apptError } = await supabase.from("exam_appointments").insert(inserts)
@@ -92,7 +92,7 @@ export default function SisregTab() {
     if (!confirm(`Deseja cancelar o agendamento de ${patient.patient_name}?`)) return
     setIsLoading(true)
     try {
-      await supabase.from("exam_appointments").delete().eq("sus", patient.cns).eq("exam_date", patient.exam_date).eq("chave_sisreg", "IMPORT_SISREG")
+      await supabase.from("exam_appointments").delete().eq("sus", patient.cns).eq("exam_date", patient.exam_date).or(`chave_sisreg.eq.IMPORT_SISREG,chave_sisreg.eq.`)
       await supabase.from("exam_sisreg_import").update({ status: 'pending' }).in("id", patient.ids)
       alert("Agendamento removido.")
       loadImports()
