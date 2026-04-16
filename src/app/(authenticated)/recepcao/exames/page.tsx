@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useMemo } from "react"
 import { CalendarDays, List, Play, CheckCircle2, ChevronRight, BarChart2, Globe } from "lucide-react"
 import ExamesDashboardTab from "./dashboard-tab"
