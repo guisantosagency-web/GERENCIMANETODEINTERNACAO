@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { 
-  CalendarDays, Search, User, CreditCard, ClipboardList, 
+  CalendarDays, Search, User, Users, CreditCard, ClipboardList, 
   Trash2, Plus, Clock, FileText, Settings2, 
   CheckCircle2, AlertCircle, Loader2, ChevronRight, Printer, Activity, MapPin
 } from "lucide-react"

@@ -28,14 +28,14 @@ function LiquidCard({ title, value, label, icon: Icon, gradient, trend, trendVal
   const isPositive = parseFloat(trendValue) >= 0
   
   return (
-    <div className={`card-csgo group relative overflow-hidden rounded-[2.5rem] p-6 text-white shadow-2xl transition-all duration-700 hover:scale-[1.05] h-[160px] border border-white/5`}>
+    <div className={`card-csgo group relative overflow-hidden rounded-2xl p-5 text-white shadow-xl transition-all duration-500 hover:scale-[1.02] h-[140px] border border-white/5`}>
       {/* Immersive Glow Overlay */}
       <div className={`absolute inset-0 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-700 ${gradient}`} />
       
       <div className="relative z-10 flex flex-col h-full justify-between">
         <div className="flex items-center justify-between">
-          <div className="rounded-[1.2rem] bg-[#161B22] p-3 border border-white/10 shadow-2xl group-hover:border-[#00D9FF]/30 transition-all">
-            <Icon className="h-5 w-5 text-white/80 group-hover:text-[#00D9FF]" />
+          <div className="rounded-xl bg-[#161B22] p-2.5 border border-white/10 shadow-lg group-hover:border-[#00D9FF]/30 transition-all">
+            <Icon className="h-4 w-4 text-white/80 group-hover:text-[#00D9FF]" />
           </div>
           <div className="flex flex-col items-end">
             <span className="text-[9px] font-black uppercase tracking-[0.4em] text-[#7E8C9A] mb-1">{title}</span>
@@ -51,7 +51,7 @@ function LiquidCard({ title, value, label, icon: Icon, gradient, trend, trendVal
         <div className="flex items-end justify-between px-1">
           <div>
             <div className="flex items-baseline gap-2">
-               <h4 className="text-4xl font-black font-space tracking-tighter leading-none">{value}</h4>
+               <h4 className="text-3xl font-black font-space tracking-tighter leading-none">{value}</h4>
                {trend && <span className="text-[10px] font-black text-[#00D9FF] lowercase opacity-50 tracking-widest">{trend}</span>}
             </div>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#7E8C9A] mt-2 line-clamp-1">{label}</p>
@@ -183,12 +183,12 @@ export default function ExamesDashboardTab() {
   if (!mounted) return null
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000 relative pb-32">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 relative pb-16">
       
       {/* HUD DASHBOARD COMMANDS */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
         <LiquidCard 
-          title="Presence Logic"
+          title="Presenças"
           value={stats.presentes}
           label="Pacientes Confirmados"
           icon={CheckCircle2}
@@ -199,7 +199,7 @@ export default function ExamesDashboardTab() {
           total={stats.concluded}
         />
         <LiquidCard 
-          title="Absence Audit"
+          title="Faltas"
           value={stats.faltas}
           label="Faltas Registradas"
           icon={CalendarX2}
@@ -210,7 +210,7 @@ export default function ExamesDashboardTab() {
           total={stats.concluded}
         />
         <LiquidCard 
-          title="Active Queue"
+          title="Fila Ativa"
           value={stats.agendados}
           label="Aguardando Atendimento"
           icon={Clock3}
@@ -218,7 +218,7 @@ export default function ExamesDashboardTab() {
           total={stats.total}
         />
         <LiquidCard 
-          title="Terminal Total"
+          title="Total Geral"
           value={stats.total}
           label="Carga Total do Período"
           icon={BarChart3}
@@ -227,20 +227,20 @@ export default function ExamesDashboardTab() {
         />
       </div>
 
-      <div className="card-csgo rounded-[4rem] p-10 lg:p-14 shadow-2xl relative overflow-hidden backdrop-blur-3xl">
+      <div className="card-csgo rounded-2xl p-6 lg:p-8 shadow-xl relative overflow-hidden backdrop-blur-3xl">
         <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#00D9FF] to-transparent" />
         
         {/* FILTERS COMMAND CENTER */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12 mb-14">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
           <div className="flex items-center gap-8">
             <div className="relative group">
               <div className="absolute inset-0 bg-[#00D9FF] blur-2xl opacity-20" />
-              <div className="p-6 bg-gradient-to-br from-[#00D9FF] to-[#0088FF] text-white rounded-[2rem] shadow-2xl relative border border-white/20">
-                <Target className="h-10 w-10" />
+              <div className="p-4 bg-gradient-to-br from-[#00D9FF] to-[#0088FF] text-white rounded-xl shadow-lg relative border border-white/20">
+                <Target className="h-6 w-6" />
               </div>
             </div>
             <div>
-              <h2 className="text-5xl font-black font-space uppercase tracking-tight text-white leading-tight">Data Terminal</h2>
+              <h2 className="text-2xl font-black font-space uppercase tracking-tight text-white leading-tight">Painel de Dados</h2>
               <div className="flex items-center gap-3 mt-3">
                 <div className="h-2 w-2 rounded-full bg-[#00FF88] animate-pulse" />
                 <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#7E8C9A]">Filtros Estratégicos Ativos</p>
@@ -250,23 +250,23 @@ export default function ExamesDashboardTab() {
 
           <div className="flex flex-wrap items-center gap-6 bg-[#161B22] p-5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-x-auto no-scrollbar">
              <div className="space-y-1.5 flex flex-col items-center">
-                <Label className="text-[8px] font-black tracking-[0.3em] uppercase text-[#7E8C9A]">Cycle Year</Label>
+                <Label className="text-[8px] font-black tracking-[0.2em] uppercase text-[#7E8C9A]">Ano</Label>
                 <select value={selectedYear || ""} onChange={e => setSelectedYear(e.target.value)} className="h-12 bg-white/5 border-none rounded-xl text-[11px] font-black text-white px-6 focus:ring-2 focus:ring-[#00D9FF]/20">
-                  <option value="">ALL YEARS</option>
+                  <option value="">TODOS</option>
                   {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
              </div>
              <div className="h-12 w-px bg-white/5 mx-2" />
              <div className="space-y-1.5 flex flex-col items-center">
-                <Label className="text-[8px] font-black tracking-[0.3em] uppercase text-[#7E8C9A]">Operation Month</Label>
+                <Label className="text-[8px] font-black tracking-[0.2em] uppercase text-[#7E8C9A]">Mês</Label>
                 <select value={selectedMonth || ""} onChange={e => setSelectedMonth(e.target.value)} className="h-12 bg-white/5 border-none rounded-xl text-[11px] font-black text-white px-6 focus:ring-2 focus:ring-[#00D9FF]/20">
-                   <option value="">ALL MONTHS</option>
+                   <option value="">TODOS</option>
                    {MONTHS_NAMES.map((m, i) => <option key={i} value={i+1}>{m.toUpperCase()}</option>)}
                 </select>
              </div>
              <div className="h-12 w-px bg-white/5 mx-2" />
              <div className="space-y-1.5 flex flex-col items-center">
-                <Label className="text-[8px] font-black tracking-[0.3em] uppercase text-[#7E8C9A]">Specific Day</Label>
+                <Label className="text-[8px] font-black tracking-[0.2em] uppercase text-[#7E8C9A]">Dia</Label>
                 <select value={selectedDay || ""} onChange={e => setSelectedDay(e.target.value)} className="h-12 bg-white/5 border-none rounded-xl text-[11px] font-black text-white px-6 focus:ring-2 focus:ring-[#00D9FF]/20 text-center w-24">
                    <option value="">---</option>
                    {Array.from({length: 31}, (_, i) => <option key={i} value={i+1}>{i+1}</option>)}
@@ -279,15 +279,15 @@ export default function ExamesDashboardTab() {
         </div>
 
         {/* ANALYTICS ENGINE */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
            <div className="lg:col-span-8 space-y-10">
-              <div className="bg-[#161B22]/50 rounded-[3rem] p-10 border border-white/5 shadow-2xl relative overflow-hidden group">
+              <div className="bg-[#161B22]/50 rounded-2xl p-6 border border-white/5 shadow-lg relative overflow-hidden group">
                  <div className="absolute top-0 right-0 p-12 opacity-[0.02] group-hover:scale-125 transition-transform duration-1000">
                     <Activity className="h-64 w-64 text-white" />
                  </div>
-                 <div className="flex items-center justify-between mb-10 relative z-10">
-                    <h3 className="text-2xl font-black font-space uppercase tracking-widest text-[#00D9FF] flex items-center gap-4">
-                       <TrendingUp className="h-6 w-6" /> Performance Map
+                 <div className="flex items-center justify-between mb-6 relative z-10">
+                    <h3 className="text-lg font-black font-space uppercase tracking-wide text-[#00D9FF] flex items-center gap-3">
+                       <TrendingUp className="h-5 w-5" /> Mapa de Desempenho
                     </h3>
                     <div className="flex items-center gap-6">
                        <span className="flex items-center gap-2 text-[9px] font-black text-[#00FF88] uppercase tracking-[0.2em]"><div className="h-2 w-2 rounded-full bg-[#00FF88]" /> Confirmados</span>
@@ -299,9 +299,9 @@ export default function ExamesDashboardTab() {
            </div>
 
            <div className="lg:col-span-4 space-y-8">
-              <div className="bg-[#161B22]/50 rounded-[3rem] p-8 border border-white/5 shadow-2xl">
-                 <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-[#7E8C9A] mb-8 flex items-center gap-4 px-2">
-                    <Zap className="h-4 w-4 text-[#FF6B35]" /> Core Procedures
+              <div className="bg-[#161B22]/50 rounded-2xl p-6 border border-white/5 shadow-lg">
+                 <h3 className="text-[11px] font-black uppercase tracking-widest text-[#7E8C9A] mb-6 flex items-center gap-3 px-1">
+                    <Zap className="h-4 w-4 text-[#FF6B35]" /> Procedimentos
                  </h3>
                  <div className="space-y-4">
                     {stats.procedureTops.slice(0, 5).map(([name, count], idx) => (
@@ -319,26 +319,26 @@ export default function ExamesDashboardTab() {
                  </div>
               </div>
 
-              <div className="bg-[#161B22]/50 rounded-[3rem] p-8 border border-white/5 shadow-2xl relative overflow-hidden">
+              <div className="bg-[#161B22]/50 rounded-2xl p-6 border border-white/5 shadow-lg relative overflow-hidden">
                  <div className="absolute bottom-0 right-0 p-8 opacity-[0.03]">
                     <BarChart3 className="h-40 w-40 text-white" />
                  </div>
                  <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-[#7E8C9A] mb-8 px-2 flex items-center gap-4">
-                    <Clock3 className="h-4 w-4 text-[#00FF88]" /> Today Analysis
+                    <Clock3 className="h-4 w-4 text-[#00FF88]" /> Resumo do Dia
                  </h3>
                  <div className="grid grid-cols-2 gap-4 relative z-10">
                     <div className="p-5 rounded-2xl bg-[#0F1419]/80 border border-white/5 text-center">
-                       <p className="text-[8px] font-black text-[#7E8C9A] uppercase tracking-widest mb-1">Queue Size</p>
+                       <p className="text-[8px] font-black text-[#7E8C9A] uppercase tracking-widest mb-1">Na Fila</p>
                        <p className="text-3xl font-black text-white font-space">{stats.todayAgendados}</p>
                     </div>
                     <div className="p-5 rounded-2xl bg-[#0F1419]/80 border border-white/5 text-center">
-                       <p className="text-[8px] font-black text-[#00FF88] uppercase tracking-widest mb-1">Pass Rate</p>
+                       <p className="text-[8px] font-black text-[#00FF88] uppercase tracking-widest mb-1">Presentes</p>
                        <p className="text-3xl font-black text-white font-space">{stats.todayPresentes}</p>
                     </div>
                  </div>
                  <div className="mt-4 p-6 rounded-2xl bg-[#0F1419]/80 border border-white/5 group hover:border-[#FF6B35]/40 transition-all">
                     <div className="flex justify-between items-center mb-3">
-                       <span className="text-[9px] font-black text-[#7E8C9A] uppercase tracking-widest">Total Operation Volume</span>
+                       <span className="text-[9px] font-black text-[#7E8C9A] uppercase tracking-widest">Volume Total de Operações</span>
                        <span className="text-xl font-black font-space text-white">{stats.todayTotal}</span>
                     </div>
                     <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">

@@ -170,7 +170,7 @@ export default function SisregTab() {
                 className="h-14 px-10 rounded-2xl bg-[#00D9FF] text-white font-black uppercase text-[11px] tracking-widest gap-4 shadow-[0_10px_30px_rgba(0,217,255,0.2)] hover:scale-[1.05] transition-all"
               >
                 <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} /> 
-                Sync Engine
+                Sincronizar
               </Button>
             </div>
           </div>
@@ -243,7 +243,7 @@ export default function SisregTab() {
                                   onClick={() => handleUnconfirm(item)}
                                   className="h-16 px-8 rounded-3xl bg-white/5 text-[#7E8C9A] hover:bg-[#FF1493] hover:text-white transition-all duration-500 font-black text-[10px] uppercase tracking-widest gap-4 border border-white/5"
                                >
-                                  <Undo2 className="h-5 w-5" /> Rollback
+                                  <Undo2 className="h-5 w-5" /> Desfazer
                                 </Button>
                             </div>
                          ) : (
@@ -253,7 +253,7 @@ export default function SisregTab() {
                               className="h-16 px-10 rounded-3xl bg-[#00D9FF] text-white font-black text-[11px] uppercase tracking-widest gap-4 shadow-[0_10px_40px_rgba(0,217,255,0.3)] hover:scale-[1.05] transition-all"
                             >
                               {processingId === item.cns ? <Loader2 className="h-6 w-6 animate-spin" /> : <UserPlus className="h-6 w-6" />}
-                              Authorize Entry
+                              Autorizar Entrada
                             </Button>
                          )}
                          

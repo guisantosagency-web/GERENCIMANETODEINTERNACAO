@@ -44,22 +44,14 @@ export default function ExamesHubPage() {
   }, [visibleTabs, setTabs, setModuleName, setActiveTab, activeTab])
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Header-like title area (Reduced since we have the Top Header) */}
-      <div className="flex flex-col gap-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF6B35]/10 text-[#FF6B35] border border-[#FF6B35]/20 text-[10px] font-black uppercase tracking-[0.2em] w-fit">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF6B35] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FF6B35]"></span>
-          </span>
-          Terminal de Controle
-        </div>
-        <div className="space-y-1">
-           <h1 className="text-4xl lg:text-5xl font-black font-space tracking-tight text-white uppercase">
-              Fluxo de <span className="text-[#FF6B35]">Atendimento</span>
-           </h1>
-           <p className="text-[#7E8C9A] font-bold text-sm max-w-xl uppercase tracking-wider opacity-60">Operação em tempo real de agendamentos e recepção.</p>
-        </div>
+    <div className="space-y-6 animate-in fade-in duration-700">
+      {/* Compact Header */}
+      <div className="flex items-center gap-3">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00FF88] opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00FF88]"></span>
+        </span>
+        <p className="text-xs font-bold text-[#7E8C9A] uppercase tracking-widest">Painel operacional em tempo real</p>
       </div>
 
       <div className="pt-2">

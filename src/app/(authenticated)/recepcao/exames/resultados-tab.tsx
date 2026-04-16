@@ -177,20 +177,20 @@ export default function ResultadosTab() {
             <div className="flex items-center gap-6 mb-4">
               <div className="relative">
                 <div className="absolute inset-0 bg-[#00D9FF] blur-2xl opacity-20" />
-                <div className="p-5 bg-gradient-to-br from-[#00D9FF] to-[#0088FF] text-white rounded-[1.8rem] shadow-2xl relative border border-white/20">
-                  <PackageCheck className="h-8 w-8" />
+                <div className="p-4 bg-gradient-to-br from-[#00D9FF] to-[#0088FF] text-white rounded-xl shadow-lg relative border border-white/20">
+                  <PackageCheck className="h-6 w-6" />
                 </div>
               </div>
-              <h2 className="text-5xl font-black font-space uppercase tracking-tight text-white leading-tight">Delivery Hub</h2>
+              <h2 className="text-3xl font-black font-space uppercase tracking-tight text-white leading-tight">Entrega de Resultados</h2>
             </div>
-            <p className="text-[#7E8C9A] text-[10px] font-black uppercase tracking-[0.6em] ml-24">MEDICAL RESULT RELEASE PROTOCOL • ACTIVE MONITORING</p>
+            <p className="text-[#7E8C9A] text-[9px] font-black uppercase tracking-[0.3em] ml-20">PROTOCOLO DE ENTREGA DE RESULTADOS MÉDICOS • MONITORAMENTO ATIVO</p>
           </div>
 
           <div className="flex items-center gap-3 bg-[#161B22] p-2 rounded-[2rem] border border-white/5">
              {[
-               { id: 'todos', label: 'All Files', color: 'text-white' },
-               { id: 'pendentes', label: 'Pending', color: 'text-[#FF6B35]' },
-               { id: 'entregues', label: 'Released', color: 'text-[#00FF88]' }
+               { id: 'todos', label: 'Todos', color: 'text-white' },
+               { id: 'pendentes', label: 'Pendentes', color: 'text-[#FF6B35]' },
+               { id: 'entregues', label: 'Entregues', color: 'text-[#00FF88]' }
              ].map((t) => (
                <button 
                  key={t.id}
@@ -209,8 +209,8 @@ export default function ResultadosTab() {
           <Input 
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            placeholder="SCANNING PATIENT NAME, CPF OR DATABASE ID..."
-            className="h-24 pl-20 pr-10 text-[13px] font-black uppercase tracking-[0.2em] rounded-[2.5rem] bg-[#161B22] border-white/5 shadow-2xl text-white placeholder:text-white/10 transition-all focus:border-[#00D9FF]/40"
+            placeholder="PROCURAR POR NOME DO PACIENTE, CPF OU ID..."
+            className="h-16 pl-20 pr-10 text-[11px] font-black uppercase tracking-[0.2em] rounded-3xl bg-[#161B22] border-white/5 shadow-xl text-white placeholder:text-white/10 transition-all focus:border-[#00D9FF]/40"
           />
         </div>
 
@@ -219,7 +219,7 @@ export default function ResultadosTab() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-40 gap-8 animate-pulse">
               <div className="h-16 w-16 border-[6px] border-[#00D9FF]/20 border-t-[#00D9FF] rounded-full animate-spin shadow-[0_0_30px_rgba(0,217,255,0.2)]" />
-              <p className="text-[11px] font-black uppercase tracking-[0.8em] text-[#7E8C9A]">Accessing Encrypted Records...</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.6em] text-[#7E8C9A]">Acessando Registros...</p>
             </div>
           ) : filteredData.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-40 opacity-30">
@@ -227,7 +227,7 @@ export default function ResultadosTab() {
                  <div className="absolute inset-0 bg-gradient-to-br from-transparent via-[#00D9FF]/5 to-transparent rotate-45 animate-pulse" />
                  <SearchX className="h-20 w-20 text-white relative z-10" />
               </div>
-              <p className="text-2xl font-black font-space uppercase tracking-[0.5em] text-[#7E8C9A]">No Data Matches Found</p>
+              <p className="text-2xl font-black font-space uppercase tracking-[0.2em] text-[#7E8C9A]">Nenhum Resultado Encontrado</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6">
@@ -267,9 +267,9 @@ export default function ResultadosTab() {
                       <div className="flex flex-col items-center lg:items-end animate-in fade-in slide-in-from-right-10 duration-700">
                         <div className="px-6 py-2 bg-[#00FF88]/10 text-[#00FF88] rounded-full mb-3 flex items-center gap-3 border border-[#00FF88]/20 shadow-xl">
                           <div className="w-2 h-2 rounded-full bg-[#00FF88] animate-ping" />
-                          <span className="text-[9px] font-black uppercase tracking-[0.2em]">FILE RELEASED</span>
+                          <span className="text-[9px] font-black uppercase tracking-[0.1em]">ARQUIVO ENTREGUE</span>
                         </div>
-                        <span className="text-[11px] font-black text-white uppercase tracking-wider mb-1">BY: {a.result_delivered_by || "AUTHORIZED SYSTEM"}</span>
+                        <span className="text-[11px] font-black text-white uppercase tracking-wider mb-1">POR: {a.result_delivered_by || "SISTEMA AUTORIZADO"}</span>
                         <span className="text-[9px] font-bold text-[#7E8C9A] uppercase tracking-widest">{format(parseISO(a.result_delivered_at), 'dd/MM/yy • HH:mm')}</span>
                       </div>
                     )}
@@ -283,16 +283,16 @@ export default function ResultadosTab() {
                           className="h-16 w-full lg:w-48 rounded-[1.5rem] bg-white/5 text-[#7E8C9A] hover:bg-[#FF1493] hover:text-white transition-all duration-500 font-black uppercase text-[10px] tracking-widest gap-4 border border-white/5"
                         >
                           {isUpdating === a.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <XCircle className="h-5 w-5" />}
-                          Rollback
+                          Desfazer
                         </Button>
                       ) : (
                         <Button 
                           disabled={isUpdating === a.id}
                           onClick={() => handleDelivery(a.id, true)}
-                          className="h-16 w-full lg:w-auto px-12 rounded-[1.5rem] bg-white text-[#0F1419] hover:bg-[#00D9FF] hover:text-white transition-all duration-500 font-black uppercase text-[11px] tracking-[0.2em] shadow-2xl gap-4 group/btn"
+                          className="h-16 w-full lg:w-auto px-10 rounded-2xl bg-white text-[#0F1419] hover:bg-[#00D9FF] hover:text-white transition-all duration-500 font-black uppercase text-[11px] tracking-[0.1em] shadow-xl gap-4 group/btn"
                         >
                           {isUpdating === a.id ? <Loader2 className="h-6 w-6 animate-spin text-[#00D9FF]" /> : <CheckCircle2 className="h-6 w-6 group-hover:scale-125 transition-transform" />}
-                          Authorize Entry
+                          Entregar Resultado
                           <ArrowRight className="h-5 w-5 group-hover:translate-x-3 transition-transform duration-500" />
                         </Button>
                       )}

@@ -156,18 +156,18 @@ export default function PacientesTab() {
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 relative pb-32">
       {/* HEADER COMMAND SECTION */}
-      <div className="card-csgo rounded-[3.5rem] p-8 lg:p-12 shadow-2xl relative overflow-hidden">
+      <div className="card-csgo rounded-2xl p-6 lg:p-8 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#00D9FF] to-transparent" />
         <div className="flex flex-col xl:grid xl:grid-cols-12 items-center gap-10">
           <div className="xl:col-span-4 flex items-center gap-8 w-full">
             <div className="relative group">
               <div className="absolute inset-0 bg-[#00D9FF] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity animate-pulse" />
-              <div className="h-20 w-20 bg-gradient-to-br from-[#00D9FF] to-[#0088FF] rounded-[2rem] flex items-center justify-center text-white shadow-2xl relative border border-white/20">
-                <Users className="h-10 w-10" />
+              <div className="h-14 w-14 bg-gradient-to-br from-[#00D9FF] to-[#0088FF] rounded-xl flex items-center justify-center text-white shadow-lg relative border border-white/20">
+                <Users className="h-7 w-7" />
               </div>
             </div>
             <div>
-              <h1 className="text-5xl font-black font-space uppercase tracking-tight text-white leading-tight">Master Database</h1>
+              <h1 className="text-2xl font-black font-space uppercase tracking-tight text-white leading-tight">Base de Pacientes</h1>
               <div className="flex items-center gap-3 mt-2">
                 <div className="h-2 w-2 rounded-full bg-[#00FF88] animate-pulse" />
                 <p className="text-[10px] font-black uppercase tracking-[0.6em] text-[#7E8C9A]">Sincronização Ativa • {patients.length} Registros</p>
@@ -182,7 +182,7 @@ export default function PacientesTab() {
                 placeholder="PROCURAR POR NOME, CPF OU CARTÃO SUS..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="h-16 pl-16 pr-8 bg-[#161B22] border-white/5 rounded-3xl text-[11px] font-black uppercase text-white placeholder:text-white/20 transition-all focus:border-[#00D9FF]/50 shadow-2xl w-full"
+                className="h-14 pl-14 pr-6 bg-[#161B22] border-white/5 rounded-2xl text-[11px] font-black uppercase text-white placeholder:text-white/20 transition-all focus:border-[#00D9FF]/50 shadow-lg w-full"
               />
             </div>
             <Button 
@@ -191,7 +191,7 @@ export default function PacientesTab() {
               className="h-16 px-10 rounded-3xl bg-white/[0.03] text-[#00D9FF] border border-[#00D9FF]/20 hover:bg-[#00D9FF] hover:text-white transition-all duration-500 font-black uppercase text-[11px] tracking-widest gap-4 shadow-xl"
             >
               <RefreshCw className={`h-6 w-6 ${isLoading ? 'animate-spin' : ''}`} />
-              RE-SYNC DATA
+              ATUALIZAR
             </Button>
           </div>
         </div>
@@ -221,20 +221,20 @@ export default function PacientesTab() {
             {filteredPatients.map((p) => {
               const isSisreg = sisregMap[p.sus] || (p.cpf && sisregMap[p.cpf])
               return (
-                <div key={p.id} className="card-csgo p-8 lg:p-10 rounded-[4rem] relative group border border-white/5 hover:border-[#00D9FF]/40 transition-all duration-700 overflow-hidden">
+                <div key={p.id} className="card-csgo p-6 lg:p-8 rounded-2xl relative group border border-white/5 hover:border-[#00D9FF]/40 transition-all duration-500 overflow-hidden">
                    <div className="absolute top-0 right-0 p-12 opacity-[0.01] group-hover:opacity-[0.05] group-hover:scale-125 transition-all text-white pointer-events-none">
                       <UserCircle className="h-64 w-64" />
                    </div>
 
                    <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-12">
                       <div className="flex items-center gap-10">
-                         <div className={`h-24 w-24 rounded-[2.5rem] flex flex-col items-center justify-center shadow-2xl transition-all border shrink-0 ${isSisreg ? 'bg-[#00D9FF]/10 text-[#00D9FF] border-[#00D9FF]/30' : 'bg-[#161B22] text-[#7E8C9A] border-white/5'}`}>
-                            {isSisreg ? <Globe className="h-8 w-8 mb-2" /> : <User className="h-8 w-8 mb-2" />}
-                            <span className="text-[8px] font-black tracking-[0.3em] uppercase">{isSisreg ? 'SISREG' : 'LOCAL'}</span>
+                         <div className={`h-16 w-16 rounded-xl flex flex-col items-center justify-center shadow-lg transition-all border shrink-0 ${isSisreg ? 'bg-[#00D9FF]/10 text-[#00D9FF] border-[#00D9FF]/30' : 'bg-[#161B22] text-[#7E8C9A] border-white/5'}`}>
+                            {isSisreg ? <Globe className="h-6 w-6 mb-1" /> : <User className="h-6 w-6 mb-1" />}
+                            <span className="text-[7px] font-black tracking-widest uppercase">{isSisreg ? 'SISREG' : 'LOCAL'}</span>
                          </div>
                          
                          <div className="space-y-3">
-                            <h4 className="text-3xl font-black text-white uppercase tracking-tight group-hover:text-[#00D9FF] transition-colors leading-tight">{p.full_name}</h4>
+                            <h4 className="text-xl font-black text-white uppercase tracking-tight group-hover:text-[#00D9FF] transition-colors leading-tight">{p.full_name}</h4>
                             <div className="flex flex-wrap items-center gap-6">
                                <div className="flex items-center gap-3">
                                   <CalendarDays className="h-4 w-4 text-[#FF6B35]" />
@@ -257,14 +257,14 @@ export default function PacientesTab() {
                             <div className="flex items-center gap-4 px-6 py-3 bg-[#161B22] border border-white/5 rounded-2xl group/doc transition-all hover:border-[#00D9FF]/30">
                                <CreditCard className="h-4 w-4 text-[#00D9FF]" />
                                <div className="flex flex-col">
-                                  <span className="text-[8px] font-black text-[#7E8C9A] uppercase tracking-widest mb-0.5">CPF Identifier</span>
+                                  <span className="text-[8px] font-black text-[#7E8C9A] uppercase tracking-widest mb-0.5">CPF</span>
                                   <span className="text-[11px] font-black text-white tracking-widest">{p.cpf || "--- . --- . --- - --"}</span>
                                </div>
                             </div>
                             <div className="flex items-center gap-4 px-6 py-3 bg-[#161B22] border border-white/5 rounded-2xl group/doc transition-all hover:border-[#00FF88]/30">
                                <ClipboardList className="h-4 w-4 text-[#00FF88]" />
                                <div className="flex flex-col">
-                                  <span className="text-[8px] font-black text-[#7E8C9A] uppercase tracking-widest mb-0.5">National SUS Card</span>
+                                  <span className="text-[8px] font-black text-[#7E8C9A] uppercase tracking-widest mb-0.5">Cartão SUS</span>
                                   <span className="text-[11px] font-black text-white tracking-widest">{p.sus || "--- ---- ---- ----"}</span>
                                </div>
                             </div>
@@ -380,7 +380,7 @@ export default function PacientesTab() {
                   {isSaving ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
                       <Save className="h-5 w-5 mr-3" />
-                      Commit Changes
+                      Salvar Alterações
                     </>
                   )}
                 </Button>
