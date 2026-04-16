@@ -642,7 +642,7 @@ export default function AgendamentoTab() {
           <div class="info-row"><span class="label">Paciente:</span> <span class="value">${data[0]?.patient_name || data.patient_name}</span></div>
           <div class="info-row"><span class="label">CPF:</span> <span class="value">${maskCPF((data[0]?.cpf || data.cpf) || "")}</span></div>
           <div class="info-row"><span class="label">Cartão SUS:</span> <span class="value">${(data[0]?.sus || data.sus) || "--"}</span></div>
-          <div class="info-row"><span class="label">Chave SISREG:</span> <span class="value">${(data[0]?.chave_sisreg !== 'IMPORT_SISREG' && (data[0]?.chave_sisreg || data.chave_sisreg)) || "--"}</span></div>
+          <div class="info-row"><span class="label">Chave SISREG:</span> <span class="value">${((data[0]?.chave_sisreg || data.chave_sisreg) && !(data[0]?.chave_sisreg || data.chave_sisreg).includes('IMPORT_SISREG')) ? (data[0]?.chave_sisreg || data.chave_sisreg) : "--"}</span></div>
           <div class="info-row"><span class="label">Atendente:</span> <span class="value">${(data[0]?.receptionist_name || data.receptionist_name) || "NÃO INFORMADO"}</span></div>
         </div>
         <table>

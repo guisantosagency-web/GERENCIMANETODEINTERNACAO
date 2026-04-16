@@ -60,7 +60,7 @@ function MultiSelect({ label, options, selected, onChange, icon: Icon }: any) {
 }
 
 export default function HistoricoTab() {
-  const { user } = useAuth()
+  const { user, logos } = useAuth()
   const [loading, setLoading] = useState(true)
   const [appointments, setAppointments] = useState<any[]>([])
   const [selectedPatient, setSelectedPatient] = useState<any>(null)
@@ -141,14 +141,13 @@ export default function HistoricoTab() {
     const printWindow = window.open("", "_blank")
     if (!printWindow) return
 
-    const { logos } = user as any || {}
     const logoHtml = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 15px;">
         <div style="display: flex; gap: 20px; height: 60px;">
-          <img src="/logo-hto.png" style="height: 100%;"/>
-          <img src="/logo-instituto.png" style="height: 100%;"/>
-          <img src="/logo-maranhao.png" style="height: 100%;"/>
-          <img src="/logo-sus.png" style="height: 100%;"/>
+          ${logos?.logo_hto ? `<img src="${logos.logo_hto}" style="height: 100%;"/>` : ""}
+          ${logos?.logo_instituto ? `<img src="${logos.logo_instituto}" style="height: 100%;"/>` : ""}
+          ${logos?.logo_maranhao ? `<img src="${logos.logo_maranhao}" style="height: 100%;"/>` : ""}
+          ${logos?.logo_sus ? `<img src="${logos.logo_sus}" style="height: 100%;"/>` : ""}
         </div>
         <div style="text-align: right; font-size: 8pt; font-weight: bold; opacity: 0.6;">
           EMITIDO EM ${format(new Date(), 'dd/MM/yyyy HH:mm')}
@@ -193,7 +192,7 @@ export default function HistoricoTab() {
               <tr>
                 <td><strong>${appt.patient_name}</strong></td>
                 <td>CPF: ${appt.cpf || "---"}<br/>SUS: ${appt.sus || "---"}</td>
-                <td>${(appt.chave_sisreg !== 'IMPORT_SISREG' && appt.chave_sisreg) || "---"}</td>
+                <td>${(appt.chave_sisreg && !appt.chave_sisreg.includes('IMPORT_SISREG')) ? appt.chave_sisreg : "---"}</td>
                 <td>${appt.procedure_name}<br/><span style="font-size: 7.5pt; opacity: 0.8;">${appt.exam_type}</span></td>
                 <td>${format(parseISO(appt.exam_date), 'dd/MM/yyyy')} ${appt.exam_time}</td>
                 <td>${appt.status}</td>
@@ -371,7 +370,7 @@ export default function HistoricoTab() {
                       </td>
                       <td className="px-8 py-5">
                         <span className="text-[10px] font-black uppercase tracking-widest text-purple-600 bg-purple-50 px-3 py-1.5 rounded-full inline-block">
-                          {(appt.chave_sisreg !== 'IMPORT_SISREG' && appt.chave_sisreg) || "N/A"}
+                          {(appt.chave_sisreg && !appt.chave_sisreg.includes('IMPORT_SISREG')) ? appt.chave_sisreg : "N/A"}
                         </span>
                       </td>
                       <td className="px-8 py-5">
@@ -454,7 +453,7 @@ export default function HistoricoTab() {
                 </div>
                 <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 col-span-2">
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Chave SISREG</p>
-                  <p className="font-black text-purple-600 uppercase text-sm">{(selectedPatient?.chave_sisreg !== 'IMPORT_SISREG' && selectedPatient?.chave_sisreg) || "Não Informado"}</p>
+                  <p className="font-black text-purple-600 uppercase text-sm">{(selectedPatient?.chave_sisreg && !selectedPatient.chave_sisreg.includes('IMPORT_SISREG')) ? selectedPatient.chave_sisreg : "Não Informado"}</p>
                 </div>
               </div>
             </div>
