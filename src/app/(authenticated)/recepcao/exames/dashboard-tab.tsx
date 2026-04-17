@@ -14,10 +14,6 @@ import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useAuth } from "@/lib/auth-context"
 
-const ExamsCharts = dynamic(() => import("@/components/exams-charts").then(m => m.ExamsCharts), {
-  ssr: false,
-  loading: () => <div className="h-[300px] w-full flex items-center justify-center animate-pulse bg-slate-50 border border-slate-100 rounded-[1.5rem] text-slate-500">Carregando gráficos estratégicos...</div>
-})
 
 function DashboardCard({ title, value, label, icon: Icon, colorClass, percentage, secondaryText }: any) {
   return (
@@ -123,6 +119,26 @@ export default function ExamesDashboardTab() {
     const finishedToday = todayRecs.filter(a => a.status === 'finalizado').length
     const totalToday = todayRecs.length
 
+    // Procedimentos agrupados com lógica de Tomografia
+    const procCounts: Record<string, number> = {}
+    filteredRecords.forEach(r => {
+      let pName = (r.procedure_name || "NÃO INFORMADO").toUpperCase()
+      const pType = (r.exam_type || "").toUpperCase()
+      
+      if (pName.includes("TOMOGRAFIA") || pName.includes("ANGIOTOMOGRAFIA")) {
+         if (pType.includes("COM CONTRASTE")) {
+           pName = "TOMOGRAFIA COM CONTRASTE"
+         } else {
+           pName = "TOMOGRAFIA SEM CONTRASTE"
+         }
+      }
+      procCounts[pName] = (procCounts[pName] || 0) + 1
+    })
+    
+    const procedures = Object.entries(procCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+
     return {
       total,
       uniquePatients,
@@ -131,7 +147,8 @@ export default function ExamesDashboardTab() {
       absRate,
       inQueue,
       finishedToday,
-      totalToday
+      totalToday,
+      procedures
     }
   }, [filteredRecords, appointments])
 
@@ -243,84 +260,101 @@ export default function ExamesDashboardTab() {
         />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-        {/* GRÁFICOS */}
-        <div className="xl:col-span-8 space-y-8">
-           <div className="bg-white rounded-[2.5rem] p-8 lg:p-10 shadow-sm border border-slate-100">
-              <div className="flex items-center justify-between mb-10">
-                 <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100 shadow-sm">
-                       <Activity className="h-5 w-5" />
-                    </div>
-                    <div>
-                       <h3 className="text-xl font-bold font-space uppercase tracking-tight text-slate-800 leading-tight">Desempenho Operacional</h3>
-                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Análise volumétrica por período</p>
-                    </div>
-                 </div>
-              </div>
-              <ExamsCharts records={filteredRecords} />
-           </div>
-        </div>
-
+      <div className="grid grid-cols-1 gap-8">
         {/* RESUMO DO DIA */}
-        <div className="xl:col-span-4 space-y-8">
+        <div className="w-full space-y-8">
            <div className="bg-white rounded-[2.5rem] p-8 lg:p-10 shadow-sm border border-slate-100 flex flex-col h-full">
-              <div className="flex items-center gap-4 mb-10">
-                 <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center border border-orange-100 shadow-sm">
-                    <Clock className="h-5 w-5" />
-                 </div>
-                 <div>
-                    <h3 className="text-xl font-bold font-space uppercase tracking-tight text-slate-800 leading-tight">Resumo do Dia</h3>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">{format(new Date(), "dd 'de' MMMM", { locale: ptBR })}</p>
-                 </div>
+              <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center gap-4">
+                   <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center border border-orange-100 shadow-sm">
+                      <Clock className="h-5 w-5" />
+                   </div>
+                   <div>
+                      <h3 className="text-xl font-bold font-space uppercase tracking-tight text-slate-800 leading-tight">Resumo do Dia</h3>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">{format(new Date(), "dd 'de' MMMM", { locale: ptBR })}</p>
+                   </div>
+                </div>
+                <div className="text-right hidden md:block">
+                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1">Eficiência Geral</span>
+                   <span className="text-xl font-black text-teal-600">{stats.totalToday > 0 ? ((stats.finishedToday / stats.totalToday) * 100).toFixed(0) : 0}%</span>
+                </div>
               </div>
 
-              <div className="space-y-6 flex-1">
-                 <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-teal-200 transition-all">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
+                 <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-teal-200 transition-all flex flex-col">
                     <div className="flex items-center justify-between mb-4">
                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Na Fila</span>
                        <div className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
                     </div>
-                    <div className="flex items-baseline gap-2">
+                    <div className="flex items-baseline gap-2 mt-auto">
                        <h4 className="text-4xl font-black font-space tracking-tighter text-slate-800">{stats.inQueue}</h4>
                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Aguardando</span>
                     </div>
                  </div>
 
-                 <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-emerald-200 transition-all">
+                 <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-emerald-200 transition-all flex flex-col">
                     <div className="flex items-center justify-between mb-4">
                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Presentes</span>
                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                     </div>
-                    <div className="flex items-baseline gap-2">
+                    <div className="flex items-baseline gap-2 mt-auto">
                        <h4 className="text-4xl font-black font-space tracking-tighter text-slate-800">{stats.finishedToday}</h4>
                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Finalizados</span>
                     </div>
                  </div>
 
-                 <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-blue-200 transition-all">
+                 <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-blue-200 transition-all flex flex-col">
                     <div className="flex items-center justify-between mb-4">
                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Operações</span>
                        <Activity className="h-4 w-4 text-blue-500" />
                     </div>
-                    <div className="flex items-baseline gap-2">
+                    <div className="flex items-baseline gap-2 mt-auto">
                        <h4 className="text-4xl font-black font-space tracking-tighter text-slate-800">{stats.totalToday}</h4>
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Agendamentos Hoje</span>
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Agendamentos</span>
                     </div>
                  </div>
               </div>
-
-              <div className="mt-10 pt-8 border-t border-slate-50">
-                 <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Eficiência Geral</span>
-                    <span className="text-[10px] font-black text-teal-600">{stats.totalToday > 0 ? ((stats.finishedToday / stats.totalToday) * 100).toFixed(0) : 0}%</span>
-                 </div>
+              
+              <div className="mt-8 md:hidden">
                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-teal-500 rounded-full transition-all duration-1000" 
                       style={{ width: stats.totalToday > 0 ? `${(stats.finishedToday / stats.totalToday) * 100}%` : '0%' }} 
                     />
                  </div>
+              </div>
+           </div>
+        </div>
+
+        {/* PROCEDIMENTOS */}
+        <div className="w-full">
+           <div className="bg-white rounded-[2.5rem] p-8 lg:p-10 shadow-sm border border-slate-100">
+              <div className="flex items-center gap-4 mb-8">
+                 <div className="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100 shadow-sm">
+                    <Target className="h-5 w-5" />
+                 </div>
+                 <div>
+                    <h3 className="text-xl font-bold font-space uppercase tracking-tight text-slate-800 leading-tight">Procedimentos</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Quantitativo no período selecionado</p>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-5">
+                 {stats.procedures.length > 0 ? (
+                   stats.procedures.map(p => (
+                     <div key={p.name} className="p-5 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-indigo-200 hover:shadow-sm border-b-[3px] hover:border-b-indigo-400 transition-all flex flex-col justify-between min-h-[140px]">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 mb-6 leading-relaxed line-clamp-2">{p.name}</span>
+                        <div className="flex items-baseline gap-2 mt-auto">
+                           <h4 className="text-3xl font-black font-space tracking-tighter text-slate-800">{p.count}</h4>
+                           <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">exames</span>
+                        </div>
+                     </div>
+                   ))
+                 ) : (
+                   <div className="col-span-full py-10 text-center opacity-70">
+                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nenhum exame encontrado no filtro.</p>
+                   </div>
+                 )}
               </div>
            </div>
         </div>
