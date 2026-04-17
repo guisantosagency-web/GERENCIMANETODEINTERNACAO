@@ -380,8 +380,17 @@ export default function AgendamentoTab() {
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
 
-    const procName = (appt.procedure_name || "").toUpperCase()
-    const needsFasting = procName.includes("TOMOGRAFIA") || procName.includes("ULTRASSONOGRAFIA") || procName.includes("USG") || procName.includes("ANGIOTOMOGRAFIA")
+    // Busca todos os exames do mesmo paciente na mesma data para agrupar no comprovante
+    const patientAppts = dateAppointments.filter(a => 
+      a.patient_name === appt.patient_name && 
+      a.exam_date === appt.exam_date &&
+      a.status !== 'cancelado'
+    ).sort((a, b) => (a.exam_time || "").localeCompare(b.exam_time || ""))
+
+    const needsFasting = patientAppts.some(a => {
+      const p = (a.procedure_name || "").toUpperCase()
+      return p.includes("TOMOGRAFIA") || p.includes("ULTRASSONOGRAFIA") || p.includes("USG") || p.includes("ANGIOTOMOGRAFIA")
+    })
 
     const content = `
       <!DOCTYPE html><html><head>
@@ -464,27 +473,23 @@ export default function AgendamentoTab() {
               </div>
 
               <div class="section">
-                <div class="section-title">Informações do Exame</div>
-                <div class="data-grid">
-                  <div class="data-item full-width">
-                    <span class="data-label">Procedimento / Exame</span>
-                    <span class="data-value" style="color: #0f172a;">${appt.procedure_name} ${appt.exam_type ? '('+appt.exam_type+')' : ''}</span>
-                  </div>
-                  <div class="data-item">
-                    <span class="data-label">Data</span>
-                    <span class="data-value">${appt.exam_date ? new Date(appt.exam_date+'T00:00:00').toLocaleDateString('pt-BR') : '--'}</span>
-                  </div>
-                  <div class="data-item">
-                    <span class="data-label">Horário</span>
-                    <span class="data-value">${appt.exam_time || '--'}</span>
-                  </div>
-                  <div class="data-item">
-                    <span class="data-label">Protocolo</span>
-                    <span class="data-value">#${appt.id.toString().slice(-6).toUpperCase()}</span>
-                  </div>
-                  <div class="data-item">
-                    <span class="data-label">Unidade Origem</span>
-                    <span class="data-value">HTO CAXIAS</span>
+                <div class="section-title">Informações dos Exames</div>
+                <div class="data-grid" style="grid-template-columns: 1fr;">
+                  ${patientAppts.map(a => `
+                    <div class="data-item" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 2mm; margin-bottom: 2mm;">
+                      <span class="data-label">${a.exam_time} — ${a.procedure_name}</span>
+                      <span class="data-value" style="font-size: 8.5pt; color: #334155;">${a.exam_type || 'PROCEDIMENTO PADRÃO'}</span>
+                    </div>
+                  `).join('')}
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; margin-top: 1mm;">
+                    <div class="data-item">
+                      <span class="data-label">Status Geral</span>
+                      <span class="data-value" style="color: #059669; font-size: 8pt;">AGENDADOS</span>
+                    </div>
+                    <div class="data-item">
+                      <span class="data-label">Data</span>
+                      <span class="data-value" style="font-size: 8pt;">${appt.exam_date ? new Date(appt.exam_date+'T00:00:00').toLocaleDateString('pt-BR') : '--'}</span>
+                    </div>
                   </div>
                 </div>
               </div>
