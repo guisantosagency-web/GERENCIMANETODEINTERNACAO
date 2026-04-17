@@ -3,68 +3,53 @@
 import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { 
-  Users, CheckCircle2, Clock, AlertCircle, Loader2, 
-  MapPin, Search, ChevronRight, Activity, X, Plus, 
-  CheckSquare, Printer, CreditCard, Trash
+  Users, Clock, Loader2, 
+  Search, ChevronRight, X, 
+  CheckSquare, Plus, CalendarDays
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { format, parseISO, differenceInYears } from "date-fns"
 import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
-
-const estados = [
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
-]
-
-function SearchableSelect({ label, options, value, onChange, icon: Icon, disabled }: any) {
-  const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState("")
-  const filtered = options.filter((o: string) => o.toLowerCase().includes(search.toLowerCase()))
-
-  return (
-    <div className="space-y-2 relative">
-      <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-2">{label}</Label>
-      <div 
-        onClick={() => !disabled && setOpen(!open)}
-        className={`h-14 bg-[#161B22] border border-white/5 rounded-2xl flex items-center px-6 cursor-pointer shadow-xl ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:border-[#00D9FF]/30 transition-all'}`}
-      >
-        {Icon && <Icon className="h-4 w-4 text-[#7E8C9A] mr-3" />}
-        <span className={`text-xs font-black uppercase flex-1 ${value ? 'text-white' : 'text-[#7E8C9A]'}`}>{value || "SELECIONAR..."}</span>
-        <ChevronRight className={`h-4 w-4 text-[#7E8C9A] transition-transform ${open ? 'rotate-90 text-[#00D9FF]' : ''}`} />
-      </div>
-
-      {open && (
-        <div className="absolute z-50 mt-2 w-full bg-[#1A1F26] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
-          <div className="p-3 border-b border-white/5">
-             <input className="w-full bg-[#0F1419] border-none rounded-xl py-2 px-4 text-[10px] font-black uppercase text-white focus:ring-0" placeholder="BUSCAR..." value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <div className="max-h-48 overflow-y-auto">
-            {filtered.map((o: string) => (
-              <button key={o} onClick={() => { onChange(o); setOpen(false); }} className="w-full text-left px-5 py-3 text-[10px] font-black uppercase text-[#7E8C9A] hover:bg-[#00D9FF]/10 hover:text-[#00D9FF] transition-colors">{o}</button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
+import { useAuth } from "@/lib/auth-context"
 
 export default function ChegadaTab() {
   const [loading, setLoading] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [appointments, setAppointments] = useState<any[]>([])
   const [selectedAppt, setSelectedAppt] = useState<any>(null)
   const [confirmedIds, setConfirmedIds] = useState<string[]>([])
   const [origins, setOrigins] = useState<any[]>([])
-  const [municipios, setMunicipios] = useState<string[]>([])
-  const [user, setUser] = useState<any>(null)
   const [dynamicProcedures, setDynamicProcedures] = useState<string[]>([])
   const [dynamicTypes, setDynamicTypes] = useState<Record<string, string[]>>({})
-  const [isEditingReception, setIsEditingReception] = useState(false)
-  const [slotInfo, setSlotInfo] = useState<any>(null)
-  const [isCheckingSlots, setIsCheckingSlots] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+
+  // Encaixe state
+  const [showEncaixe, setShowEncaixe] = useState(false)
+  const [encaixeSearch, setEncaixeSearch] = useState("")
+  const [encaixeResults, setEncaixeResults] = useState<any[]>([])
+  const [encaixeForm, setEncaixeForm] = useState({
+    patient_name: "",
+    cpf: "",
+    sus: "",
+    procedure_name: "",
+    exam_type: "",
+    birth_date: "",
+    priority: "Sem Prioridade",
+    origin_id: "",
+    chave_sisreg: "",
+    new_origin_name: ""
+  })
+  const [isSubmittingEncaixe, setIsSubmittingEncaixe] = useState(false)
+
+  const { user } = useAuth()
+  const supabase = useMemo(() => createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  ), [])
 
   const [formData, setFormData] = useState<any>({
     patient_name: "",
@@ -80,21 +65,30 @@ export default function ChegadaTab() {
     is_encaixe: false
   })
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
   useEffect(() => {
     loadData()
-    loadUser()
-  }, [])
+    loadConfig()
+  }, [selectedDate])
 
-  async function loadUser() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      setUser({ ...user, ...profile })
+  async function loadConfig() {
+    const { data: oData } = await supabase.from("exam_origins").select("*").order("name")
+    setOrigins(oData || [])
+    const { data: pData } = await supabase.from("exam_procedures_list").select("name")
+    const { data: tData } = await supabase.from("exam_types_list").select("name, procedure_name")
+    const procedures = (pData || []).map(p => p.name)
+    setDynamicProcedures(procedures)
+    const typeMap = (tData || []).reduce((acc: any, curr: any) => {
+      if (!acc[curr.procedure_name]) acc[curr.procedure_name] = []
+      acc[curr.procedure_name].push(curr.name)
+      return acc
+    }, {})
+    setDynamicTypes(typeMap)
+    if (procedures.length > 0) {
+      setEncaixeForm(prev => ({
+        ...prev,
+        procedure_name: procedures[0],
+        exam_type: typeMap[procedures[0]]?.[0] || ""
+      }))
     }
   }
 
@@ -105,10 +99,9 @@ export default function ChegadaTab() {
         .from("exam_appointments")
         .select("*")
         .eq("status", "agendado")
-        .eq("exam_date", new Date().toISOString().split('T')[0])
+        .eq("exam_date", selectedDate)
         .order("exam_time")
 
-      // Agrupar por paciente + hora
       const grouped = (appts || []).reduce((acc: any[], curr: any) => {
         const key = `${curr.patient_name}-${curr.exam_time}`
         let exists = acc.find(a => `${a.patient_name}-${a.exam_time}` === key)
@@ -123,32 +116,10 @@ export default function ChegadaTab() {
       }, [])
 
       setAppointments(grouped)
-
-      const { data: oData } = await supabase.from("exam_origins").select("*").order("name")
-      setOrigins(oData || [])
-
-      const { data: pData } = await supabase.from("exam_procedures_list").select("name")
-      const { data: tData } = await supabase.from("exam_types_list").select("name, procedure_name")
-      setDynamicProcedures((pData || []).map(p => p.name))
-      const typeMap = (tData || []).reduce((acc: any, curr: any) => {
-        if (!acc[curr.procedure_name]) acc[curr.procedure_name] = []
-        acc[curr.procedure_name].push(curr.name)
-        return acc
-      }, {})
-      setDynamicTypes(typeMap)
-
     } finally {
       setLoading(false)
     }
   }
-
-  useEffect(() => {
-    if (formData.state === "MA") {
-      setMunicipios(["IMPERATRIZ", "AÇAILÂNDIA", "DAVINÓPOLIS", "GOVERNADOR EDISON LOBÃO", "JOÃO LISBOA"])
-    } else {
-      setMunicipios([])
-    }
-  }, [formData.state])
 
   const maskCPF = (v: string) => {
     v = v.replace(/\D/g, "")
@@ -169,7 +140,8 @@ export default function ChegadaTab() {
       origin_id: appt.origin_id || "",
       clave_sisreg: appt.chave_sisreg || "",
       priority: appt.priority || "Sem Prioridade",
-      is_encaixe: appt.is_encaixe || false
+      is_encaixe: false,
+      new_origin_name: ""
     })
   }
 
@@ -185,22 +157,14 @@ export default function ChegadaTab() {
       }
 
       const cleanCPF = formData.cpf.replace(/\D/g, "")
-
-      // Atualizar appointments
-      await supabase
-        .from("exam_appointments")
-        .update({
-          status: 'presente',
-          arrival_time: new Date().toISOString(),
-          origin_id: finalOriginId,
-          priority: formData.priority,
-          chave_sisreg: formData.clave_sisreg,
-          birth_date: formData.birth_date
-        })
-        .in("id", confirmedIds)
-
-      // Se houver exames não confirmados, cancelar ou manter como agendado? 
-      // Para simplificar, vamos considerar que os confirmados entram na fila.
+      await supabase.from("exam_appointments").update({
+        status: 'presente',
+        arrival_time: new Date().toISOString(),
+        origin_id: finalOriginId,
+        priority: formData.priority,
+        chave_sisreg: formData.clave_sisreg,
+        birth_date: formData.birth_date
+      }).in("id", confirmedIds)
 
       await upsertMasterPatient({
         full_name: selectedAppt.patient_name,
@@ -223,146 +187,398 @@ export default function ChegadaTab() {
     }
   }
 
+  const handleEncaixeSearch = async (val: string) => {
+    setEncaixeSearch(val)
+    setEncaixeForm(prev => ({ ...prev, patient_name: val }))
+    if (val.length < 3) { setEncaixeResults([]); return }
+    try {
+      const results = await searchMasterPatients(val)
+      setEncaixeResults(results)
+    } catch { }
+  }
+
+  const handleEncaixeSelectPatient = (p: any) => {
+    setEncaixeForm(prev => ({
+      ...prev,
+      patient_name: (p.full_name || p.paciente || "").toUpperCase(),
+      cpf: maskCPF(p.cpf || ""),
+      sus: p.sus || "",
+    }))
+    setEncaixeResults([])
+    setEncaixeSearch("")
+  }
+
+  const handleSubmitEncaixe = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmittingEncaixe(true)
+    try {
+      let finalOriginId = encaixeForm.origin_id
+      if (finalOriginId === "NOVO") {
+        const { data: newO, error: oErr } = await supabase.from("exam_origins").insert([{ name: encaixeForm.new_origin_name.toUpperCase() }]).select().single()
+        if (oErr) throw oErr
+        finalOriginId = newO.id
+      }
+
+      const cleanCPF = encaixeForm.cpf.replace(/\D/g, "")
+      const userName = user?.name || "RECEPÇÃO"
+
+      const { error } = await supabase.from("exam_appointments").insert([{
+        patient_name: encaixeForm.patient_name.toUpperCase(),
+        cpf: cleanCPF,
+        sus: encaixeForm.sus,
+        exam_date: selectedDate,
+        exam_time: format(new Date(), 'HH:mm'),
+        procedure_name: encaixeForm.procedure_name,
+        exam_type: encaixeForm.exam_type,
+        status: 'presente',
+        arrival_time: new Date().toISOString(),
+        origin_id: finalOriginId || null,
+        chave_sisreg: encaixeForm.chave_sisreg,
+        priority: encaixeForm.priority,
+        birth_date: encaixeForm.birth_date,
+        is_encaixe: true,
+        receptionist_name: userName
+      }])
+
+      if (error) throw error
+
+      await upsertMasterPatient({
+        full_name: encaixeForm.patient_name.toUpperCase(),
+        cpf: cleanCPF || undefined,
+        sus: encaixeForm.sus || undefined,
+        origem_cadastro: 'reception_arrival'
+      })
+
+      setShowEncaixe(false)
+      setEncaixeForm({
+        patient_name: "", cpf: "", sus: "", procedure_name: dynamicProcedures[0] || "",
+        exam_type: dynamicTypes[dynamicProcedures[0]]?.[0] || "", birth_date: "",
+        priority: "Sem Prioridade", origin_id: "", chave_sisreg: "", new_origin_name: ""
+      })
+      alert("Encaixe registrado com sucesso!")
+    } catch (err) {
+      console.error(err)
+      alert("Erro ao registrar encaixe")
+    } finally {
+      setIsSubmittingEncaixe(false)
+    }
+  }
+
+  const filteredAppointments = useMemo(() => {
+    if (!searchTerm) return appointments
+    const s = searchTerm.toLowerCase()
+    return appointments.filter(a =>
+      a.patient_name.toLowerCase().includes(s) ||
+      (a.cpf && a.cpf.includes(searchTerm)) ||
+      (a.sus && a.sus.includes(searchTerm))
+    )
+  }, [appointments, searchTerm])
+
   const calculatedAge = formData.birth_date ? differenceInYears(new Date(), parseISO(formData.birth_date)) : "--"
 
-  if (loading) return <div className="h-96 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-[#00D9FF]" /></div>
+  if (loading) return <div className="h-96 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-teal-500" /></div>
 
   return (
-    <div className="h-full min-h-[800px] flex flex-row-reverse gap-8 animate-in fade-in duration-500 overflow-hidden relative">
-      
-      {/* FORM RIGHT SIDE */}
-      <div className={`transition-all duration-700 ease-out h-full ${selectedAppt ? 'w-[550px] opacity-100 translate-x-0' : 'w-0 opacity-0 translate-x-full'}`}>
-        <div className="glass-premium rounded-[2.5rem] h-full flex flex-col overflow-hidden border border-white/5 shadow-2xl">
-           <div className="p-8 bg-[#00FF88] text-[#0F1419] relative">
-              <div className="flex items-center justify-between mb-4">
-                 <div className="h-10 w-10 flex items-center justify-center bg-black/10 rounded-xl"><CheckSquare className="h-6 w-6" /></div>
-                 <Button variant="ghost" size="icon" onClick={() => setSelectedAppt(null)} className="h-10 w-10 text-black/50 hover:bg-black/5 rounded-full"><X className="h-6 w-6" /></Button>
-              </div>
-              <h3 className="text-2xl font-black font-space uppercase tracking-tight">Protocolo de Entrada</h3>
-              <p className="text-[10px] font-black opacity-50 uppercase tracking-widest mt-1">Paciente: {selectedAppt?.patient_name}</p>
-           </div>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* HEADER CONTROLS */}
+      <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-teal-50 text-teal-600 rounded-xl border border-teal-100">
+              <Users className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-800 uppercase tracking-tight">Pacientes Agendados</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Recepção / Chegada</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Date Selector */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 flex flex-col min-w-[140px]">
+              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Data</span>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+                className="bg-transparent border-none outline-none text-xs font-bold text-slate-700 p-0 mt-0.5"
+              />
+            </div>
 
-           <div className="flex-1 overflow-y-auto p-10 custom-scrollbar space-y-10">
-              <form id="arrival-form" onSubmit={handleSubmit} className="space-y-10">
-                 <div className="space-y-4">
-                    <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-2">Exames Confirmados</Label>
-                    <div className="grid grid-cols-1 gap-3">
-                       {(selectedAppt?.raw_appointments || []).map((exam: any) => {
-                          const isConfirmed = confirmedIds.includes(exam.id)
-                          return (
-                            <button 
-                              key={exam.id} 
-                              type="button"
-                              onClick={() => setConfirmedIds(prev => prev.includes(exam.id) ? prev.filter(i => i !== exam.id) : [...prev, exam.id])}
-                              className={`flex items-center justify-between p-5 rounded-2xl border-2 transition-all ${isConfirmed ? 'bg-[#00FF88]/5 border-[#00FF88] shadow-lg' : 'bg-white/5 border-transparent opacity-40 hover:opacity-100'}`}
-                            >
-                               <div className="flex flex-col items-start">
-                                  <span className="text-xs font-black text-white uppercase">{exam.procedure_name}</span>
-                                  <span className="text-[9px] font-bold text-[#7E8C9A] uppercase">{exam.exam_type}</span>
-                               </div>
-                               <div className={`h-6 w-6 rounded-full flex items-center justify-center border-2 ${isConfirmed ? 'bg-[#00FF88] border-[#00FF88] text-[#0F1419]' : 'border-[#7E8C9A] text-transparent'}`}>
-                                  {isConfirmed && <CheckSquare className="h-3 w-3" />}
-                               </div>
-                            </button>
-                          )
-                       })}
-                    </div>
-                 </div>
+            {/* Search */}
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Buscar paciente..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="h-10 pl-10 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-teal-400 outline-none shadow-sm"
+              />
+            </div>
 
-                 <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                       <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-2">Nascimento</Label>
-                       <Input type="date" value={formData.birth_date} onChange={e => setFormData(p => ({ ...p, birth_date: e.target.value }))} className="h-14 bg-[#161B22] border-white/5 rounded-2xl text-xs font-black text-white" />
-                    </div>
-                    <div className="space-y-2">
-                       <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-2">Idade</Label>
-                       <div className="h-14 bg-white/5 rounded-2xl flex items-center justify-center font-black text-[#7E8C9A] uppercase text-xs">{calculatedAge} anos</div>
-                    </div>
-                 </div>
+            {/* Counter */}
+            <div className="h-10 px-5 bg-teal-50 border border-teal-100 rounded-xl flex items-center gap-2 shrink-0">
+              <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wider">Saldo:</span>
+              <span className="text-sm font-bold text-teal-700">{filteredAppointments.length}</span>
+            </div>
 
-                 <div className="space-y-2">
-                    <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-2">Chave SISREG</Label>
-                    <Input value={formData.clave_sisreg} onChange={e => setFormData(p => ({ ...p, clave_sisreg: e.target.value }))} className="h-14 bg-[#161B22] border-white/5 rounded-2xl text-xs font-black text-white" placeholder="APENAS NÚMEROS..." />
-                 </div>
-
-                 <div className="space-y-2">
-                    <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-2">Prioridade</Label>
-                    <select value={formData.priority} onChange={e => setFormData(p => ({ ...p, priority: e.target.value }))} className="w-full h-14 bg-[#161B22] border-none rounded-2xl px-6 font-black uppercase text-xs text-white shadow-xl">
-                       <option value="Sem Prioridade">NORMAL</option>
-                       <option value="Idoso (60+)">IDOSO 60+</option>
-                       <option value="Gestante">GESTANTE</option>
-                       <option value="Prioritário">PRIORITÁRIO</option>
-                    </select>
-                 </div>
-
-                 <div className="space-y-2">
-                    <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-2">Unidade de Origem</Label>
-                    <select value={formData.origin_id} onChange={e => setFormData(p => ({ ...p, origin_id: e.target.value }))} className="w-full h-14 bg-[#161B22] border-none rounded-2xl px-6 font-black uppercase text-xs text-white shadow-xl">
-                       <option value="">SELECIONAR...</option>
-                       {origins.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-                       <option value="NOVO">+ CADASTRAR NOVA</option>
-                    </select>
-                 </div>
-
-                 {formData.origin_id === "NOVO" && (
-                   <Input placeholder="NOME DA UNIDADE..." value={formData.new_origin_name} onChange={e => setFormData(p => ({ ...p, new_origin_name: e.target.value.toUpperCase() }))} className="h-14 bg-[#00FF88]/5 border-[#00FF88]/20 rounded-2xl text-xs font-black text-white" />
-                 )}
-              </form>
-           </div>
-
-           <div className="p-10 border-t border-white/5 bg-black/20">
-              <Button form="arrival-form" type="submit" disabled={isLoading} className="w-full h-16 bg-[#00FF88] hover:bg-[#00D9FF] text-[#0F1419] rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs transition-all shadow-2xl">
-                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Confirmar Recebimento"}
-              </Button>
-           </div>
+            {/* Encaixe Button */}
+            <Button
+              onClick={() => setShowEncaixe(true)}
+              className="h-10 px-5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold uppercase text-[10px] tracking-wider gap-2 shadow-sm"
+            >
+              <Plus className="h-4 w-4" />
+              Encaixe
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* LIST SIDE */}
-      <div className="flex-1 space-y-10 group overflow-y-auto pr-4 custom-scrollbar">
-         <div className="flex items-center justify-between mb-8">
-            <h2 className="text-4xl font-black font-space text-white uppercase tracking-tight flex items-center gap-5">
-               <div className="p-4 bg-white/5 border border-white/10 rounded-3xl shadow-2xl"><Users className="h-8 w-8 text-[#00FF88]" /></div>
-               Pacientes Agendados
-            </h2>
-            <div className="flex items-center gap-4">
-               <div className="h-14 px-8 bg-[#161B22] rounded-[2rem] flex items-center gap-4 border border-white/5">
-                  <span className="text-[10px] font-black text-[#7E8C9A] uppercase tracking-widest">Saldo do Dia:</span>
-                  <span className="text-xl font-black text-white">{appointments.length}</span>
-               </div>
+      <div className="flex gap-6">
+        {/* PATIENT LIST */}
+        <div className="flex-1 space-y-4">
+          {filteredAppointments.length === 0 ? (
+            <div className="bg-white rounded-2xl py-24 text-center border border-slate-100 shadow-sm">
+              <div className="flex flex-col items-center gap-4 opacity-40">
+                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200"><Clock className="h-10 w-10 text-slate-400" /></div>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Nenhum agendamento para esta data</p>
+              </div>
             </div>
-         </div>
-
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {appointments.length === 0 ? (
-               <div className="col-span-full py-32 text-center opacity-30">
-                  <div className="p-10 border-2 border-dashed border-[#7E8C9A] rounded-full inline-block mb-6"><Clock className="h-12 w-12 text-[#7E8C9A]" /></div>
-                  <p className="text-xs font-black uppercase tracking-[0.5em] text-[#7E8C9A]">Nenhum agendamento pendente para hoje</p>
-               </div>
-            ) : (
-               appointments.map(appt => (
-                  <div key={`${appt.patient_name}-${appt.exam_time}`} onClick={() => handleSelectAppt(appt)} className={`glass-premium rounded-[2.5rem] p-8 border border-white/5 cursor-pointer group transition-all hover:scale-[1.02] hover:shadow-2xl hover:border-[#00FF88]/30 ${selectedAppt?.id === appt.id ? 'bg-[#00FF88]/5 border-[#00FF88]' : ''}`}>
-                     <div className="flex items-center gap-6">
-                        <div className="h-16 w-16 rounded-[1.5rem] bg-[#1D232A] flex items-center justify-center font-black text-xl text-[#7E8C9A] group-hover:bg-[#00FF88] group-hover:text-[#0F1419] transition-all shadow-xl">
-                           {appt.patient_name.charAt(0)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                           <div className="flex items-center justify-between mb-1">
-                              <span className="text-[10px] font-black text-[#00FF88] uppercase tracking-widest">{appt.exam_time}</span>
-                              <ChevronRight className="h-4 w-4 text-[#7E8C9A] opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0" />
-                           </div>
-                           <h4 className="text-lg font-black text-white uppercase tracking-tight truncate">{appt.patient_name}</h4>
-                           <p className="text-[9px] font-bold text-[#7E8C9A] uppercase mt-1">
-                              {appt.raw_appointments.length > 1 ? `${appt.raw_appointments.length} PROCEDIMENTOS` : appt.procedure_name}
-                           </p>
-                        </div>
-                     </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredAppointments.map(appt => (
+                <div
+                  key={`${appt.patient_name}-${appt.exam_time}`}
+                  onClick={() => handleSelectAppt(appt)}
+                  className={`bg-white rounded-2xl p-5 border cursor-pointer group transition-all hover:shadow-md hover:border-teal-300 hover:-translate-y-0.5 ${selectedAppt?.patient_name === appt.patient_name && selectedAppt?.exam_time === appt.exam_time ? 'border-teal-400 shadow-md bg-teal-50/30' : 'border-slate-100 shadow-sm'}`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="h-14 w-14 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center font-bold text-xl text-teal-600 group-hover:bg-teal-500 group-hover:text-white transition-colors shrink-0">
+                      {appt.patient_name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">{appt.exam_time}</span>
+                        <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-teal-500 transition-colors" />
+                      </div>
+                      <h4 className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate">{appt.patient_name}</h4>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">
+                        {appt.raw_appointments.length > 1 ? `${appt.raw_appointments.length} PROCEDIMENTOS` : appt.procedure_name}
+                      </p>
+                    </div>
                   </div>
-               ))
-            )}
-         </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* SLIDE-IN ARRIVAL PROTOCOL */}
+      <Sheet open={!!selectedAppt} onOpenChange={open => !open && setSelectedAppt(null)}>
+        <SheetContent side="right" className="w-[480px] sm:max-w-[540px] p-0 border-l border-slate-200 bg-slate-50 flex flex-col shadow-xl overflow-hidden">
+          {/* Green header */}
+          <div className="p-6 bg-teal-500 text-white shrink-0">
+            <div className="flex items-center justify-between mb-3">
+              <div className="h-9 w-9 bg-white/20 rounded-xl flex items-center justify-center">
+                <CheckSquare className="h-5 w-5" />
+              </div>
+              <button onClick={() => setSelectedAppt(null)} className="h-9 w-9 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <h3 className="text-xl font-bold uppercase tracking-tight">Protocolo de Entrada</h3>
+            <p className="text-teal-100 text-[10px] font-bold uppercase tracking-wider mt-0.5">{selectedAppt?.patient_name}</p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <form id="arrival-form" onSubmit={handleSubmit} className="space-y-6">
+              {/* Exames confirmados */}
+              <div className="space-y-3">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Exames Confirmados</Label>
+                <div className="space-y-2">
+                  {(selectedAppt?.raw_appointments || []).map((exam: any) => {
+                    const isConfirmed = confirmedIds.includes(exam.id)
+                    return (
+                      <button
+                        key={exam.id}
+                        type="button"
+                        onClick={() => setConfirmedIds(prev => prev.includes(exam.id) ? prev.filter(i => i !== exam.id) : [...prev, exam.id])}
+                        className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left ${isConfirmed ? 'bg-teal-50 border-teal-400' : 'bg-white border-slate-200 opacity-60 hover:opacity-100'}`}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-slate-800 uppercase">{exam.procedure_name}</span>
+                          <span className="text-[9px] font-bold text-slate-500 uppercase">{exam.exam_type}</span>
+                        </div>
+                        <div className={`h-5 w-5 rounded-md border-2 flex items-center justify-center ${isConfirmed ? 'bg-teal-500 border-teal-500' : 'border-slate-300'}`}>
+                          {isConfirmed && <CheckSquare className="h-3 w-3 text-white" />}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Nascimento</Label>
+                  <Input type="date" value={formData.birth_date} onChange={e => setFormData((p: any) => ({ ...p, birth_date: e.target.value }))} className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-teal-400 outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Idade</Label>
+                  <div className="h-11 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs uppercase">{calculatedAge} anos</div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Chave SISREG</Label>
+                <Input value={formData.clave_sisreg} onChange={e => setFormData((p: any) => ({ ...p, clave_sisreg: e.target.value }))} className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-teal-400 outline-none" placeholder="APENAS NÚMEROS..." />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Prioridade</Label>
+                <select value={formData.priority} onChange={e => setFormData((p: any) => ({ ...p, priority: e.target.value }))} className="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 font-bold uppercase text-xs text-slate-700 outline-none focus:border-teal-400">
+                  <option value="Sem Prioridade">NORMAL</option>
+                  <option value="Idoso (60+)">IDOSO 60+</option>
+                  <option value="Gestante">GESTANTE</option>
+                  <option value="Prioritário">PRIORITÁRIO</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Unidade de Origem</Label>
+                <select value={formData.origin_id} onChange={e => setFormData((p: any) => ({ ...p, origin_id: e.target.value }))} className="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 font-bold uppercase text-xs text-slate-700 outline-none focus:border-teal-400">
+                  <option value="">SELECIONAR...</option>
+                  {origins.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                  <option value="NOVO">+ CADASTRAR NOVA</option>
+                </select>
+              </div>
+              {formData.origin_id === "NOVO" && (
+                <Input placeholder="NOME DA UNIDADE..." value={formData.new_origin_name} onChange={e => setFormData((p: any) => ({ ...p, new_origin_name: e.target.value.toUpperCase() }))} className="h-11 bg-orange-50 border-orange-200 rounded-xl text-xs font-bold text-slate-700 focus:border-orange-400 outline-none" />
+              )}
+            </form>
+          </div>
+
+          <div className="p-6 border-t border-slate-100 bg-white shrink-0">
+            <Button form="arrival-form" type="submit" disabled={isLoading} className="w-full h-13 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-bold uppercase tracking-wider text-xs transition-all shadow-sm">
+              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Confirmar Recebimento"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* ENCAIXE SHEET */}
+      <Sheet open={showEncaixe} onOpenChange={setShowEncaixe}>
+        <SheetContent side="right" className="w-[480px] sm:max-w-[540px] p-0 border-l border-slate-200 bg-slate-50 flex flex-col shadow-xl overflow-hidden">
+          <div className="p-6 bg-orange-500 text-white shrink-0">
+            <div className="flex items-center justify-between mb-3">
+              <div className="h-9 w-9 bg-white/20 rounded-xl flex items-center justify-center">
+                <Plus className="h-5 w-5" />
+              </div>
+              <button onClick={() => setShowEncaixe(false)} className="h-9 w-9 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <h3 className="text-xl font-bold uppercase tracking-tight">Registrar Encaixe</h3>
+            <p className="text-orange-100 text-[10px] font-bold uppercase tracking-wider mt-0.5">Paciente fora de horário — {selectedDate}</p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            <form id="encaixe-form" onSubmit={handleSubmitEncaixe} className="space-y-5">
+              {/* Patient Search */}
+              <div className="space-y-1 relative">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Nome do Paciente</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    required
+                    autoComplete="off"
+                    placeholder="BUSCAR OU DIGITAR NOME..."
+                    value={encaixeForm.patient_name}
+                    onChange={e => handleEncaixeSearch(e.target.value)}
+                    className="h-11 pl-10 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-orange-400 outline-none"
+                  />
+                </div>
+                {encaixeResults.length > 0 && (
+                  <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden mt-1">
+                    <div className="max-h-48 overflow-y-auto divide-y divide-slate-100">
+                      {encaixeResults.map(p => (
+                        <button key={p.id} type="button" onClick={() => handleEncaixeSelectPatient(p)} className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors">
+                          <p className="font-bold text-xs text-slate-800 uppercase">{p.full_name || p.paciente}</p>
+                          <p className="text-[9px] text-slate-500 font-bold">CPF: {maskCPF(p.cpf || "")} {p.municipio ? `• ${p.municipio}` : ""}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">CPF</Label>
+                  <Input value={encaixeForm.cpf} onChange={e => setEncaixeForm(p => ({ ...p, cpf: maskCPF(e.target.value) }))} className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center focus:border-orange-400 outline-none" placeholder="000.000.000-00" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Cartão SUS</Label>
+                  <Input value={encaixeForm.sus} onChange={e => setEncaixeForm(p => ({ ...p, sus: e.target.value }))} className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center focus:border-orange-400 outline-none" placeholder="000 0000 0000 0000" />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Procedimento</Label>
+                <select value={encaixeForm.procedure_name} onChange={e => setEncaixeForm(p => ({ ...p, procedure_name: e.target.value, exam_type: dynamicTypes[e.target.value]?.[0] || "" }))} className="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 font-bold uppercase text-xs text-slate-700 outline-none focus:border-orange-400">
+                  {dynamicProcedures.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Especificação</Label>
+                <select value={encaixeForm.exam_type} onChange={e => setEncaixeForm(p => ({ ...p, exam_type: e.target.value }))} className="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 font-bold uppercase text-xs text-slate-700 outline-none focus:border-orange-400">
+                  {(dynamicTypes[encaixeForm.procedure_name] || []).map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Nascimento</Label>
+                  <Input type="date" value={encaixeForm.birth_date} onChange={e => setEncaixeForm(p => ({ ...p, birth_date: e.target.value }))} className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-orange-400 outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Prioridade</Label>
+                  <select value={encaixeForm.priority} onChange={e => setEncaixeForm(p => ({ ...p, priority: e.target.value }))} className="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 font-bold uppercase text-xs text-slate-700 outline-none focus:border-orange-400">
+                    <option value="Sem Prioridade">NORMAL</option>
+                    <option value="Idoso (60+)">IDOSO 60+</option>
+                    <option value="Gestante">GESTANTE</option>
+                    <option value="Prioritário">PRIORITÁRIO</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Unidade de Origem</Label>
+                <select value={encaixeForm.origin_id} onChange={e => setEncaixeForm(p => ({ ...p, origin_id: e.target.value }))} className="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 font-bold uppercase text-xs text-slate-700 outline-none focus:border-orange-400">
+                  <option value="">SELECIONAR...</option>
+                  {origins.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                  <option value="NOVO">+ CADASTRAR NOVA</option>
+                </select>
+              </div>
+              {encaixeForm.origin_id === "NOVO" && (
+                <Input placeholder="NOME DA UNIDADE..." value={encaixeForm.new_origin_name} onChange={e => setEncaixeForm(p => ({ ...p, new_origin_name: e.target.value.toUpperCase() }))} className="h-11 bg-orange-50 border-orange-200 rounded-xl text-xs font-bold text-slate-700 focus:border-orange-400 outline-none" />
+              )}
+
+              <div className="space-y-1">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Chave SISREG (opcional)</Label>
+                <Input value={encaixeForm.chave_sisreg} onChange={e => setEncaixeForm(p => ({ ...p, chave_sisreg: e.target.value }))} className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-orange-400 outline-none" placeholder="OPCIONAL..." />
+              </div>
+            </form>
+          </div>
+
+          <div className="p-6 border-t border-slate-100 bg-white shrink-0">
+            <Button form="encaixe-form" type="submit" disabled={isSubmittingEncaixe} className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold uppercase tracking-wider text-xs transition-all shadow-sm">
+              {isSubmittingEncaixe ? <Loader2 className="h-5 w-5 animate-spin" /> : "Confirmar Encaixe"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

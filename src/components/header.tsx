@@ -45,23 +45,23 @@ export function Header() {
         isCollapsed ? "left-[80px]" : "left-0 lg:left-72"
       )}
     >
-      <div className="h-full px-6 flex items-center justify-between relative overflow-hidden">
+      <div className="h-full px-4 lg:px-6 flex items-center gap-4 relative overflow-hidden">
 
-        {/* Left: Module Info */}
-        <div className="flex items-center gap-8">
+        {/* Left: Module Info + Navigation Tabs — scrollable */}
+        <div className="flex items-center gap-6 flex-1 min-w-0 overflow-hidden">
           <div className="hidden xl:flex flex-col shrink-0">
             <div className="flex items-center gap-2 mb-0.5">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Módulo Ativo</p>
             </div>
-            <h1 className="text-lg font-bold text-slate-800 leading-none tracking-tight">
+            <h1 className="text-base font-bold text-slate-800 leading-none tracking-tight whitespace-nowrap">
               {getModuleTitle()}
             </h1>
           </div>
 
-          {/* Navigation Tabs */}
+          {/* Navigation Tabs — horizontal scroll on small screens */}
           {tabs && tabs.length > 0 && (
-            <nav className="hidden lg:flex items-center p-1 bg-slate-100 rounded-2xl space-x-0.5">
+            <nav className="flex items-center p-1 bg-slate-100 rounded-2xl space-x-0.5 overflow-x-auto no-scrollbar min-w-0 flex-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon
                 const isActive = activeTab === tab.id
@@ -70,16 +70,16 @@ export function Header() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "group relative flex items-center gap-2.5 px-5 py-2 rounded-xl transition-all duration-300 whitespace-nowrap",
+                      "group relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 whitespace-nowrap shrink-0",
                       isActive 
                         ? "bg-white text-slate-800 shadow-sm font-bold"
                         : "text-slate-500 hover:text-slate-700 hover:bg-white/60"
                     )}
                   >
-                    <Icon className={cn("h-3.5 w-3.5 transition-colors duration-300", isActive ? "text-teal-500" : "group-hover:text-teal-500")} />
+                    <Icon className={cn("h-3.5 w-3.5 transition-colors duration-300 shrink-0", isActive ? "text-teal-500" : "group-hover:text-teal-500")} />
                     <span className="text-[10px] font-bold uppercase tracking-wide">{tab.label}</span>
                     {isActive && (
-                      <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-teal-500 rounded-full" />
+                      <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-teal-500 rounded-full" />
                     )}
                   </button>
                 )
@@ -89,7 +89,7 @@ export function Header() {
         </div>
 
         {/* Right: User Controls */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 shrink-0 ml-3">
           <div className="hidden md:flex relative group">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
             <input 
