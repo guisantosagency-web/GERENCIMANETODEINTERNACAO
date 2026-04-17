@@ -54,7 +54,7 @@ export function ExamsCharts({ records, slots, onFilterChange }: { records: any[]
     const examBreakdown: Record<string, { name: string, presentes: number, faltas: number }> = {}
     const monthlyBreakdown: Record<string, { month: string, presentes: number, faltas: number }> = {}
 
-    records.forEach(r => {
+    records?.forEach(r => {
       const isPresent = r.status === 'presente'
       const isFalta = r.status === 'falta'
       const isAgendado = r.status === 'agendado'

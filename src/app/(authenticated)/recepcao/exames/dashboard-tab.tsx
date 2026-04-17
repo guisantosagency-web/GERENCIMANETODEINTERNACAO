@@ -258,7 +258,7 @@ export default function ExamesDashboardTab() {
                     </div>
                  </div>
               </div>
-              <ExamsCharts appointments={filteredRecords} />
+              <ExamsCharts records={filteredRecords} />
            </div>
         </div>
 
