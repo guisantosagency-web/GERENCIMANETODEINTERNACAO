@@ -424,10 +424,9 @@ export default function AgendamentoTab() {
     })
 
     const mainAppt = examsToPrint[0] || appt
-    const hospitalLogo = (logos as any)?.logo_hto || '/images/hto-20nova.png'
-    const institutoLogo = (logos as any)?.logo_invisa || ''
-    const govLogo = (logos as any)?.logo_maranhao || '/images/logo-20gov.png'
-    const susLogo = (logos as any)?.logo_sus || ''
+    
+    // Padrão do sistema de internação: verificar se existe qualquer logo
+    const hasAnyLogo = logos.logo_hto || logos.logo_maranhao || logos.logo_instituto || logos.logo_sus
 
     try {
       const examDateStr = mainAppt.exam_date 
@@ -436,6 +435,7 @@ export default function AgendamentoTab() {
 
       const content = `
       <!DOCTYPE html><html><head>
+        <meta charset="UTF-8">
         <title>Comprovação de Agendamento</title>
         <style>
           @page { size: A4 landscape; margin: 0; }
@@ -478,21 +478,18 @@ export default function AgendamentoTab() {
           .footer { margin-top: 5mm; font-size: 7pt; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 3mm; display: flex; justify-content: space-between; align-items: flex-end; }
           .signature { border-top: 1px solid #cbd5e1; width: 45mm; text-align: center; padding-top: 1mm; font-size: 6.5pt; color: #64748b; font-weight: bold; text-transform: uppercase; }
           
-          
-          .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 40pt; font-weight: 900; color: #f1f5f9; z-index: -1; text-transform: uppercase; opacity: 0.4; pointer-events: none; display: none; }
+          @media print { body { -webkit-print-color-adjust: exact; } }
         </style>
       </head><body>
         <div class="a4-landscape">
           ${[1, 2].map(copyNum => `
             <div class="receipt-copy">
-              <div class="watermark">COPIA ${copyNum}</div>
-              
               <div class="header">
                 <div class="logo-box">
-                  <img src="${hospitalLogo}" class="logo-hospital" onerror="this.style.display='none'">
-                  <img src="${institutoLogo}" class="logo-invisa" onerror="this.style.display='none'">
-                  <img src="${govLogo}" class="logo-gov" onerror="this.style.display='none'">
-                  <img src="${susLogo}" class="logo-sus" onerror="this.style.display='none'">
+                  ${logos.logo_hto ? `<img src="${logos.logo_hto}" class="logo-hospital" />` : `<img src="/images/hto-20nova.png" class="logo-hospital" />`}
+                  ${logos.logo_instituto ? `<img src="${logos.logo_instituto}" class="logo-invisa" />` : ""}
+                  ${logos.logo_maranhao ? `<img src="${logos.logo_maranhao}" class="logo-gov" />` : `<img src="/images/logo-20gov.png" class="logo-gov" />`}
+                  ${logos.logo_sus ? `<img src="${logos.logo_sus}" class="logo-sus" />` : ""}
                 </div>
                 <div class="doc-title">
                   <h1>Exames</h1>
@@ -506,7 +503,7 @@ export default function AgendamentoTab() {
                 <div class="data-grid">
                   <div class="data-item full-width">
                     <span class="data-label">Paciente</span>
-                    <span class="data-value">${mainAppt.patient_name}</span>
+                    <span class="data-value">${mainAppt.patient_name || '--'}</span>
                   </div>
                   <div class="data-item">
                     <span class="data-label">CPF</span>
@@ -524,7 +521,7 @@ export default function AgendamentoTab() {
                 <div class="data-grid" style="grid-template-columns: 1fr 1fr; gap: 2mm 4mm; align-content: start;">
                   ${examsToPrint.map((a: any) => `
                     <div class="data-item" style="border-left: 2px solid #e2e8f0; padding-left: 2mm; margin-bottom: 1mm;">
-                      <span class="data-label" style="line-height: 1;">${a.exam_time} — ${a.procedure_name}</span>
+                      <span class="data-label" style="line-height: 1;">${a.exam_time || ''} — ${a.procedure_name || ''}</span>
                       <span class="data-value" style="font-size: 7.5pt; color: #334155;">${a.exam_type || 'PADRÃO'}</span>
                     </div>
                   `).join('')}
@@ -573,22 +570,22 @@ export default function AgendamentoTab() {
       printWindow.document.write(content)
       printWindow.document.close()
       
-      // Aguarda um tempo para garantir que os logos carreguem antes de abrir o diálogo de impressão
       setTimeout(() => {
         if (printWindow.closed) return
         printWindow.print()
-      }, 1800)
+      }, 1500)
     } catch (err: any) {
-      console.error("Erro na geração do comprovante:", err)
+      console.error("Erro na geração:", err)
+      printWindow.document.open()
       printWindow.document.write(`
         <div style="padding: 20px; font-family: sans-serif; color: red;">
-          <h2>Erro ao gerar comprovante</h2>
-          <p>${err?.message || "Erro desconhecido"}</p>
-          <pre>${JSON.stringify(appt, null, 2)}</pre>
+          <h2>Erro Crítico</h2>
+          <p>${err?.message || "Erro de renderização"}</p>
         </div>
       `)
       printWindow.document.close()
     }
+  }
   }
 
   return (
