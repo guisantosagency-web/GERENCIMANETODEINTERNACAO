@@ -360,9 +360,25 @@ export default function AgendamentoTab() {
     setDateAppointments(data || [])
   }
 
-  const filteredAppointments = useMemo(() => {
-    if (!appointmentSearch) return dateAppointments
-    return dateAppointments.filter(a => a.patient_name.toLowerCase().includes(appointmentSearch.toLowerCase()))
+  const groupedAppointments = useMemo(() => {
+    const list = appointmentSearch 
+      ? dateAppointments.filter(a => a.patient_name.toLowerCase().includes(appointmentSearch.toLowerCase()))
+      : dateAppointments
+
+    // Agrupa por patient_name + exam_date (embora a data já esteja filtrada no carregamento)
+    const groups: Record<string, any[]> = {}
+    list.forEach(a => {
+      if (!groups[a.patient_name]) groups[a.patient_name] = []
+      groups[a.patient_name].push(a)
+    })
+
+    return Object.values(groups).map(group => {
+      // Retorna o primeiro item como base e anexa a lista completa de procedimentos
+      return {
+        ...group[0],
+        all_procedures: group
+      }
+    })
   }, [dateAppointments, appointmentSearch])
 
   const cancelAppointment = async (id: string, name: string) => {
@@ -720,43 +736,59 @@ export default function AgendamentoTab() {
          </div>
 
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-           {filteredAppointments.length === 0 ? (
+           {groupedAppointments.length === 0 ? (
              <div className="col-span-full py-16 text-center opacity-70">
                <div className="inline-flex p-6 bg-slate-50 border border-slate-200 rounded-2xl mb-4"><CalendarDays className="h-8 w-8 text-slate-400" /></div>
                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Nenhum agendamento para esta data</p>
              </div>
            ) : (
-             filteredAppointments.map(appt => (
-               <div key={appt.id} className="bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl p-5 transition-colors group">
+             groupedAppointments.map(group => (
+               <div key={group.id} className="bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl p-5 transition-colors group">
                  <div className="flex items-start justify-between mb-4">
                     <div className="h-10 w-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center font-bold text-teal-600 text-sm shadow-sm group-hover:bg-teal-500 group-hover:text-white transition-colors">
-                      {appt.patient_name.charAt(0)}
+                      {group.patient_name.charAt(0)}
                     </div>
-                    <span className="text-[8px] font-bold bg-cyan-50 text-cyan-600 border border-cyan-100 px-2.5 py-1 rounded-md uppercase tracking-wider">{appt.status}</span>
+                    <span className="text-[8px] font-bold bg-cyan-50 text-cyan-600 border border-cyan-100 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                      {group.all_procedures.length > 1 ? `${group.all_procedures.length} EXAMES` : '1 EXAME'}
+                    </span>
                  </div>
                  <div className="space-y-3">
-                   <p className="text-xs font-bold text-slate-800 uppercase tracking-tight truncate" title={appt.patient_name}>{appt.patient_name}</p>
-                   <div className="flex flex-col gap-0.5">
-                      <p className="text-[9px] font-bold text-teal-600 uppercase tracking-wider">{appt.procedure_name}</p>
-                      <p className="text-[8px] font-bold text-slate-500 uppercase">{appt.exam_type}</p>
+                   <p className="text-xs font-bold text-slate-800 uppercase tracking-tight truncate" title={group.patient_name}>{group.patient_name}</p>
+                   
+                   <div className="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1">
+                     {group.all_procedures.map((p: any) => (
+                       <div key={p.id} className="flex flex-col gap-0.5 border-l-2 border-teal-400 pl-2">
+                         <p className="text-[9px] font-bold text-teal-600 uppercase tracking-wider">{p.procedure_name}</p>
+                         <p className="text-[8px] font-bold text-slate-500 uppercase">{p.exam_type} — {p.exam_time}</p>
+                       </div>
+                     ))}
                    </div>
+
                    <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                       <div className="flex items-center gap-1.5 text-slate-500 font-bold text-[9px]">
-                        <Clock className="h-3.5 w-3.5 text-orange-400" /> {appt.exam_time}
+                        <Clock className="h-3.5 w-3.5 text-orange-400" /> {group.exam_time}
                       </div>
                       <div className="flex items-center gap-1">
                         <Button
                           size="icon" variant="ghost"
-                          onClick={() => printAppointment(appt)}
-                          title="Imprimir comprovante"
+                          onClick={() => printAppointment(group)}
+                          title="Imprimir comprovante agrupado"
                           className="h-7 w-7 rounded-lg text-slate-400 hover:bg-teal-50 hover:text-teal-600 transition-colors"
                         >
                           <Printer className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           size="icon" variant="ghost"
-                          onClick={() => cancelAppointment(appt.id, appt.patient_name)}
-                          title="Cancelar agendamento"
+                          onClick={() => {
+                            if (group.all_procedures.length > 1) {
+                              if (confirm(`Deseja cancelar TODOS os ${group.all_procedures.length} exames de ${group.patient_name}?`)) {
+                                group.all_procedures.forEach((p: any) => cancelAppointment(p.id, group.patient_name))
+                              }
+                            } else {
+                              cancelAppointment(group.id, group.patient_name)
+                            }
+                          }}
+                          title="Cancelar agendamento(s)"
                           className="h-7 w-7 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
