@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { format, parseISO } from "date-fns"
 import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
 import { ExamManagerModal } from "@/components/exam-manager-modal"
+import { useAuth } from "@/lib/auth-context"
 
 
 const FALLBACK_PROCEDURES = ["RAIO X", "TOMOGRAFIA", "ULTRASSONOGRAFIA", "MAMOGRAFIA", "ELETROCARDIOGRAMA"]
@@ -154,6 +155,7 @@ function HumanModel({ procedure }: { procedure: string }) {
 }
 
 export default function AgendamentoTab() {
+  const { logos } = useAuth()
   const [loading, setLoading] = useState(false)
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
