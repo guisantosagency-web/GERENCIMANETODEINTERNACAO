@@ -4,27 +4,41 @@ import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { 
   Play, Users, Loader2, 
-  Clock, Printer, Trash2, CheckCircle2, X
+  Clock, Printer, Trash2, CheckCircle2, X,
+  Edit2, UserMinus, RotateCcw
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format, parseISO, differenceInYears } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
 import { Footer } from "@/components/footer"
-import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Edit2, UserMinus, RotateCcw } from "lucide-react"
+
+// --------- Types ---------
+type FilaItem = {
+  id: string
+  patient_name: string
+  procedure_name: string
+  exam_type: string
+  status: string
+  arrival_time: string | null
+  birth_date: string | null
+  priority: string
+  chave_sisreg: string | null
+}
+
+type GroupedFilaItem = {
+  patient_name: string
+  arrival_time: string | null
+  birth_date: string | null
+  priority: string
+  ids: string[]
+  procedures: { id: string; name: string; type: string; status: string }[]
+  status: string // Overall status (representative)
+}
 
 export default function FilaTab() {
   const [loading, setLoading] = useState(true)
-  const [appointments, setAppointments] = useState<any>({})
-  const [allPatients, setAllPatients] = useState<any[]>([])
+  const [allData, setAllData] = useState<FilaItem[]>([])
+  const [appointments, setAppointments] = useState<Record<string, GroupedFilaItem[]>>({})
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const { logos } = useAuth()
 
@@ -42,21 +56,59 @@ export default function FilaTab() {
         .from("exam_appointments")
         .select("*")
         .eq("exam_date", selectedDate)
-        .in("status", ["presente", "realizando", "finalizado"])
+        .in("status", ["presente", "realizando", "finalizado", "falta"])
         .order("arrival_time", { ascending: true })
 
       if (error) throw error
 
-      setAllPatients(data || [])
+      setAllData(data || [])
 
-      const groups = (data || []).reduce((acc: any, curr: any) => {
-        const cat = curr.procedure_name || "Outros"
-        if (!acc[cat]) acc[cat] = []
-        acc[cat].push(curr)
-        return acc
-      }, {})
+      // Grouping Logic: 
+      // 1. By Category (procedure_name)
+      // 2. Inside Category, by Patient (Name + Arrival Time)
+      const categoryGroups: Record<string, GroupedFilaItem[]> = {}
 
-      setAppointments(groups)
+      const rawItems = (data || []) as FilaItem[]
+      
+      const processedCategoryGroups: Record<string, Record<string, GroupedFilaItem>> = {}
+
+      rawItems.forEach(item => {
+        const cat = item.procedure_name || "Outros"
+        const patientKey = `${item.patient_name}-${item.arrival_time}`
+
+        if (!processedCategoryGroups[cat]) processedCategoryGroups[cat] = {}
+        
+        if (!processedCategoryGroups[cat][patientKey]) {
+          processedCategoryGroups[cat][patientKey] = {
+            patient_name: item.patient_name,
+            arrival_time: item.arrival_time,
+            birth_date: item.birth_date,
+            priority: item.priority,
+            ids: [item.id],
+            procedures: [{ id: item.id, name: item.procedure_name, type: item.exam_type, status: item.status }],
+            status: item.status
+          }
+        } else {
+          processedCategoryGroups[cat][patientKey].ids.push(item.id)
+          processedCategoryGroups[cat][patientKey].procedures.push({ 
+            id: item.id, 
+            name: item.procedure_name, 
+            type: item.exam_type, 
+            status: item.status 
+          })
+          // If any is 'realizando', the group might be considered 'realizando'
+          if (item.status === 'realizando' || processedCategoryGroups[cat][patientKey].status === 'presente') {
+             processedCategoryGroups[cat][patientKey].status = item.status
+          }
+        }
+      })
+
+      // Convert back to arrays
+      Object.keys(processedCategoryGroups).forEach(cat => {
+        categoryGroups[cat] = Object.values(processedCategoryGroups[cat])
+      })
+
+      setAppointments(categoryGroups)
     } catch (err) {
       console.error(err)
     } finally {
@@ -64,9 +116,9 @@ export default function FilaTab() {
     }
   }
 
-  async function updateStatus(id: string, newStatus: string) {
+  async function updateStatus(ids: string[], newStatus: string) {
     try {
-      const { error } = await supabase.from("exam_appointments").update({ status: newStatus }).eq("id", id)
+      const { error } = await supabase.from("exam_appointments").update({ status: newStatus }).in("id", ids)
       if (error) throw error
       loadData()
     } catch (err) {
@@ -75,10 +127,10 @@ export default function FilaTab() {
     }
   }
 
-  async function handleCancel(id: string, name: string) {
-    if (!confirm(`Cancelar o atendimento de ${name}? Esta ação retornará o paciente para o status 'agendado'.`)) return
+  async function handleCancel(ids: string[], name: string) {
+    if (!confirm(`Remover os procedimentos de ${name} desta fila? Eles retornarão para o status 'agendado'.`)) return
     try {
-      await supabase.from("exam_appointments").update({ status: 'agendado', arrival_time: null }).eq("id", id)
+      await supabase.from("exam_appointments").update({ status: 'agendado', arrival_time: null }).in("id", ids)
       loadData()
     } catch (err) {
       console.error(err)
@@ -109,7 +161,6 @@ export default function FilaTab() {
           body { font-family: Arial, sans-serif; color: #111; line-height: 1.4; }
           .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #14b8a6; padding-bottom: 8px; margin-bottom: 12px; }
           .title { font-size: 18pt; font-weight: bold; text-transform: uppercase; color: #0f172a; }
-          .meta { font-size: 9pt; margin-bottom: 10mm; display: flex; justify-content: space-between; }
           table { width: 100%; border-collapse: collapse; margin-bottom: 10mm; }
           th { background: #f0fdf4; border: 1px solid #d1fae5; padding: 3mm; font-size: 9pt; text-align: left; }
           td { border: 1px solid #e2e8f0; padding: 3mm; font-size: 9pt; }
@@ -125,7 +176,7 @@ export default function FilaTab() {
           ${logosHtml}
           <div>
             <div class="title">Fila de Atendimento</div>
-            <div style="font-size:9pt; color:#64748b; margin-top:4px;">Data: ${format(parseISO(selectedDate), 'dd/MM/yyyy')} &nbsp;|&nbsp; Total: ${allPatients.length} pacientes</div>
+            <div style="font-size:9pt; color:#64748b; margin-top:4px;">Data: ${format(parseISO(selectedDate), 'dd/MM/yyyy')} &nbsp;|&nbsp; Total: ${allData.length} exames</div>
           </div>
         </div>
         <table>
@@ -133,20 +184,18 @@ export default function FilaTab() {
             <tr>
               <th width="8%">Chegada</th>
               <th width="28%">Paciente</th>
-              <th width="14%">Chave SISREG</th>
-              <th width="32%">Exame / Especificação</th>
+              <th width="32%">Procedimentos / Especificações</th>
               <th width="8%">Idade</th>
               <th width="10%">Status</th>
             </tr>
           </thead>
           <tbody>
-            ${allPatients.sort((a,b) => (a.arrival_time || '').localeCompare(b.arrival_time || '')).map(p => {
+            ${allData.sort((a,b) => (a.arrival_time || '').localeCompare(b.arrival_time || '')).map(p => {
               const age = p.birth_date ? differenceInYears(new Date(), parseISO(p.birth_date)) : "--"
               return `
               <tr>
                 <td style="text-align: center;">${p.arrival_time ? format(new Date(p.arrival_time), 'HH:mm') : '--:--'}</td>
                 <td><strong>${p.patient_name}</strong></td>
-                <td style="text-align: center; color: #666;">${(p.chave_sisreg && !p.chave_sisreg.includes('IMPORT_SISREG')) ? p.chave_sisreg : '--'}</td>
                 <td>${p.procedure_name} ${p.exam_type ? `(${p.exam_type})` : ''}</td>
                 <td style="text-align: center;">${age} anos</td>
                 <td><span class="badge ${p.status}">${p.status}</span></td>
@@ -234,7 +283,7 @@ export default function FilaTab() {
                 </div>
                 <h3 className="text-sm font-bold text-purple-700 tracking-widest uppercase">{category}</h3>
                 <div className="h-px flex-1 bg-purple-100" />
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{appointments[category].length} Pac.</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{appointments[category].length} Pacientes</span>
               </div>
 
               {/* Table */}
@@ -251,51 +300,57 @@ export default function FilaTab() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {appointments[category].map((a: any) => {
-                      const age = a.birth_date ? differenceInYears(new Date(), parseISO(a.birth_date)) : "--"
+                    {appointments[category].map((group) => {
+                      const age = group.birth_date ? differenceInYears(new Date(), parseISO(group.birth_date)) : "--"
                       return (
-                        <tr key={a.id} className={`hover:bg-slate-50 transition-colors group ${a.status === 'finalizado' ? 'opacity-50' : ''}`}>
+                        <tr key={`${group.patient_name}-${group.arrival_time}`} className={`hover:bg-slate-50 transition-colors group ${group.status === 'finalizado' ? 'opacity-50' : ''}`}>
                           <td className="py-4 px-5 text-center text-xs font-bold text-slate-500">
-                            {a.arrival_time ? format(new Date(a.arrival_time), 'HH:mm') : '--:--'}
+                            {group.arrival_time ? format(new Date(group.arrival_time), 'HH:mm') : '--:--'}
                           </td>
                           <td className="py-4 px-5">
                             <div className="flex items-center gap-3">
                               <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
-                                a.priority !== 'Sem Prioridade' ? 'bg-orange-100 text-orange-600 animate-pulse' : 'bg-slate-100 text-slate-500'
+                                group.priority !== 'Sem Prioridade' ? 'bg-orange-100 text-orange-600 animate-pulse' : 'bg-slate-100 text-slate-500'
                               }`}>
-                                {a.patient_name.charAt(0)}
+                                {group.patient_name.charAt(0)}
                               </div>
                               <div>
-                                <p className="font-bold text-slate-800 text-xs uppercase tracking-tight">{a.patient_name}</p>
+                                <p className="font-bold text-slate-800 text-xs uppercase tracking-tight">{group.patient_name}</p>
                                 <p className="text-[9px] font-bold text-slate-400 uppercase">
-                                  {a.priority !== 'Sem Prioridade' ? `⚡ ${a.priority}` : 'Normal'}
+                                  {group.priority !== 'Sem Prioridade' ? `⚡ ${group.priority}` : 'Normal'}
                                 </p>
                               </div>
                             </div>
                           </td>
                           <td className="py-4 px-5">
-                            <p className="font-bold text-slate-700 text-xs uppercase">{a.procedure_name}</p>
-                            <p className="text-[9px] font-bold text-teal-500 uppercase">{a.exam_type}</p>
+                             <div className="space-y-1">
+                               {group.procedures.map((p, idx) => (
+                                 <div key={p.id} className={idx > 0 ? "pt-1 border-t border-slate-50" : ""}>
+                                   <p className="font-bold text-slate-700 text-[10px] uppercase leading-tight">{p.name}</p>
+                                   <p className="text-[8px] font-bold text-teal-500 uppercase">{p.type || 'Geral'}</p>
+                                 </div>
+                               ))}
+                             </div>
                           </td>
                           <td className="py-4 px-5 text-center text-xs font-bold text-slate-500">{age} anos</td>
                           <td className="py-4 px-5 text-center">
-                            <span className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wide ${statusBadge(a.status)}`}>
-                              {a.status}
+                            <span className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wide ${statusBadge(group.status)}`}>
+                              {group.status}
                             </span>
                           </td>
                           <td className="py-4 px-5 text-center">
                             <div className="flex items-center justify-center gap-1.5">
-                              {a.status === 'presente' && (
+                              {group.status === 'presente' && (
                                 <>
                                   <button
-                                    onClick={() => updateStatus(a.id, 'realizando')}
+                                    onClick={() => updateStatus(group.ids, 'realizando')}
                                     title="Chamar Paciente"
                                     className="h-8 px-3 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all border border-blue-100 hover:border-blue-500 flex items-center gap-1.5"
                                   >
                                     <Play className="h-3 w-3" /> Chamada
                                   </button>
                                   <button
-                                    onClick={() => updateStatus(a.id, 'falta')}
+                                    onClick={() => updateStatus(group.ids, 'falta')}
                                     title="Marcar Falta"
                                     className="h-8 w-8 flex items-center justify-center bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-lg transition-all border border-rose-100 hover:border-rose-500"
                                   >
@@ -304,17 +359,17 @@ export default function FilaTab() {
                                 </>
                               )}
                               
-                              {a.status === 'realizando' && (
+                              {group.status === 'realizando' && (
                                 <>
                                   <button
-                                    onClick={() => updateStatus(a.id, 'finalizado')}
+                                    onClick={() => updateStatus(group.ids, 'finalizado')}
                                     title="Finalizar Atendimento"
                                     className="h-8 px-3 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all border border-emerald-100 hover:border-emerald-500 flex items-center gap-1.5"
                                   >
                                     <CheckCircle2 className="h-3 w-3" /> Finalizar
                                   </button>
                                   <button
-                                    onClick={() => updateStatus(a.id, 'presente')}
+                                    onClick={() => updateStatus(group.ids, 'presente')}
                                     title="Voltar para Espera"
                                     className="h-8 w-8 flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-lg transition-all border border-slate-200"
                                   >
@@ -323,9 +378,9 @@ export default function FilaTab() {
                                 </>
                               )}
 
-                              {a.status === 'finalizado' && (
+                              {group.status === 'finalizado' && (
                                 <button
-                                  onClick={() => updateStatus(a.id, 'realizando')}
+                                  onClick={() => updateStatus(group.ids, 'realizando')}
                                   title="Reabrir Atendimento"
                                   className="h-8 w-8 flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-lg transition-all border border-slate-200"
                                 >
@@ -333,9 +388,9 @@ export default function FilaTab() {
                                 </button>
                               )}
 
-                              {a.status === 'falta' && (
+                              {group.status === 'falta' && (
                                 <button
-                                  onClick={() => updateStatus(a.id, 'presente')}
+                                  onClick={() => updateStatus(group.ids, 'presente')}
                                   title="Marcar como Presente"
                                   className="h-8 w-8 flex items-center justify-center bg-emerald-50 text-emerald-500 hover:bg-emerald-100 rounded-lg transition-all border border-emerald-200"
                                 >
@@ -345,7 +400,7 @@ export default function FilaTab() {
 
                               {/* Delete/Rollback button (Enviado por engano) */}
                               <button
-                                onClick={() => handleCancel(a.id, a.patient_name)}
+                                onClick={() => handleCancel(group.ids, group.patient_name)}
                                 title="Remover da Fila (Enviado por engano)"
                                 className="h-8 w-8 flex items-center justify-center text-slate-300 hover:bg-slate-50 hover:text-amber-600 rounded-lg transition-all border border-transparent hover:border-amber-100"
                               >
