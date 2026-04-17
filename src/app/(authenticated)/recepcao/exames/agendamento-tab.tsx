@@ -463,15 +463,15 @@ export default function AgendamentoTab() {
               
               <div class="header">
                 <div class="logo-box">
-                  <img src="/images/hto-20nova.png" class="logo-hospital" onerror="this.style.display='none'">
-                  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCAxMDAgNDAiPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iNDAiIGZpbGw9IiNmZmYiLz48dGV4dCB4PSI1MCIgeT0iMjgiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyMCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMwMGE1YTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPmludmlzYTwvdGV4dD48L3N2Zz4=" class="logo-invisa">
-                  <img src="/images/logo-20gov.png" class="logo-gov" onerror="this.style.display='none'">
-                  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDgwIDUwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0i preschool fifty" fill="#fff"/><text x="40" y="32" font-family="Arial" font-size="24" font-weight="bold" fill="#333399" text-anchor="middle">SUS</text></svg>" class="logo-sus">
+                  <img src="${logos.logo_hto || '/images/hto-20nova.png'}" class="logo-hospital" onerror="this.style.display='none'">
+                  <img src="${logos.logo_instituto || ''}" class="logo-invisa" onerror="this.style.display='none'">
+                  <img src="${logos.logo_maranhao || '/images/logo-20gov.png'}" class="logo-gov" onerror="this.style.display='none'">
+                  <img src="${logos.logo_sus || ''}" class="logo-sus" onerror="this.style.display='none'">
                 </div>
                 <div class="doc-title">
-                  <h1>Confirmando Agendamento</h1>
-                  <p>Serviço de Apoio Diagnóstico e Terapêutico</p>
-                  <p style="font-size: 6pt; margin-top: 2px;">Via ${copyNum === 1 ? 'do Paciente' : 'Interna / Médica'}</p>
+                  <h1>Exames</h1>
+                  <p>HTO Caxias</p>
+                  <p style="font-size: 6pt; margin-top: 2px; color: #14b8a6; font-weight: 800;">VIA ${copyNum === 1 ? 'PACIENTE' : 'INTERNA'}</p>
                 </div>
               </div>
 
