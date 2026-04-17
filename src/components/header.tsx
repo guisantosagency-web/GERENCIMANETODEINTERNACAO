@@ -40,30 +40,28 @@ export function Header() {
   return (
     <header 
       className={cn(
-        "fixed top-0 right-0 z-50 h-20 transition-all duration-500 ease-in-out border-b border-white/5",
-        "bg-[#0F1419]/95 backdrop-blur-3xl",
+        "fixed top-0 right-0 z-50 h-16 transition-all duration-500 ease-in-out",
+        "bg-white/95 backdrop-blur-xl border-b border-slate-100 shadow-[0_1px_12px_rgba(0,0,0,0.04)]",
         isCollapsed ? "left-[80px]" : "left-0 lg:left-72"
       )}
     >
-      <div className="h-full px-8 flex items-center justify-between relative overflow-hidden">
-        {/* Superior Scanning Line */}
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#FF6B35]/40 to-transparent animate-pulse" />
+      <div className="h-full px-6 flex items-center justify-between relative overflow-hidden">
 
-        {/* Left: Tactical Module Info */}
-        <div className="flex items-center gap-10">
-          <div className="hidden xl:block shrink-0">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="h-2 w-2 rounded-full bg-[#FF6B35] animate-ping shadow-[0_0_10px_#FF6B35]" />
-              <h2 className="text-[10px] font-black uppercase tracking-[0.5em] text-[#7E8C9A]">Active Module</h2>
+        {/* Left: Module Info */}
+        <div className="flex items-center gap-8">
+          <div className="hidden xl:flex flex-col shrink-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Módulo Ativo</p>
             </div>
-            <h1 className="text-2xl font-black font-space tracking-tighter text-white leading-none">
+            <h1 className="text-lg font-bold text-slate-800 leading-none tracking-tight">
               {getModuleTitle()}
             </h1>
           </div>
 
-          {/* Central Command Tabs (Superior Bar) */}
+          {/* Navigation Tabs */}
           {tabs && tabs.length > 0 && (
-            <nav className="hidden lg:flex items-center p-1.5 bg-black/40 rounded-[1.5rem] border border-white/5 backdrop-blur-md shadow-2xl space-x-1">
+            <nav className="hidden lg:flex items-center p-1 bg-slate-100 rounded-2xl space-x-0.5">
               {tabs.map((tab) => {
                 const Icon = tab.icon
                 const isActive = activeTab === tab.id
@@ -72,19 +70,16 @@ export function Header() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "group relative flex items-center gap-3 px-6 py-2.5 rounded-[1.1rem] transition-all duration-500 whitespace-nowrap overflow-hidden",
+                      "group relative flex items-center gap-2.5 px-5 py-2 rounded-xl transition-all duration-300 whitespace-nowrap",
                       isActive 
-                        ? "bg-white text-[#0F1419] shadow-[0_0_25px_rgba(255,255,255,0.15)] scale-105 z-10"
-                        : "text-[#7E8C9A] hover:text-white hover:bg-white/5"
+                        ? "bg-white text-slate-800 shadow-sm font-bold"
+                        : "text-slate-500 hover:text-slate-700 hover:bg-white/60"
                     )}
                   >
+                    <Icon className={cn("h-3.5 w-3.5 transition-colors duration-300", isActive ? "text-teal-500" : "group-hover:text-teal-500")} />
+                    <span className="text-[10px] font-bold uppercase tracking-wide">{tab.label}</span>
                     {isActive && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#FF6B35]/20 to-transparent animate-pulse pointer-events-none" />
-                    )}
-                    <Icon className={cn("h-4 w-4 transition-transform duration-500", isActive ? "scale-110 text-[#FF6B35]" : "group-hover:scale-110")} />
-                    <span className="text-[10px] font-black uppercase tracking-[0.15em]">{tab.label}</span>
-                    {isActive && (
-                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-[#FF6B35] shadow-[0_0_10px_#FF6B35]" />
+                      <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-teal-500 rounded-full" />
                     )}
                   </button>
                 )
@@ -93,47 +88,44 @@ export function Header() {
           )}
         </div>
 
-        {/* Right: Tactical HUD elements */}
-        <div className="flex items-center gap-6">
+        {/* Right: User Controls */}
+        <div className="flex items-center gap-4">
           <div className="hidden md:flex relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-[#00D9FF]/20 to-transparent blur-md opacity-0 group-focus-within:opacity-100 transition-opacity" />
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7E8C9A] group-focus-within:text-[#00D9FF] transition-colors" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
             <input 
               type="text" 
-              placeholder="GLOBAL SEARCH..." 
-              className="w-48 lg:w-64 h-11 pl-12 pr-4 bg-[#161B22] border border-white/10 rounded-[1.2rem] text-[10px] font-black tracking-widest text-white placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-[#00D9FF]/20 transition-all shadow-inner"
+              placeholder="Buscar..." 
+              className="w-44 lg:w-56 h-10 pl-10 pr-4 bg-slate-100 border border-slate-200 rounded-xl text-[11px] font-medium text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition-all focus:bg-white"
             />
           </div>
 
           <div className="flex items-center gap-3">
-             <button className="relative p-3 rounded-xl bg-white/5 hover:bg-[#FF1493]/10 transition-all text-[#7E8C9A] hover:text-[#FF1493] group border border-white/5">
-               <Bell className="h-5 w-5 animate-pulse" />
-               <span className="absolute top-2 right-2 w-2 h-2 bg-[#FF1493] rounded-full ring-2 ring-[#0F1419] shadow-[0_0_8px_#FF1493]" />
+             <button className="relative p-2.5 rounded-xl bg-slate-100 hover:bg-rose-50 transition-all text-slate-500 hover:text-rose-500 border border-slate-200 hover:border-rose-200">
+               <Bell className="h-4 w-4" />
+               <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-rose-500 rounded-full shadow-sm" />
              </button>
 
-             <div className="h-10 w-px bg-white/10 mx-2" />
+             <div className="h-8 w-px bg-slate-200 mx-1" />
 
-             {/* Tactical Profile Badge */}
-             <button className="flex items-center gap-4 p-2 pl-3 rounded-[1.5rem] bg-[#161B22] border border-white/10 hover:border-[#FF6B35]/40 transition-all group overflow-hidden relative">
-               <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B35]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-               
+             {/* Profile Badge */}
+             <button className="flex items-center gap-3 py-2 pl-3 pr-2 rounded-2xl bg-slate-100 border border-slate-200 hover:border-teal-300 hover:bg-teal-50 transition-all group">
                <div className="text-right shrink-0">
-                 <p className="text-[10px] font-black text-white uppercase tracking-tighter leading-none mb-1 group-hover:text-[#FF6B35] transition-colors">
+                 <p className="text-[11px] font-bold text-slate-700 leading-none mb-0.5 group-hover:text-teal-700 transition-colors">
                    {user?.name.split(' ')[0]}
                  </p>
-                 <div className="flex items-center justify-end gap-1.5">
-                   <div className="h-1 w-1 rounded-full bg-[#00FF88]" />
-                   <p className="text-[8px] font-black text-[#7E8C9A] uppercase tracking-[0.2em] leading-none">
-                     {user?.role === "admin" ? "ROOT_ADMIN" : "OP_USER"}
+                 <div className="flex items-center justify-end gap-1">
+                   <div className="h-1 w-1 rounded-full bg-emerald-500" />
+                   <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider leading-none">
+                     {user?.role === "admin" ? "Admin" : "Operador"}
                    </p>
                  </div>
                </div>
 
-               <div className="w-10 h-10 rounded-[0.9rem] bg-gradient-to-br from-[#FF6B35] to-[#FF8C00] flex items-center justify-center text-white font-black shadow-2xl relative z-10 border border-white/10">
+               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
                  {user?.name.charAt(0).toUpperCase()}
                </div>
                
-               <ChevronDown className="h-4 w-4 text-[#7E8C9A] group-hover:text-white transition-all mr-1" />
+               <ChevronDown className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-600 transition-all mr-0.5" />
              </button>
           </div>
         </div>
@@ -141,4 +133,3 @@ export function Header() {
     </header>
   )
 }
-
