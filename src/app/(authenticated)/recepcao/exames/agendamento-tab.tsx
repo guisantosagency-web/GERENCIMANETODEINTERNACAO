@@ -387,126 +387,132 @@ export default function AgendamentoTab() {
       <!DOCTYPE html><html><head>
         <title>Comprovação de Agendamento</title>
         <style>
-          @page { size: A5; margin: 10mm; }
-          body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.5; margin: 0; padding: 0; background: #fff; }
-          .container { padding: 5mm; position: relative; min-height: 190mm; border: 1px solid #e2e8f0; border-radius: 4px; }
+          @page { size: A4 landscape; margin: 0; }
+          body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.4; margin: 0; padding: 0; background: #fff; }
           
+          .a4-landscape { display: flex; width: 297mm; height: 210mm; overflow: hidden; }
+          .receipt-copy { width: 50%; height: 100%; padding: 10mm; position: relative; box-sizing: border-box; display: flex; flex-direction: column; }
+          .divider { width: 0; border-left: 1px dashed #cbd5e1; height: 100%; position: relative; }
+          .divider::after { content: '✂️'; position: absolute; top: 10mm; left: -8px; font-size: 12pt; background: white; padding: 2px; }
+
           /* Header */
-          .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #14b8a6; padding-bottom: 5mm; margin-bottom: 8mm; }
-          .logo-box { display: flex; align-items: center; gap: 4mm; }
-          .logo-hospital { height: 16mm; }
-          .logo-gov { height: 12mm; opacity: 0.8; }
+          .header { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 2px solid #14b8a6; padding-bottom: 4mm; margin-bottom: 6mm; }
+          .logo-box { display: flex; flex-direction: column; gap: 2mm; align-items: flex-start; }
+          .logo-hospital { height: 14mm; }
+          .logo-gov { height: 10mm; opacity: 0.8; }
           .doc-title { text-align: right; }
-          .doc-title h1 { margin: 0; font-size: 13pt; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
-          .doc-title p { margin: 1mm 0 0 0; font-size: 8pt; color: #64748b; font-weight: bold; text-transform: uppercase; }
+          .doc-title h1 { margin: 0; font-size: 11pt; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
+          .doc-title p { margin: 1mm 0 0 0; font-size: 7pt; color: #64748b; font-weight: bold; text-transform: uppercase; }
 
           /* Sections */
-          .section { margin-bottom: 6mm; }
-          .section-title { font-size: 8pt; font-weight: 800; color: #14b8a6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3mm; display: flex; align-items: center; gap: 2mm; border-left: 3px solid #14b8a6; padding-left: 2mm; }
+          .section { margin-bottom: 5mm; }
+          .section-title { font-size: 7.5pt; font-weight: 800; color: #14b8a6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2mm; display: flex; align-items: center; gap: 2mm; border-left: 3px solid #14b8a6; padding-left: 2mm; }
           
           /* Data Grid */
-          .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; background: #f8fafc; padding: 4mm; border-radius: 8px; border: 1px solid #f1f5f9; }
+          .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; background: #f8fafc; padding: 3mm; border-radius: 8px; border: 1px solid #f1f5f9; }
           .data-item { display: flex; flex-direction: column; }
-          .data-label { font-size: 7pt; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.5mm; }
-          .data-value { font-size: 10pt; font-weight: 700; color: #1e293b; }
+          .data-label { font-size: 6.5pt; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.5mm; }
+          .data-value { font-size: 9pt; font-weight: 700; color: #1e293b; overflow: hidden; text-overflow: ellipsis; }
           .full-width { grid-column: span 2; }
 
           /* Guidelines Box */
-          .guidelines { margin-top: 8mm; padding: 5mm; background: #f0fdfa; border-radius: 12px; border: 1px solid #ccfbf1; position: relative; overflow: hidden; }
-          .guidelines::before { content: 'i'; position: absolute; right: -10mm; top: -10mm; font-size: 60pt; font-weight: bold; color: #14b8a6; opacity: 0.05; font-style: italic; }
-          .guidelines h3 { margin: 0 0 3mm 0; font-size: 9pt; text-transform: uppercase; color: #0d9488; display: flex; align-items: center; gap: 2mm; }
-          .guidelines ul { margin: 0; padding-left: 5mm; font-size: 9pt; color: #334155; }
-          .guidelines li { margin-bottom: 1.5mm; }
-
-          /* Watermark */
-          .watermark { position: absolute; bottom: 30mm; left: 50%; transform: translateX(-50%); font-size: 60pt; font-weight: 900; color: #f1f5f9; z-index: -1; text-transform: uppercase; opacity: 0.5; pointer-events: none; white-space: nowrap; }
+          .guidelines { padding: 4mm; background: #f0fdfa; border-radius: 12px; border: 1px solid #ccfbf1; margin-top: auto; }
+          .guidelines h3 { margin: 0 0 2mm 0; font-size: 8pt; text-transform: uppercase; color: #0d9488; }
+          .guidelines ul { margin: 0; padding-left: 4mm; font-size: 8.5pt; color: #334155; }
+          .guidelines li { margin-bottom: 1mm; }
 
           /* Footer */
-          .footer { position: absolute; bottom: 5mm; left: 5mm; right: 5mm; font-size: 7.5pt; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 4mm; display: flex; justify-content: space-between; align-items: flex-end; }
-          .footer-info { line-height: 1.4; }
-          .signature { border-top: 1px solid #cbd5e1; width: 50mm; text-align: center; padding-top: 1mm; font-size: 7pt; color: #64748b; font-weight: bold; text-transform: uppercase; }
+          .footer { margin-top: 5mm; font-size: 7pt; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 3mm; display: flex; justify-content: space-between; align-items: flex-end; }
+          .signature { border-top: 1px solid #cbd5e1; width: 45mm; text-align: center; padding-top: 1mm; font-size: 6.5pt; color: #64748b; font-weight: bold; text-transform: uppercase; }
+          
+          .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 40pt; font-weight: 900; color: #f1f5f9; z-index: -1; text-transform: uppercase; opacity: 0.4; pointer-events: none; }
         </style>
       </head><body>
-        <div class="container">
-          <div class="watermark">HTO CAXIAS</div>
-          
-          <div class="header">
-            <div class="logo-box">
-              <img src="/images/hto-20nova.png" class="logo-hospital" onerror="this.style.display='none'">
-              <img src="/images/logo-20gov.png" class="logo-gov" onerror="this.style.display='none'">
-            </div>
-            <div class="doc-title">
-              <h1>Confirmando Agendamento</h1>
-              <p>Serviço de Apoio Diagnóstico e Terapêutico</p>
-            </div>
-          </div>
+        <div class="a4-landscape">
+          ${[1, 2].map(copyNum => `
+            <div class="receipt-copy">
+              <div class="watermark">COPIA ${copyNum}</div>
+              
+              <div class="header">
+                <div class="logo-box">
+                  <img src="/images/hto-20nova.png" class="logo-hospital" onerror="this.style.display='none'">
+                  <img src="/images/logo-20gov.png" class="logo-gov" onerror="this.style.display='none'">
+                </div>
+                <div class="doc-title">
+                  <h1>Confirmando Agendamento</h1>
+                  <p>Serviço de Apoio Diagnóstico e Terapêutico</p>
+                  <p style="font-size: 6pt; margin-top: 2px;">Via ${copyNum === 1 ? 'do Paciente' : 'Interna / Médica'}</p>
+                </div>
+              </div>
 
-          <div class="section">
-            <div class="section-title">Dados do Paciente</div>
-            <div class="data-grid">
-              <div class="data-item full-width">
-                <span class="data-label">Paciente</span>
-                <span class="data-value">${appt.patient_name}</span>
+              <div class="section">
+                <div class="section-title">Dados do Paciente</div>
+                <div class="data-grid">
+                  <div class="data-item full-width">
+                    <span class="data-label">Paciente</span>
+                    <span class="data-value">${appt.patient_name}</span>
+                  </div>
+                  <div class="data-item">
+                    <span class="data-label">CPF</span>
+                    <span class="data-value">${appt.cpf || '--'}</span>
+                  </div>
+                  <div class="data-item">
+                    <span class="data-label">Cartão SUS</span>
+                    <span class="data-value">${appt.sus || '--'}</span>
+                  </div>
+                </div>
               </div>
-              <div class="data-item">
-                <span class="data-label">CPF</span>
-                <span class="data-value">${appt.cpf || '--'}</span>
-              </div>
-              <div class="data-item">
-                <span class="data-label">Cartão SUS</span>
-                <span class="data-value">${appt.sus || '--'}</span>
-              </div>
-            </div>
-          </div>
 
-          <div class="section">
-            <div class="section-title">Informações do Exame</div>
-            <div class="data-grid">
-              <div class="data-item full-width">
-                <span class="data-label">Procedimento / Exame</span>
-                <span class="data-value" style="color: #0f172a;">${appt.procedure_name} ${appt.exam_type ? '('+appt.exam_type+')' : ''}</span>
+              <div class="section">
+                <div class="section-title">Informações do Exame</div>
+                <div class="data-grid">
+                  <div class="data-item full-width">
+                    <span class="data-label">Procedimento / Exame</span>
+                    <span class="data-value" style="color: #0f172a;">${appt.procedure_name} ${appt.exam_type ? '('+appt.exam_type+')' : ''}</span>
+                  </div>
+                  <div class="data-item">
+                    <span class="data-label">Data</span>
+                    <span class="data-value">${appt.exam_date ? new Date(appt.exam_date+'T00:00:00').toLocaleDateString('pt-BR') : '--'}</span>
+                  </div>
+                  <div class="data-item">
+                    <span class="data-label">Horário</span>
+                    <span class="data-value">${appt.exam_time || '--'}</span>
+                  </div>
+                  <div class="data-item">
+                    <span class="data-label">Protocolo</span>
+                    <span class="data-value">#${appt.id.toString().slice(-6).toUpperCase()}</span>
+                  </div>
+                  <div class="data-item">
+                    <span class="data-label">Unidade Origem</span>
+                    <span class="data-value">HTO CAXIAS</span>
+                  </div>
+                </div>
               </div>
-              <div class="data-item">
-                <span class="data-label">Data do Agendamento</span>
-                <span class="data-value">${appt.exam_date ? new Date(appt.exam_date+'T00:00:00').toLocaleDateString('pt-BR') : '--'}</span>
-              </div>
-              <div class="data-item">
-                <span class="data-label">Horário</span>
-                <span class="data-value">${appt.exam_time || '--'}</span>
-              </div>
-              <div class="data-item">
-                <span class="data-label">Status</span>
-                <span class="data-value" style="color: #059669;">CONFIRMADO</span>
-              </div>
-              <div class="data-item">
-                <span class="data-label">Protocolo</span>
-                <span class="data-value">#${appt.id.toString().slice(-6).toUpperCase()}</span>
-              </div>
-            </div>
-          </div>
 
-          <div class="guidelines">
-            <h3>Orientações ao Paciente</h3>
-            <ul>
-              <li>Chegar com <strong>20 minutos</strong> de antecedência para cadastro.</li>
-              <li>Apresentar <strong>Documento com Foto</strong> e <strong>Cartão do SUS</strong>.</li>
-              ${needsFasting ? `
-                <li><strong>PREPARO:</strong> Jejum absoluto de 04 a 06 horas (água permitida).</li>
-                <li><strong>IMPORTANT:</strong> Trazer todos os exames anteriores da região a ser examinada.</li>
-              ` : '<li>Não é necessário preparo especial para este procedimento.</li>'}
-            </ul>
-          </div>
+              <div class="guidelines">
+                <h3>Orientações</h3>
+                <ul>
+                  <li>Chegar com <strong>20 min</strong> de antecedência.</li>
+                  <li>Documento com foto e Cartão SUS obrigatórios.</li>
+                  ${needsFasting ? `
+                    <li><strong>JEJUM:</strong> 04 a 06 horas (água permitida).</li>
+                    <li>Trazer exames anteriores da região.</li>
+                  ` : '<li>Não é necessário preparo especial.</li>'}
+                </ul>
+              </div>
 
-          <div class="footer">
-            <div class="footer-info">
-              <strong>HTO Caxias — Hospital de Traumatologia e Ortopedia</strong><br/>
-              Sistema de Gestão de Exames — Núcleo de Atendimento ao Paciente<br/>
-              <em>Impresso em ${new Date().toLocaleString('pt-BR')}</em>
+              <div class="footer">
+                <div class="footer-info">
+                  <strong>HTO Caxias</strong><br/>
+                  Impresso em ${new Date().toLocaleString('pt-BR')}
+                </div>
+                <div class="signature">
+                  Carimbo e Visto
+                </div>
+              </div>
             </div>
-            <div class="signature">
-              Carimbo e Visto Recepção
-            </div>
-          </div>
+            ${copyNum === 1 ? '<div class="divider"></div>' : ''}
+          `).join('')}
         </div>
       </body></html>`
     printWindow.document.write(content)
