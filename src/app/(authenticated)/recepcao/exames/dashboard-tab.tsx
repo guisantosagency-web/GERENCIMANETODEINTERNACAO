@@ -125,8 +125,8 @@ export default function ExamesDashboardTab() {
       let pName = (r.procedure_name || "NÃO INFORMADO").toUpperCase()
       const pType = (r.exam_type || "").toUpperCase()
       
-      if (pName.includes("TOMOGRAFIA") || pName.includes("ANGIOTOMOGRAFIA")) {
-         if (pType.includes("COM CONTRASTE")) {
+      if (pName.includes("TOMOGRAFIA") || pName.includes("ANGIO") || pType.includes("TOMOGRAFIA") || pType.includes("ANGIO")) {
+         if (pName.includes("COM CONTRASTE") || pType.includes("COM CONTRASTE") || pName.includes("ANGIO") || pType.includes("ANGIO")) {
            pName = "TOMOGRAFIA COM CONTRASTE"
          } else {
            pName = "TOMOGRAFIA SEM CONTRASTE"
