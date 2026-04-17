@@ -405,6 +405,9 @@ export default function AgendamentoTab() {
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
 
+    // Escreve um estado inicial para evitar página branca
+    printWindow.document.write('<html><head><title>Carregando...</title></head><body><div style="padding:20px; font-family:sans-serif;">Gerando comprovante, aguarde...</div></body></html>')
+
     // Busca todos os exames do mesmo paciente na mesma data para agrupar no comprovante
     const patientAppts = dateAppointments.filter(a => 
       a.patient_name === patientName && 
@@ -566,6 +569,7 @@ export default function AgendamentoTab() {
         </div>
       </body></html>`
       
+      printWindow.document.open()
       printWindow.document.write(content)
       printWindow.document.close()
       
