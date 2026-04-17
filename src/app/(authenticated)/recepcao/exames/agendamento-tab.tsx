@@ -379,6 +379,10 @@ export default function AgendamentoTab() {
   const printAppointment = (appt: any) => {
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
+
+    const procName = (appt.procedure_name || "").toUpperCase()
+    const needsFasting = procName.includes("TOMOGRAFIA") || procName.includes("ULTRASSONOGRAFIA") || procName.includes("USG") || procName.includes("ANGIOTOMOGRAFIA")
+
     const content = `
       <!DOCTYPE html><html><head>
         <title>Comprovação de Agendamento</title>
@@ -406,7 +410,7 @@ export default function AgendamentoTab() {
           <ul style="margin: 0; padding-left: 5mm; font-size: 8.5pt; color: #475569;">
             <li>Chegar com 15 minutos de antecedência.</li>
             <li>Trazer documento original com foto e cartão do SUS.</li>
-            <li>Para Ultrassonografia/Tomografia: Jejum de 4 a 6 horas (exceto se informado o contrário).</li>
+            ${needsFasting ? '<li>Para Ultrassonografia/Tomografia: Jejum de 4 a 6 horas (exceto se informado o contrário).</li>' : ''}
             <li>Trazer exames anteriores relacionados ao procedimento.</li>
           </ul>
         </div>
