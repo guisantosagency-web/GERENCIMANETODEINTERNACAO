@@ -421,6 +421,10 @@ export default function AgendamentoTab() {
     })
 
     const mainAppt = examsToPrint[0] || appt
+    const hospitalLogo = (logos as any)?.logo_hto || '/images/hto-20nova.png'
+    const institutoLogo = (logos as any)?.logo_invisa || ''
+    const govLogo = (logos as any)?.logo_maranhao || '/images/logo-20gov.png'
+    const susLogo = (logos as any)?.logo_sus || ''
 
     try {
       const examDateStr = mainAppt.exam_date 
@@ -482,10 +486,10 @@ export default function AgendamentoTab() {
               
               <div class="header">
                 <div class="logo-box">
-                  <img src="${logos.logo_hto || '/images/hto-20nova.png'}" class="logo-hospital" onerror="this.style.display='none'">
-                  <img src="${logos.logo_instituto || ''}" class="logo-invisa" onerror="this.style.display='none'">
-                  <img src="${logos.logo_maranhao || '/images/logo-20gov.png'}" class="logo-gov" onerror="this.style.display='none'">
-                  <img src="${logos.logo_sus || ''}" class="logo-sus" onerror="this.style.display='none'">
+                  <img src="${hospitalLogo}" class="logo-hospital" onerror="this.style.display='none'">
+                  <img src="${institutoLogo}" class="logo-invisa" onerror="this.style.display='none'">
+                  <img src="${govLogo}" class="logo-gov" onerror="this.style.display='none'">
+                  <img src="${susLogo}" class="logo-sus" onerror="this.style.display='none'">
                 </div>
                 <div class="doc-title">
                   <h1>Exames</h1>
