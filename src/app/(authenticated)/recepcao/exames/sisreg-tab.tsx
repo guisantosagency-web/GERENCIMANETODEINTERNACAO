@@ -264,8 +264,8 @@ export default function SisregTab() {
             })}
           </div>
         )}
-        <Footer />
       </div>
+
     </div>
   )
 }
