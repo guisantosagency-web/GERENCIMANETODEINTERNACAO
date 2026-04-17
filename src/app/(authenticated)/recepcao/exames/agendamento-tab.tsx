@@ -423,8 +423,10 @@ export default function AgendamentoTab() {
           /* Header */
           .header { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 2px solid #14b8a6; padding-bottom: 4mm; margin-bottom: 6mm; }
           .logo-box { display: flex; flex-direction: row; gap: 4mm; align-items: center; }
-          .logo-hospital { height: 10mm; }
-          .logo-gov { height: 8mm; opacity: 0.8; }
+          .logo-hospital { height: 9mm; }
+          .logo-invisa { height: 7mm; opacity: 0.9; }
+          .logo-gov { height: 7mm; opacity: 0.8; }
+          .logo-sus { height: 8mm; opacity: 0.9; }
           .doc-title { text-align: right; }
           .doc-title h1 { margin: 0; font-size: 11pt; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
           .doc-title p { margin: 1mm 0 0 0; font-size: 7pt; color: #64748b; font-weight: bold; text-transform: uppercase; }
@@ -450,7 +452,8 @@ export default function AgendamentoTab() {
           .footer { margin-top: 5mm; font-size: 7pt; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 3mm; display: flex; justify-content: space-between; align-items: flex-end; }
           .signature { border-top: 1px solid #cbd5e1; width: 45mm; text-align: center; padding-top: 1mm; font-size: 6.5pt; color: #64748b; font-weight: bold; text-transform: uppercase; }
           
-          .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 40pt; font-weight: 900; color: #f1f5f9; z-index: -1; text-transform: uppercase; opacity: 0.4; pointer-events: none; }
+          
+          .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 40pt; font-weight: 900; color: #f1f5f9; z-index: -1; text-transform: uppercase; opacity: 0.4; pointer-events: none; display: none; }
         </style>
       </head><body>
         <div class="a4-landscape">
@@ -461,7 +464,9 @@ export default function AgendamentoTab() {
               <div class="header">
                 <div class="logo-box">
                   <img src="/images/hto-20nova.png" class="logo-hospital" onerror="this.style.display='none'">
+                  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCAxMDAgNDAiPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iNDAiIGZpbGw9IiNmZmYiLz48dGV4dCB4PSI1MCIgeT0iMjgiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyMCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMwMGE1YTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPmludmlzYTwvdGV4dD48L3N2Zz4=" class="logo-invisa">
                   <img src="/images/logo-20gov.png" class="logo-gov" onerror="this.style.display='none'">
+                  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDgwIDUwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0i preschool fifty" fill="#fff"/><text x="40" y="32" font-family="Arial" font-size="24" font-weight="bold" fill="#333399" text-anchor="middle">SUS</text></svg>" class="logo-sus">
                 </div>
                 <div class="doc-title">
                   <h1>Confirmando Agendamento</h1>
@@ -524,8 +529,9 @@ export default function AgendamentoTab() {
 
               <div class="footer">
                 <div class="footer-info">
-                  <strong>HTO Caxias</strong><br/>
-                  Impresso em ${new Date().toLocaleString('pt-BR')}
+                  <strong>HTO Caxias</strong> — Serviço de Excelência<br/>
+                  Impresso em ${new Date().toLocaleString('pt-BR')}<br/>
+                  <span style="font-size: 5.5pt; color: #cbd5e1; margin-top: 1mm; display: block;">Desenvolvido por Guilherme Santos — Avero Agency</span>
                 </div>
                 <div class="signature">
                   Carimbo e Visto
