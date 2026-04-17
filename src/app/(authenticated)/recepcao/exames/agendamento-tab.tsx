@@ -493,16 +493,16 @@ export default function AgendamentoTab() {
                 </div>
               </div>
 
-              <div class="section">
+              <div class="section" style="flex: 1; min-height: 0;">
                 <div class="section-title">Informações dos Exames</div>
-                <div class="data-grid" style="grid-template-columns: 1fr;">
+                <div class="data-grid" style="grid-template-columns: 1fr 1fr; gap: 2mm 4mm; align-content: start;">
                   ${patientAppts.map(a => `
-                    <div class="data-item" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 2mm; margin-bottom: 2mm;">
-                      <span class="data-label">${a.exam_time} — ${a.procedure_name}</span>
-                      <span class="data-value" style="font-size: 8.5pt; color: #334155;">${a.exam_type || 'PROCEDIMENTO PADRÃO'}</span>
+                    <div class="data-item" style="border-left: 2px solid #e2e8f0; padding-left: 2mm; margin-bottom: 1mm;">
+                      <span class="data-label" style="line-height: 1;">${a.exam_time} — ${a.procedure_name}</span>
+                      <span class="data-value" style="font-size: 7.5pt; color: #334155;">${a.exam_type || 'PADRÃO'}</span>
                     </div>
                   `).join('')}
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; margin-top: 1mm;">
+                  <div class="data-item full-width" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; margin-top: 2mm; padding-top: 2mm; border-top: 1px dashed #e2e8f0;">
                     <div class="data-item">
                       <span class="data-label">Status Geral</span>
                       <span class="data-value" style="color: #059669; font-size: 8pt;">AGENDADOS</span>
