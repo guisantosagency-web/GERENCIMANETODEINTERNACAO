@@ -407,8 +407,8 @@ export default function AgendamentoTab() {
           /* Header */
           .header { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 2px solid #14b8a6; padding-bottom: 4mm; margin-bottom: 6mm; }
           .logo-box { display: flex; flex-direction: column; gap: 2mm; align-items: flex-start; }
-          .logo-hospital { height: 14mm; }
-          .logo-gov { height: 10mm; opacity: 0.8; }
+          .logo-hospital { height: 10mm; }
+          .logo-gov { height: 8mm; opacity: 0.8; }
           .doc-title { text-align: right; }
           .doc-title h1 { margin: 0; font-size: 11pt; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
           .doc-title p { margin: 1mm 0 0 0; font-size: 7pt; color: #64748b; font-weight: bold; text-transform: uppercase; }
@@ -522,7 +522,11 @@ export default function AgendamentoTab() {
       </body></html>`
     printWindow.document.write(content)
     printWindow.document.close()
-    printWindow.print()
+    
+    // Aguarda um tempo para garantir que os logos carreguem antes de abrir o diálogo de impressão
+    setTimeout(() => {
+      printWindow.print()
+    }, 3000)
   }
 
   return (
