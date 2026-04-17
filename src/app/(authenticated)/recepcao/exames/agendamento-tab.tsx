@@ -408,10 +408,10 @@ export default function AgendamentoTab() {
         <div style="margin-top: 10mm; padding: 4mm; background: #f8fafc; border: 1px solid #e2e8f0; rounded-2xl;">
           <h3 style="margin: 0 0 2mm 0; font-size: 9pt; text-transform: uppercase; color: #14b8a6;">Orientações Importantes</h3>
           <ul style="margin: 0; padding-left: 5mm; font-size: 8.5pt; color: #475569;">
-            <li>Chegar com 15 minutos de antecedência.</li>
-            <li>Trazer documento original com foto e cartão do SUS.</li>
-            ${needsFasting ? '<li>Para Ultrassonografia/Tomografia: Jejum de 4 a 6 horas (exceto se informado o contrário).</li>' : ''}
-            <li>Trazer exames anteriores relacionados ao procedimento.</li>
+            ${needsFasting ? `
+              <li>Para Ultrassonografia/Tomografia: Jejum de 4 a 6 horas (exceto se informado o contrário).</li>
+              <li>Trazer exames anteriores relacionados ao procedimento.</li>
+            ` : ''}
           </ul>
         </div>
 
