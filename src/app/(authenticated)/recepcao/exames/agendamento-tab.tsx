@@ -406,7 +406,7 @@ export default function AgendamentoTab() {
 
           /* Header */
           .header { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 2px solid #14b8a6; padding-bottom: 4mm; margin-bottom: 6mm; }
-          .logo-box { display: flex; flex-direction: column; gap: 2mm; align-items: flex-start; }
+          .logo-box { display: flex; flex-direction: row; gap: 4mm; align-items: center; }
           .logo-hospital { height: 10mm; }
           .logo-gov { height: 8mm; opacity: 0.8; }
           .doc-title { text-align: right; }
