@@ -393,20 +393,34 @@ export default function AgendamentoTab() {
   }
 
   const printAppointment = (appt: any) => {
+    // Garantir que temos acesso ao nome e data para o filtro de agrupamento
+    const patientName = appt.patient_name || (appt.all_procedures?.[0]?.patient_name)
+    const examDate = appt.exam_date || (appt.all_procedures?.[0]?.exam_date)
+
+    if (!patientName) {
+      console.error("Dados do paciente ausentes para impressão")
+      return
+    }
+
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
 
     // Busca todos os exames do mesmo paciente na mesma data para agrupar no comprovante
     const patientAppts = dateAppointments.filter(a => 
-      a.patient_name === appt.patient_name && 
-      a.exam_date === appt.exam_date &&
+      a.patient_name === patientName && 
+      a.exam_date === examDate &&
       a.status !== 'cancelado'
     ).sort((a, b) => (a.exam_time || "").localeCompare(b.exam_time || ""))
 
-    const needsFasting = patientAppts.some(a => {
+    // Se por algum motivo o filtro local falhar, usamos o que veio no appt
+    const examsToPrint = patientAppts.length > 0 ? patientAppts : (appt.all_procedures || [appt])
+
+    const needsFasting = examsToPrint.some((a: any) => {
       const p = (a.procedure_name || "").toUpperCase()
       return p.includes("TOMOGRAFIA") || p.includes("ULTRASSONOGRAFIA") || p.includes("USG") || p.includes("ANGIOTOMOGRAFIA")
     })
+
+    const mainAppt = examsToPrint[0] || appt
 
     const content = `
       <!DOCTYPE html><html><head>
@@ -480,15 +494,15 @@ export default function AgendamentoTab() {
                 <div class="data-grid">
                   <div class="data-item full-width">
                     <span class="data-label">Paciente</span>
-                    <span class="data-value">${appt.patient_name}</span>
+                    <span class="data-value">${mainAppt.patient_name}</span>
                   </div>
                   <div class="data-item">
                     <span class="data-label">CPF</span>
-                    <span class="data-value">${appt.cpf || '--'}</span>
+                    <span class="data-value">${mainAppt.cpf || '--'}</span>
                   </div>
                   <div class="data-item">
                     <span class="data-label">Cartão SUS</span>
-                    <span class="data-value">${appt.sus || '--'}</span>
+                    <span class="data-value">${mainAppt.sus || '--'}</span>
                   </div>
                 </div>
               </div>
@@ -496,7 +510,7 @@ export default function AgendamentoTab() {
               <div class="section" style="flex: 1; min-height: 0;">
                 <div class="section-title">Informações dos Exames</div>
                 <div class="data-grid" style="grid-template-columns: 1fr 1fr; gap: 2mm 4mm; align-content: start;">
-                  ${patientAppts.map(a => `
+                  ${examsToPrint.map((a: any) => `
                     <div class="data-item" style="border-left: 2px solid #e2e8f0; padding-left: 2mm; margin-bottom: 1mm;">
                       <span class="data-label" style="line-height: 1;">${a.exam_time} — ${a.procedure_name}</span>
                       <span class="data-value" style="font-size: 7.5pt; color: #334155;">${a.exam_type || 'PADRÃO'}</span>
@@ -509,7 +523,7 @@ export default function AgendamentoTab() {
                     </div>
                     <div class="data-item">
                       <span class="data-label">Data</span>
-                      <span class="data-value" style="font-size: 8pt;">${appt.exam_date ? new Date(appt.exam_date+'T00:00:00').toLocaleDateString('pt-BR') : '--'}</span>
+                      <span class="data-value" style="font-size: 8pt;">${mainAppt.exam_date ? new Date(mainAppt.exam_date+'T00:00:00').toLocaleDateString('pt-BR') : '--'}</span>
                     </div>
                   </div>
                 </div>
