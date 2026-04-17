@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { format, parseISO, differenceInYears } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
-import { Footer } from "@/components/footer"
 
 // --------- Types ---------
 type FilaItem = {
@@ -33,6 +32,18 @@ type GroupedFilaItem = {
   ids: string[]
   procedures: { id: string; name: string; type: string; status: string }[]
   status: string // Overall status (representative)
+}
+
+function getParentCategory(name: string): string {
+  if (!name) return "OUTROS"
+  const n = name.toUpperCase()
+  if (n.includes("TOMOGRAFIA") || n.includes("ANGIOTOMOGRAFIA") || n.includes("ANGIO TC")) return "TOMOGRAFIA"
+  if (n.includes("RAIO X") || n.includes("RX") || n.includes("RAIO-X")) return "RAIO X"
+  if (n.includes("ULTRASSONOGRAFIA") || n.includes("USG") || n.includes("ECOGRAFIA") || n.includes("DOppler")) return "ULTRASSONOGRAFIA"
+  if (n.includes("MAMOGRAFIA")) return "MAMOGRAFIA"
+  if (n.includes("ELETROCARDIOGRAMA") || n.includes("ECG")) return "ELETROCARDIOGRAMA"
+  if (n.includes("LABORATORIAI") || n.includes("SANGUE") || n.includes("URINA") || n.includes("BIOQUIMICA")) return "LABORATORIAIS"
+  return "OUTROS"
 }
 
 export default function FilaTab() {
@@ -64,7 +75,7 @@ export default function FilaTab() {
       setAllData(data || [])
 
       // Grouping Logic: 
-      // 1. By Category (procedure_name)
+      // 1. By Normalized Category
       // 2. Inside Category, by Patient (Name + Arrival Time)
       const categoryGroups: Record<string, GroupedFilaItem[]> = {}
 
@@ -73,7 +84,7 @@ export default function FilaTab() {
       const processedCategoryGroups: Record<string, Record<string, GroupedFilaItem>> = {}
 
       rawItems.forEach(item => {
-        const cat = item.procedure_name || "Outros"
+        const cat = getParentCategory(item.procedure_name)
         const patientKey = `${item.patient_name}-${item.arrival_time}`
 
         if (!processedCategoryGroups[cat]) processedCategoryGroups[cat] = {}
@@ -96,10 +107,15 @@ export default function FilaTab() {
             type: item.exam_type, 
             status: item.status 
           })
-          // If any is 'realizando', the group might be considered 'realizando'
-          if (item.status === 'realizando' || processedCategoryGroups[cat][patientKey].status === 'presente') {
-             processedCategoryGroups[cat][patientKey].status = item.status
-          }
+          // Priority handling - if any is priority, the whole group is
+          if (item.priority !== 'Sem Prioridade') processedCategoryGroups[cat][patientKey].priority = item.priority
+
+          // Status handling - priority: realizando > presente > finalizado/falta
+          const s = item.status
+          const currentS = processedCategoryGroups[cat][patientKey].status
+          if (s === 'realizando') processedCategoryGroups[cat][patientKey].status = 'realizando'
+          else if (s === 'presente' && currentS !== 'realizando') processedCategoryGroups[cat][patientKey].status = 'presente'
+          // else stay as is
         }
       })
 
@@ -161,10 +177,10 @@ export default function FilaTab() {
           body { font-family: Arial, sans-serif; color: #111; line-height: 1.4; }
           .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #14b8a6; padding-bottom: 8px; margin-bottom: 12px; }
           .title { font-size: 18pt; font-weight: bold; text-transform: uppercase; color: #0f172a; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 10mm; }
-          th { background: #f0fdf4; border: 1px solid #d1fae5; padding: 3mm; font-size: 9pt; text-align: left; }
-          td { border: 1px solid #e2e8f0; padding: 3mm; font-size: 9pt; }
-          .badge { padding: 2px 8px; border-radius: 4px; font-size: 8pt; font-weight: bold; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 10mm; font-size: 8.5pt; }
+          th { background: #f0fdf4; border: 1px solid #d1fae5; padding: 2.5mm; font-size: 8.5pt; text-align: left; }
+          td { border: 1px solid #e2e8f0; padding: 2.5mm; }
+          .badge { padding: 2px 8px; border-radius: 4px; font-size: 7.5pt; font-weight: bold; }
           .presente { background: #fef3c7; color: #92400e; }
           .realizando { background: #dbeafe; color: #1e40af; }
           .finalizado { background: #d1fae5; color: #065f46; }
@@ -184,7 +200,7 @@ export default function FilaTab() {
             <tr>
               <th width="8%">Chegada</th>
               <th width="28%">Paciente</th>
-              <th width="32%">Procedimentos / Especificações</th>
+              <th width="40%">Procedimentos / Especificações</th>
               <th width="8%">Idade</th>
               <th width="10%">Status</th>
             </tr>
@@ -198,7 +214,7 @@ export default function FilaTab() {
                 <td><strong>${p.patient_name}</strong></td>
                 <td>${p.procedure_name} ${p.exam_type ? `(${p.exam_type})` : ''}</td>
                 <td style="text-align: center;">${age} anos</td>
-                <td><span class="badge ${p.status}">${p.status}</span></td>
+                <td><span class="badge ${p.status}">${p.status.toUpperCase()}</span></td>
               </tr>`
             }).join('')}
           </tbody>
@@ -229,7 +245,7 @@ export default function FilaTab() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       {/* HEADER */}
       <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
@@ -272,90 +288,95 @@ export default function FilaTab() {
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
-          {Object.keys(appointments).map(category => (
-            <div key={category} className="space-y-3">
+        <div className="space-y-10">
+          {Object.keys(appointments).sort().map(category => (
+            <div key={category} className="space-y-4">
               {/* Category header */}
               <div className="flex items-center gap-3 px-1">
                 <div className="relative shrink-0">
                   <div className="h-2 w-2 rounded-full bg-purple-500" />
                   <div className="absolute inset-0 h-2 w-2 rounded-full bg-purple-500 animate-ping opacity-75" />
                 </div>
-                <h3 className="text-sm font-bold text-purple-700 tracking-widest uppercase">{category}</h3>
+                <h3 className="text-sm font-bold text-purple-700 tracking-[0.2em] uppercase">{category}</h3>
                 <div className="h-px flex-1 bg-purple-100" />
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{appointments[category].length} Pacientes</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{appointments[category].length} Pacientes na Fila</span>
               </div>
 
               {/* Table */}
-              <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
+              <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-slate-100 bg-slate-50">
-                      <th className="py-4 px-5 text-center text-[9px] font-bold uppercase tracking-wider text-slate-500">Chegada</th>
-                      <th className="py-4 px-5 text-[9px] font-bold uppercase tracking-wider text-slate-500">Paciente</th>
-                      <th className="py-4 px-5 text-[9px] font-bold uppercase tracking-wider text-slate-500">Exame / Especificação</th>
-                      <th className="py-4 px-5 text-center text-[9px] font-bold uppercase tracking-wider text-slate-500">Idade</th>
-                      <th className="py-4 px-5 text-center text-[9px] font-bold uppercase tracking-wider text-slate-500">Status</th>
-                      <th className="py-4 px-5 text-center text-[9px] font-bold uppercase tracking-wider text-slate-500">Ações</th>
+                    <tr className="border-b border-slate-100 bg-slate-50/50">
+                      <th className="py-5 px-6 text-center text-[9px] font-bold uppercase tracking-widest text-slate-500">Chegada</th>
+                      <th className="py-5 px-6 text-[9px] font-bold uppercase tracking-widest text-slate-500">Paciente</th>
+                      <th className="py-5 px-6 text-[9px] font-bold uppercase tracking-widest text-slate-500">Exames / Especificações</th>
+                      <th className="py-5 px-6 text-center text-[9px] font-bold uppercase tracking-widest text-slate-500">Idade</th>
+                      <th className="py-5 px-6 text-center text-[9px] font-bold uppercase tracking-widest text-slate-500">Status</th>
+                      <th className="py-5 px-6 text-center text-[9px] font-bold uppercase tracking-widest text-slate-500">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {appointments[category].map((group) => {
                       const age = group.birth_date ? differenceInYears(new Date(), parseISO(group.birth_date)) : "--"
                       return (
-                        <tr key={`${group.patient_name}-${group.arrival_time}`} className={`hover:bg-slate-50 transition-colors group ${group.status === 'finalizado' ? 'opacity-50' : ''}`}>
-                          <td className="py-4 px-5 text-center text-xs font-bold text-slate-500">
+                        <tr key={`${group.patient_name}-${group.arrival_time}`} className={`hover:bg-slate-50 transition-all group ${group.status === 'finalizado' ? 'opacity-50' : ''}`}>
+                          <td className="py-5 px-6 text-center text-xs font-bold text-slate-500">
                             {group.arrival_time ? format(new Date(group.arrival_time), 'HH:mm') : '--:--'}
                           </td>
-                          <td className="py-4 px-5">
-                            <div className="flex items-center gap-3">
-                              <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
-                                group.priority !== 'Sem Prioridade' ? 'bg-orange-100 text-orange-600 animate-pulse' : 'bg-slate-100 text-slate-500'
+                          <td className="py-5 px-6">
+                            <div className="flex items-center gap-4">
+                              <div className={`h-10 w-10 rounded-2xl flex items-center justify-center font-bold text-xs shrink-0 shadow-sm border ${
+                                group.priority !== 'Sem Prioridade' ? 'bg-orange-100 text-orange-600 border-orange-200' : 'bg-slate-100 text-slate-500 border-slate-200'
                               }`}>
                                 {group.patient_name.charAt(0)}
                               </div>
                               <div>
-                                <p className="font-bold text-slate-800 text-xs uppercase tracking-tight">{group.patient_name}</p>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase">
-                                  {group.priority !== 'Sem Prioridade' ? `⚡ ${group.priority}` : 'Normal'}
+                                <p className="font-bold text-slate-800 text-xs uppercase tracking-tight leading-tight">{group.patient_name}</p>
+                                <p className={`text-[9px] font-bold uppercase mt-0.5 ${group.priority !== 'Sem Prioridade' ? 'text-orange-500' : 'text-slate-400'}`}>
+                                  {group.priority !== 'Sem Prioridade' ? `⚡ ${group.priority}` : 'Atendimento Normal'}
                                 </p>
                               </div>
                             </div>
                           </td>
-                          <td className="py-4 px-5">
-                             <div className="space-y-1">
+                          <td className="py-5 px-6">
+                             <div className="flex flex-col gap-1.5">
                                {group.procedures.map((p, idx) => (
-                                 <div key={p.id} className={idx > 0 ? "pt-1 border-t border-slate-50" : ""}>
-                                   <p className="font-bold text-slate-700 text-[10px] uppercase leading-tight">{p.name}</p>
-                                   <p className="text-[8px] font-bold text-teal-500 uppercase">{p.type || 'Geral'}</p>
+                                 <div key={p.id} className={`flex items-start gap-2 ${idx > 0 ? "pt-1.5 border-t border-slate-50" : ""}`}>
+                                   <div className="mt-1 h-1.5 w-1.5 rounded-full bg-teal-500 shrink-0" />
+                                   <div>
+                                     <p className="font-bold text-slate-700 text-[10px] uppercase leading-tight">{p.name}</p>
+                                     <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5 tracking-wider">{p.type || 'ESPECIFICAÇÃO GERAL'}</p>
+                                   </div>
                                  </div>
                                ))}
                              </div>
                           </td>
-                          <td className="py-4 px-5 text-center text-xs font-bold text-slate-500">{age} anos</td>
-                          <td className="py-4 px-5 text-center">
-                            <span className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wide ${statusBadge(group.status)}`}>
+                          <td className="py-5 px-6 text-center text-xs font-bold text-slate-500">{age} anos</td>
+                          <td className="py-5 px-6 text-center">
+                            <span className={`px-4 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest shadow-sm ${statusBadge(group.status)}`}>
                               {group.status}
                             </span>
                           </td>
-                          <td className="py-4 px-5 text-center">
+                          <td className="py-5 px-6 text-center">
                             <div className="flex items-center justify-center gap-1.5">
-                              {group.status === 'presente' && (
+                              {['presente', 'falta'].includes(group.status) && (
                                 <>
                                   <button
                                     onClick={() => updateStatus(group.ids, 'realizando')}
                                     title="Chamar Paciente"
-                                    className="h-8 px-3 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all border border-blue-100 hover:border-blue-500 flex items-center gap-1.5"
+                                    className="h-9 px-4 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all shadow-sm flex items-center gap-2"
                                   >
-                                    <Play className="h-3 w-3" /> Chamada
+                                    <Play className="h-3.5 w-3.5" /> Chamada
                                   </button>
-                                  <button
-                                    onClick={() => updateStatus(group.ids, 'falta')}
-                                    title="Marcar Falta"
-                                    className="h-8 w-8 flex items-center justify-center bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-lg transition-all border border-rose-100 hover:border-rose-500"
-                                  >
-                                    <UserMinus className="h-3.5 w-3.5" />
-                                  </button>
+                                  {group.status === 'presente' && (
+                                    <button
+                                      onClick={() => updateStatus(group.ids, 'falta')}
+                                      title="Marcar Falta"
+                                      className="h-9 w-9 flex items-center justify-center bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all border border-rose-100 shadow-sm"
+                                    >
+                                      <UserMinus className="h-4 w-4" />
+                                    </button>
+                                  )}
                                 </>
                               )}
                               
@@ -364,47 +385,36 @@ export default function FilaTab() {
                                   <button
                                     onClick={() => updateStatus(group.ids, 'finalizado')}
                                     title="Finalizar Atendimento"
-                                    className="h-8 px-3 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all border border-emerald-100 hover:border-emerald-500 flex items-center gap-1.5"
+                                    className="h-9 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all shadow-sm flex items-center gap-2"
                                   >
-                                    <CheckCircle2 className="h-3 w-3" /> Finalizar
+                                    <CheckCircle2 className="h-3.5 w-3.5" /> Finalizar
                                   </button>
                                   <button
                                     onClick={() => updateStatus(group.ids, 'presente')}
                                     title="Voltar para Espera"
-                                    className="h-8 w-8 flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-lg transition-all border border-slate-200"
+                                    className="h-9 w-9 flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-xl transition-all border border-slate-200 shadow-sm"
                                   >
-                                    <RotateCcw className="h-3.5 w-3.5" />
+                                    <RotateCcw className="h-4 w-4" />
                                   </button>
                                 </>
                               )}
 
-                              {group.status === 'finalizado' && (
-                                <button
-                                  onClick={() => updateStatus(group.ids, 'realizando')}
-                                  title="Reabrir Atendimento"
-                                  className="h-8 w-8 flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-lg transition-all border border-slate-200"
-                                >
-                                  <RotateCcw className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-
-                              {group.status === 'falta' && (
+                              {['finalizado', 'falta'].includes(group.status) && (
                                 <button
                                   onClick={() => updateStatus(group.ids, 'presente')}
-                                  title="Marcar como Presente"
-                                  className="h-8 w-8 flex items-center justify-center bg-emerald-50 text-emerald-500 hover:bg-emerald-100 rounded-lg transition-all border border-emerald-200"
+                                  title="Reabrir / Voltar para Fila"
+                                  className="h-9 w-9 flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-xl transition-all border border-slate-200 shadow-sm"
                                 >
-                                  <RotateCcw className="h-3.5 w-3.5" />
+                                  <RotateCcw className="h-4 w-4" />
                                 </button>
                               )}
 
-                              {/* Delete/Rollback button (Enviado por engano) */}
                               <button
                                 onClick={() => handleCancel(group.ids, group.patient_name)}
                                 title="Remover da Fila (Enviado por engano)"
-                                className="h-8 w-8 flex items-center justify-center text-slate-300 hover:bg-slate-50 hover:text-amber-600 rounded-lg transition-all border border-transparent hover:border-amber-100"
+                                className="h-9 w-9 flex items-center justify-center text-slate-300 hover:bg-slate-50 hover:text-amber-600 rounded-xl transition-all border border-transparent hover:border-amber-100"
                               >
-                                <X className="h-3.5 w-3.5" />
+                                <X className="h-4 w-4" />
                               </button>
                             </div>
                           </td>
@@ -418,7 +428,6 @@ export default function FilaTab() {
           ))}
         </div>
       )}
-      <Footer />
     </div>
   )
 }

@@ -11,7 +11,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format, parseISO, startOfMonth, endOfMonth } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useAuth } from "@/lib/auth-context"
-import { Footer } from "@/components/footer"
 
 
 function MultiSelect({ label, options, selected, onChange, icon: Icon }: any) {
@@ -286,6 +285,26 @@ export default function HistoricoTab() {
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
                 className="h-12 px-4 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 uppercase focus:border-teal-400 shadow-sm outline-none"
+              />
+            </div>
+
+            <div className="xl:col-span-2">
+              <MultiSelect
+                label="Procedimento"
+                options={availableProcedures}
+                selected={selectedProcedures}
+                onChange={setSelectedProcedures}
+                icon={Activity}
+              />
+            </div>
+
+            <div className="xl:col-span-2">
+              <MultiSelect
+                label="Exame / Tipo"
+                options={availableTypes}
+                selected={selectedTypes}
+                onChange={setSelectedTypes}
+                icon={Search}
               />
             </div>
 

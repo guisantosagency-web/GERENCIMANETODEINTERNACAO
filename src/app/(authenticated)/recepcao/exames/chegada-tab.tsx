@@ -14,7 +14,6 @@ import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { format, parseISO, differenceInYears } from "date-fns"
 import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
 import { useAuth } from "@/lib/auth-context"
-import { Footer } from "@/components/footer"
 
 // ---------- Types ----------
 type ExamItem = { id: string; procedure_name: string; exam_type: string }
@@ -745,7 +744,6 @@ export default function ChegadaTab() {
           </div>
         </SheetContent>
       </Sheet>
-      <Footer />
     </div>
   )
 }

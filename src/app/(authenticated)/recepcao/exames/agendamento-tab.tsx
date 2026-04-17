@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label"
 import { format, parseISO } from "date-fns"
 import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
 import { ExamManagerModal } from "@/components/exam-manager-modal"
-import { Footer } from "@/components/footer"
 
 
 const FALLBACK_PROCEDURES = ["RAIO X", "TOMOGRAFIA", "ULTRASSONOGRAFIA", "MAMOGRAFIA", "ELETROCARDIOGRAMA"]
@@ -676,8 +675,6 @@ export default function AgendamentoTab() {
       `}</style>
       
       <ExamManagerModal isOpen={isManagerOpen} onOpenChange={setIsManagerOpen} onUpdate={loadConfig} />
-      
-      <Footer />
     </div>
   )
 }

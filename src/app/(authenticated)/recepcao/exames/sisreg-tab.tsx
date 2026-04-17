@@ -1,5 +1,4 @@
 "use client"
-import { Footer } from "@/components/footer"
 import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { Globe, RefreshCw, CheckCircle2, Search, Loader2, UserPlus, Trash2, Undo2 } from "lucide-react"
