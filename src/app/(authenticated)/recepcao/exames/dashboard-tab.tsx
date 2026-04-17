@@ -8,6 +8,7 @@ import {
   CheckCircle2, CalendarX2, Clock3, BarChart3,
   CalendarDays, TrendingDown, Target, Zap, Activity
 } from "lucide-react"
+import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { format, parseISO } from "date-fns"
@@ -341,6 +342,7 @@ export default function ExamesDashboardTab() {
            </div>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }

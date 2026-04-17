@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label"
 import { useAuth } from "@/lib/auth-context"
 import { format } from "date-fns"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Footer } from "@/components/footer"
+
 
 export default function PacientesTab() {
   const [patients, setPatients] = useState<any[]>([])
@@ -377,6 +379,7 @@ export default function PacientesTab() {
           </div>
         </SheetContent>
       </Sheet>
+      <Footer />
     </div>
   )
 }

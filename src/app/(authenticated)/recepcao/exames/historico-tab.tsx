@@ -11,6 +11,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format, parseISO, startOfMonth, endOfMonth } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useAuth } from "@/lib/auth-context"
+import { Footer } from "@/components/footer"
+
 
 function MultiSelect({ label, options, selected, onChange, icon: Icon }: any) {
   return (
@@ -108,7 +110,10 @@ export default function HistoricoTab() {
     if (!name) return "NÃO INFORMADO"
     const n = name.toUpperCase()
     if (n.includes("TOMOGRAFIA")) {
-      if (n.includes("COM CONTRASTE")) return "TOMOGRAFIA COM CONTRASTE"
+      // Include Angiotomografia as contrast tomography as requested
+      if (n.includes("COM CONTRASTE") || n.includes("ANGIOTOMOGRAFIA") || n.includes("ANGIO")) {
+        return "TOMOGRAFIA COM CONTRASTE"
+      }
       return "TOMOGRAFIA"
     }
     return n

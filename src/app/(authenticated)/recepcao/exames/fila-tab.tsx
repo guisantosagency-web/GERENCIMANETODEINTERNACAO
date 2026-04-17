@@ -4,11 +4,22 @@ import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { 
   Play, Users, Loader2, 
-  Clock, Printer, Trash2
+  Clock, Printer, Trash2, CheckCircle2, X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format, parseISO, differenceInYears } from "date-fns"
 import { useAuth } from "@/lib/auth-context"
+import { Footer } from "@/components/footer"
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Edit2, UserMinus, RotateCcw } from "lucide-react"
 
 export default function FilaTab() {
   const [loading, setLoading] = useState(true)
@@ -164,6 +175,7 @@ export default function FilaTab() {
   const statusBadge = (status: string) => {
     if (status === 'presente') return 'bg-orange-50 text-orange-600 border border-orange-100'
     if (status === 'realizando') return 'bg-blue-50 text-blue-600 border border-blue-100'
+    if (status === 'falta') return 'bg-rose-50 text-rose-600 border border-rose-100'
     return 'bg-emerald-50 text-emerald-600 border border-emerald-100'
   }
 
@@ -272,33 +284,73 @@ export default function FilaTab() {
                             </span>
                           </td>
                           <td className="py-4 px-5 text-center">
-                            <div className="flex items-center justify-center gap-2">
+                            <div className="flex items-center justify-center gap-1.5">
                               {a.status === 'presente' && (
+                                <>
+                                  <button
+                                    onClick={() => updateStatus(a.id, 'realizando')}
+                                    title="Chamar Paciente"
+                                    className="h-8 px-3 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all border border-blue-100 hover:border-blue-500 flex items-center gap-1.5"
+                                  >
+                                    <Play className="h-3 w-3" /> Chamada
+                                  </button>
+                                  <button
+                                    onClick={() => updateStatus(a.id, 'falta')}
+                                    title="Marcar Falta"
+                                    className="h-8 w-8 flex items-center justify-center bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-lg transition-all border border-rose-100 hover:border-rose-500"
+                                  >
+                                    <UserMinus className="h-3.5 w-3.5" />
+                                  </button>
+                                </>
+                              )}
+                              
+                              {a.status === 'realizando' && (
+                                <>
+                                  <button
+                                    onClick={() => updateStatus(a.id, 'finalizado')}
+                                    title="Finalizar Atendimento"
+                                    className="h-8 px-3 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all border border-emerald-100 hover:border-emerald-500 flex items-center gap-1.5"
+                                  >
+                                    <CheckCircle2 className="h-3 w-3" /> Finalizar
+                                  </button>
+                                  <button
+                                    onClick={() => updateStatus(a.id, 'presente')}
+                                    title="Voltar para Espera"
+                                    className="h-8 w-8 flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-lg transition-all border border-slate-200"
+                                  >
+                                    <RotateCcw className="h-3.5 w-3.5" />
+                                  </button>
+                                </>
+                              )}
+
+                              {a.status === 'finalizado' && (
                                 <button
                                   onClick={() => updateStatus(a.id, 'realizando')}
-                                  className="h-8 px-3 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all border border-blue-100 hover:border-blue-500"
+                                  title="Reabrir Atendimento"
+                                  className="h-8 w-8 flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-lg transition-all border border-slate-200"
                                 >
-                                  Chamada
+                                  <RotateCcw className="h-3.5 w-3.5" />
                                 </button>
                               )}
-                              {a.status === 'realizando' && (
+
+                              {a.status === 'falta' && (
                                 <button
-                                  onClick={() => updateStatus(a.id, 'finalizado')}
-                                  className="h-8 px-3 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all border border-emerald-100 hover:border-emerald-500"
+                                  onClick={() => updateStatus(a.id, 'presente')}
+                                  title="Marcar como Presente"
+                                  className="h-8 w-8 flex items-center justify-center bg-emerald-50 text-emerald-500 hover:bg-emerald-100 rounded-lg transition-all border border-emerald-200"
                                 >
-                                  Finalizar
+                                  <RotateCcw className="h-3.5 w-3.5" />
                                 </button>
                               )}
-                              {/* Cancel/Delete button */}
-                              {a.status !== 'finalizado' && (
-                                <button
-                                  onClick={() => handleCancel(a.id, a.patient_name)}
-                                  title="Cancelar atendimento"
-                                  className="h-8 w-8 flex items-center justify-center text-slate-300 hover:bg-rose-50 hover:text-rose-500 rounded-lg transition-all border border-transparent hover:border-rose-100"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              )}
+
+                              {/* Delete/Rollback button (Enviado por engano) */}
+                              <button
+                                onClick={() => handleCancel(a.id, a.patient_name)}
+                                title="Remover da Fila (Enviado por engano)"
+                                className="h-8 w-8 flex items-center justify-center text-slate-300 hover:bg-slate-50 hover:text-amber-600 rounded-lg transition-all border border-transparent hover:border-amber-100"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -311,6 +363,7 @@ export default function FilaTab() {
           ))}
         </div>
       )}
+      <Footer />
     </div>
   )
 }

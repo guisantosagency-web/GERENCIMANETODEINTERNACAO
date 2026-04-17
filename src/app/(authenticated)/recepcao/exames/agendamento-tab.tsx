@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label"
 import { format, parseISO } from "date-fns"
 import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
 import { ExamManagerModal } from "@/components/exam-manager-modal"
+import { Footer } from "@/components/footer"
+
 
 const FALLBACK_PROCEDURES = ["RAIO X", "TOMOGRAFIA", "ULTRASSONOGRAFIA", "MAMOGRAFIA", "ELETROCARDIOGRAMA"]
 const FALLBACK_TYPES: Record<string, string[]> = {
@@ -399,7 +401,21 @@ export default function AgendamentoTab() {
         <div class="row"><span class="label">Data</span><span class="value">${appt.exam_date ? new Date(appt.exam_date+'T00:00:00').toLocaleDateString('pt-BR') : '--'}</span></div>
         <div class="row"><span class="label">Hora</span><span class="value">${appt.exam_time || '--'}</span></div>
         <div class="row"><span class="label">Status</span><span class="value">${appt.status}</span></div>
-        <div class="footer">HTO Caxias &mdash; Sistema de Gestão de Exames</div>
+
+        <div style="margin-top: 10mm; padding: 4mm; background: #f8fafc; border: 1px solid #e2e8f0; rounded-2xl;">
+          <h3 style="margin: 0 0 2mm 0; font-size: 9pt; text-transform: uppercase; color: #14b8a6;">Orientações Importantes</h3>
+          <ul style="margin: 0; padding-left: 5mm; font-size: 8.5pt; color: #475569;">
+            <li>Chegar com 15 minutos de antecedência.</li>
+            <li>Trazer documento original com foto e cartão do SUS.</li>
+            <li>Para Ultrassonografia/Tomografia: Jejum de 4 a 6 horas (exceto se informado o contrário).</li>
+            <li>Trazer exames anteriores relacionados ao procedimento.</li>
+          </ul>
+        </div>
+
+        <div class="footer">
+          Desenvolvido por Guilherme Santos - Avero Agency<br/>
+          HTO Caxias &mdash; Sistema de Gestão de Exames
+        </div>
       </body></html>`
     printWindow.document.write(content)
     printWindow.document.close()
@@ -660,6 +676,8 @@ export default function AgendamentoTab() {
       `}</style>
       
       <ExamManagerModal isOpen={isManagerOpen} onOpenChange={setIsManagerOpen} onUpdate={loadConfig} />
+      
+      <Footer />
     </div>
   )
 }

@@ -5,15 +5,19 @@ import { createBrowserClient } from "@supabase/ssr"
 import { 
   Users, Clock, Loader2, 
   Search, ChevronRight, X, 
-  CheckSquare, Plus, CalendarDays
+  CheckSquare, Plus, Trash2, AlertTriangle
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { format, parseISO, differenceInYears } from "date-fns"
 import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
 import { useAuth } from "@/lib/auth-context"
+import { Footer } from "@/components/footer"
+
+// ---------- Types ----------
+type ExamItem = { id: string; procedure_name: string; exam_type: string }
 
 export default function ChegadaTab() {
   const [loading, setLoading] = useState(true)
@@ -35,22 +39,17 @@ export default function ChegadaTab() {
     patient_name: "",
     cpf: "",
     sus: "",
-    procedure_name: "",
-    exam_type: "",
     birth_date: "",
     priority: "Sem Prioridade",
     origin_id: "",
     chave_sisreg: "",
     new_origin_name: ""
   })
+  const [encaixeExams, setEncaixeExams] = useState<ExamItem[]>([{ id: "1", procedure_name: "", exam_type: "" }])
+  const [slotWarnings, setSlotWarnings] = useState<Record<string, string>>({})
   const [isSubmittingEncaixe, setIsSubmittingEncaixe] = useState(false)
 
-  const { user } = useAuth()
-  const supabase = useMemo(() => createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  ), [])
-
+  // Arrival protocol state
   const [formData, setFormData] = useState<any>({
     patient_name: "",
     birth_date: "",
@@ -64,6 +63,12 @@ export default function ChegadaTab() {
     priority: "Sem Prioridade",
     is_encaixe: false
   })
+
+  const { user } = useAuth()
+  const supabase = useMemo(() => createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  ), [])
 
   useEffect(() => {
     loadData()
@@ -84,11 +89,7 @@ export default function ChegadaTab() {
     }, {})
     setDynamicTypes(typeMap)
     if (procedures.length > 0) {
-      setEncaixeForm(prev => ({
-        ...prev,
-        procedure_name: procedures[0],
-        exam_type: typeMap[procedures[0]]?.[0] || ""
-      }))
+      setEncaixeExams([{ id: "1", procedure_name: procedures[0], exam_type: typeMap[procedures[0]]?.[0] || "" }])
     }
   }
 
@@ -145,8 +146,26 @@ export default function ChegadaTab() {
     })
   }
 
+  // Determine if selected origin is SISREG
+  const isProtocoloSisreg = useMemo(() => {
+    if (!formData.origin_id) return false
+    const origin = origins.find(o => o.id === formData.origin_id)
+    return origin?.name?.toUpperCase().includes("SISREG") || false
+  }, [formData.origin_id, origins])
+
+  const isEncaixeSisreg = useMemo(() => {
+    if (!encaixeForm.origin_id) return false
+    const origin = origins.find(o => o.id === encaixeForm.origin_id)
+    return origin?.name?.toUpperCase().includes("SISREG") || false
+  }, [encaixeForm.origin_id, origins])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    // Validate SISREG key if required
+    if (isProtocoloSisreg && !formData.clave_sisreg.trim()) {
+      alert("Chave SISREG é obrigatória quando a unidade de origem é SISREG.")
+      return
+    }
     setIsLoading(true)
     try {
       let finalOriginId = formData.origin_id
@@ -163,7 +182,9 @@ export default function ChegadaTab() {
         origin_id: finalOriginId,
         priority: formData.priority,
         chave_sisreg: formData.clave_sisreg,
-        birth_date: formData.birth_date
+        birth_date: formData.birth_date,
+        cpf: cleanCPF || undefined,
+        sus: formData.sus || undefined
       }).in("id", confirmedIds)
 
       await upsertMasterPatient({
@@ -203,13 +224,83 @@ export default function ChegadaTab() {
       patient_name: (p.full_name || p.paciente || "").toUpperCase(),
       cpf: maskCPF(p.cpf || ""),
       sus: p.sus || "",
+      birth_date: p.data_nascimento || ""
     }))
     setEncaixeResults([])
     setEncaixeSearch("")
   }
 
+  // Check slot availability for a given procedure
+  const checkSlot = async (examId: string, procedureName: string) => {
+    if (!procedureName) return
+    try {
+      const { data } = await supabase
+        .from("exam_slots")
+        .select("total_slots")
+        .eq("exam_date", selectedDate)
+        .eq("procedure_name", procedureName)
+        .single()
+
+      if (data) {
+        const { count } = await supabase
+          .from("exam_appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("exam_date", selectedDate)
+          .eq("procedure_name", procedureName)
+          .neq("status", "cancelado")
+        
+        const used = count || 0
+        const available = data.total_slots - used
+        setSlotWarnings(prev => ({
+          ...prev,
+          [examId]: available <= 0 
+            ? `⚠️ VAGAS ESGOTADAS (${data.total_slots}/${data.total_slots})` 
+            : available <= 2 
+              ? `⚡ Atenção: apenas ${available} vaga(s)` 
+              : ""
+        }))
+      } else {
+        setSlotWarnings(prev => ({ ...prev, [examId]: "" }))
+      }
+    } catch {
+      setSlotWarnings(prev => ({ ...prev, [examId]: "" }))
+    }
+  }
+
+  const addEncaixeExam = () => {
+    const newId = Date.now().toString()
+    const defaultProc = dynamicProcedures[0] || ""
+    setEncaixeExams(prev => [...prev, { 
+      id: newId, 
+      procedure_name: defaultProc, 
+      exam_type: dynamicTypes[defaultProc]?.[0] || "" 
+    }])
+  }
+
+  const removeEncaixeExam = (id: string) => {
+    if (encaixeExams.length <= 1) return
+    setEncaixeExams(prev => prev.filter(e => e.id !== id))
+    setSlotWarnings(prev => { const n = { ...prev }; delete n[id]; return n })
+  }
+
+  const updateEncaixeExam = (id: string, field: string, value: string) => {
+    setEncaixeExams(prev => prev.map(e => {
+      if (e.id !== id) return e
+      const updated = { ...e, [field]: value }
+      if (field === "procedure_name") {
+        updated.exam_type = dynamicTypes[value]?.[0] || ""
+        checkSlot(id, value)
+      }
+      return updated
+    }))
+  }
+
   const handleSubmitEncaixe = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isEncaixeSisreg && !encaixeForm.chave_sisreg.trim()) {
+      alert("Chave SISREG é obrigatória quando a unidade de origem é SISREG.")
+      return
+    }
     setIsSubmittingEncaixe(true)
     try {
       let finalOriginId = encaixeForm.origin_id
@@ -221,15 +312,14 @@ export default function ChegadaTab() {
 
       const cleanCPF = encaixeForm.cpf.replace(/\D/g, "")
       const userName = user?.name || "RECEPÇÃO"
-
-      const { error } = await supabase.from("exam_appointments").insert([{
+      const inserts = encaixeExams.map(exam => ({
         patient_name: encaixeForm.patient_name.toUpperCase(),
         cpf: cleanCPF,
         sus: encaixeForm.sus,
         exam_date: selectedDate,
         exam_time: format(new Date(), 'HH:mm'),
-        procedure_name: encaixeForm.procedure_name,
-        exam_type: encaixeForm.exam_type,
+        procedure_name: exam.procedure_name,
+        exam_type: exam.exam_type,
         status: 'presente',
         arrival_time: new Date().toISOString(),
         origin_id: finalOriginId || null,
@@ -238,8 +328,9 @@ export default function ChegadaTab() {
         birth_date: encaixeForm.birth_date,
         is_encaixe: true,
         receptionist_name: userName
-      }])
+      }))
 
+      const { error } = await supabase.from("exam_appointments").insert(inserts)
       if (error) throw error
 
       await upsertMasterPatient({
@@ -250,12 +341,11 @@ export default function ChegadaTab() {
       })
 
       setShowEncaixe(false)
-      setEncaixeForm({
-        patient_name: "", cpf: "", sus: "", procedure_name: dynamicProcedures[0] || "",
-        exam_type: dynamicTypes[dynamicProcedures[0]]?.[0] || "", birth_date: "",
-        priority: "Sem Prioridade", origin_id: "", chave_sisreg: "", new_origin_name: ""
-      })
-      alert("Encaixe registrado com sucesso!")
+      const defaultProc = dynamicProcedures[0] || ""
+      setEncaixeForm({ patient_name: "", cpf: "", sus: "", birth_date: "", priority: "Sem Prioridade", origin_id: "", chave_sisreg: "", new_origin_name: "" })
+      setEncaixeExams([{ id: "1", procedure_name: defaultProc, exam_type: dynamicTypes[defaultProc]?.[0] || "" }])
+      setSlotWarnings({})
+      alert(`Encaixe registrado: ${inserts.length} procedimento(s).`)
     } catch (err) {
       console.error(err)
       alert("Erro ao registrar encaixe")
@@ -293,7 +383,6 @@ export default function ChegadaTab() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            {/* Date Selector */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 flex flex-col min-w-[140px]">
               <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Data</span>
               <input
@@ -303,8 +392,6 @@ export default function ChegadaTab() {
                 className="bg-transparent border-none outline-none text-xs font-bold text-slate-700 p-0 mt-0.5"
               />
             </div>
-
-            {/* Search */}
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
@@ -314,14 +401,10 @@ export default function ChegadaTab() {
                 className="h-10 pl-10 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-teal-400 outline-none shadow-sm"
               />
             </div>
-
-            {/* Counter */}
             <div className="h-10 px-5 bg-teal-50 border border-teal-100 rounded-xl flex items-center gap-2 shrink-0">
               <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wider">Saldo:</span>
               <span className="text-sm font-bold text-teal-700">{filteredAppointments.length}</span>
             </div>
-
-            {/* Encaixe Button */}
             <Button
               onClick={() => setShowEncaixe(true)}
               className="h-10 px-5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold uppercase text-[10px] tracking-wider gap-2 shadow-sm"
@@ -333,50 +416,45 @@ export default function ChegadaTab() {
         </div>
       </div>
 
-      <div className="flex gap-6">
-        {/* PATIENT LIST */}
-        <div className="flex-1 space-y-4">
-          {filteredAppointments.length === 0 ? (
-            <div className="bg-white rounded-2xl py-24 text-center border border-slate-100 shadow-sm">
-              <div className="flex flex-col items-center gap-4 opacity-40">
-                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200"><Clock className="h-10 w-10 text-slate-400" /></div>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Nenhum agendamento para esta data</p>
+      {/* PATIENT LIST */}
+      {filteredAppointments.length === 0 ? (
+        <div className="bg-white rounded-2xl py-24 text-center border border-slate-100 shadow-sm">
+          <div className="flex flex-col items-center gap-4 opacity-40">
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200"><Clock className="h-10 w-10 text-slate-400" /></div>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Nenhum agendamento para esta data</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filteredAppointments.map(appt => (
+            <div
+              key={`${appt.patient_name}-${appt.exam_time}`}
+              onClick={() => handleSelectAppt(appt)}
+              className={`bg-white rounded-2xl p-5 border cursor-pointer group transition-all hover:shadow-md hover:border-teal-300 hover:-translate-y-0.5 ${selectedAppt?.patient_name === appt.patient_name && selectedAppt?.exam_time === appt.exam_time ? 'border-teal-400 shadow-md bg-teal-50/30' : 'border-slate-100 shadow-sm'}`}
+            >
+              <div className="flex items-center gap-4">
+                <div className="h-14 w-14 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center font-bold text-xl text-teal-600 group-hover:bg-teal-500 group-hover:text-white transition-colors shrink-0">
+                  {appt.patient_name.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">{appt.exam_time}</span>
+                    <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-teal-500 transition-colors" />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate">{appt.patient_name}</h4>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">
+                    {appt.raw_appointments.length > 1 ? `${appt.raw_appointments.length} PROCEDIMENTOS` : appt.procedure_name}
+                  </p>
+                </div>
               </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filteredAppointments.map(appt => (
-                <div
-                  key={`${appt.patient_name}-${appt.exam_time}`}
-                  onClick={() => handleSelectAppt(appt)}
-                  className={`bg-white rounded-2xl p-5 border cursor-pointer group transition-all hover:shadow-md hover:border-teal-300 hover:-translate-y-0.5 ${selectedAppt?.patient_name === appt.patient_name && selectedAppt?.exam_time === appt.exam_time ? 'border-teal-400 shadow-md bg-teal-50/30' : 'border-slate-100 shadow-sm'}`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="h-14 w-14 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center font-bold text-xl text-teal-600 group-hover:bg-teal-500 group-hover:text-white transition-colors shrink-0">
-                      {appt.patient_name.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">{appt.exam_time}</span>
-                        <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-teal-500 transition-colors" />
-                      </div>
-                      <h4 className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate">{appt.patient_name}</h4>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">
-                        {appt.raw_appointments.length > 1 ? `${appt.raw_appointments.length} PROCEDIMENTOS` : appt.procedure_name}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          ))}
         </div>
-      </div>
+      )}
 
-      {/* SLIDE-IN ARRIVAL PROTOCOL */}
+      {/* ============ SLIDE-IN ARRIVAL PROTOCOL ============ */}
       <Sheet open={!!selectedAppt} onOpenChange={open => !open && setSelectedAppt(null)}>
-        <SheetContent side="right" className="w-[480px] sm:max-w-[540px] p-0 border-l border-slate-200 bg-slate-50 flex flex-col shadow-xl overflow-hidden">
-          {/* Green header */}
+        <SheetContent side="right" className="w-[500px] sm:max-w-[540px] p-0 border-l border-slate-200 bg-slate-50 flex flex-col shadow-xl overflow-hidden">
           <div className="p-6 bg-teal-500 text-white shrink-0">
             <div className="flex items-center justify-between mb-3">
               <div className="h-9 w-9 bg-white/20 rounded-xl flex items-center justify-center">
@@ -390,34 +468,33 @@ export default function ChegadaTab() {
             <p className="text-teal-100 text-[10px] font-bold uppercase tracking-wider mt-0.5">{selectedAppt?.patient_name}</p>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            <form id="arrival-form" onSubmit={handleSubmit} className="space-y-6">
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            <form id="arrival-form" onSubmit={handleSubmit} className="space-y-5">
               {/* Exames confirmados */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Exames Confirmados</Label>
-                <div className="space-y-2">
-                  {(selectedAppt?.raw_appointments || []).map((exam: any) => {
-                    const isConfirmed = confirmedIds.includes(exam.id)
-                    return (
-                      <button
-                        key={exam.id}
-                        type="button"
-                        onClick={() => setConfirmedIds(prev => prev.includes(exam.id) ? prev.filter(i => i !== exam.id) : [...prev, exam.id])}
-                        className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left ${isConfirmed ? 'bg-teal-50 border-teal-400' : 'bg-white border-slate-200 opacity-60 hover:opacity-100'}`}
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-xs font-bold text-slate-800 uppercase">{exam.procedure_name}</span>
-                          <span className="text-[9px] font-bold text-slate-500 uppercase">{exam.exam_type}</span>
-                        </div>
-                        <div className={`h-5 w-5 rounded-md border-2 flex items-center justify-center ${isConfirmed ? 'bg-teal-500 border-teal-500' : 'border-slate-300'}`}>
-                          {isConfirmed && <CheckSquare className="h-3 w-3 text-white" />}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
+                {(selectedAppt?.raw_appointments || []).map((exam: any) => {
+                  const isConfirmed = confirmedIds.includes(exam.id)
+                  return (
+                    <button
+                      key={exam.id}
+                      type="button"
+                      onClick={() => setConfirmedIds(prev => prev.includes(exam.id) ? prev.filter(i => i !== exam.id) : [...prev, exam.id])}
+                      className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left ${isConfirmed ? 'bg-teal-50 border-teal-400' : 'bg-white border-slate-200 opacity-60 hover:opacity-100'}`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-slate-800 uppercase">{exam.procedure_name}</span>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase">{exam.exam_type}</span>
+                      </div>
+                      <div className={`h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0 ${isConfirmed ? 'bg-teal-500 border-teal-500' : 'border-slate-300'}`}>
+                        {isConfirmed && <CheckSquare className="h-3 w-3 text-white" />}
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
 
+              {/* Dados do paciente */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Nascimento</Label>
@@ -429,11 +506,29 @@ export default function ChegadaTab() {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Chave SISREG</Label>
-                <Input value={formData.clave_sisreg} onChange={e => setFormData((p: any) => ({ ...p, clave_sisreg: e.target.value }))} className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-teal-400 outline-none" placeholder="APENAS NÚMEROS..." />
+              {/* CPF + CNS */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">CPF <span className="text-slate-300">(opcional)</span></Label>
+                  <Input
+                    value={formData.cpf}
+                    onChange={e => setFormData((p: any) => ({ ...p, cpf: maskCPF(e.target.value) }))}
+                    placeholder="000.000.000-00"
+                    className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center focus:border-teal-400 outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">CNS / SUS <span className="text-slate-300">(opcional)</span></Label>
+                  <Input
+                    value={formData.sus}
+                    onChange={e => setFormData((p: any) => ({ ...p, sus: e.target.value }))}
+                    placeholder="000 0000 0000 0000"
+                    className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center focus:border-teal-400 outline-none"
+                  />
+                </div>
               </div>
 
+              {/* Prioridade */}
               <div className="space-y-1">
                 <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Prioridade</Label>
                 <select value={formData.priority} onChange={e => setFormData((p: any) => ({ ...p, priority: e.target.value }))} className="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 font-bold uppercase text-xs text-slate-700 outline-none focus:border-teal-400">
@@ -444,6 +539,7 @@ export default function ChegadaTab() {
                 </select>
               </div>
 
+              {/* Unidade de Origem */}
               <div className="space-y-1">
                 <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Unidade de Origem</Label>
                 <select value={formData.origin_id} onChange={e => setFormData((p: any) => ({ ...p, origin_id: e.target.value }))} className="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 font-bold uppercase text-xs text-slate-700 outline-none focus:border-teal-400">
@@ -455,20 +551,34 @@ export default function ChegadaTab() {
               {formData.origin_id === "NOVO" && (
                 <Input placeholder="NOME DA UNIDADE..." value={formData.new_origin_name} onChange={e => setFormData((p: any) => ({ ...p, new_origin_name: e.target.value.toUpperCase() }))} className="h-11 bg-orange-50 border-orange-200 rounded-xl text-xs font-bold text-slate-700 focus:border-orange-400 outline-none" />
               )}
+
+              {/* Chave SISREG — obrigatória só se origem for SISREG */}
+              <div className="space-y-1">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">
+                  Chave SISREG {isProtocoloSisreg ? <span className="text-rose-500 ml-1">*obrigatória</span> : <span className="text-slate-300">(opcional)</span>}
+                </Label>
+                <Input
+                  value={formData.clave_sisreg}
+                  onChange={e => setFormData((p: any) => ({ ...p, clave_sisreg: e.target.value }))}
+                  required={isProtocoloSisreg}
+                  placeholder={isProtocoloSisreg ? "OBRIGATÓRIO - APENAS NÚMEROS" : "APENAS NÚMEROS..."}
+                  className={`h-11 rounded-xl text-xs font-bold text-slate-700 outline-none ${isProtocoloSisreg ? 'bg-rose-50 border-rose-200 focus:border-rose-400' : 'bg-white border-slate-200 focus:border-teal-400'}`}
+                />
+              </div>
             </form>
           </div>
 
           <div className="p-6 border-t border-slate-100 bg-white shrink-0">
-            <Button form="arrival-form" type="submit" disabled={isLoading} className="w-full h-13 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-bold uppercase tracking-wider text-xs transition-all shadow-sm">
+            <Button form="arrival-form" type="submit" disabled={isLoading} className="w-full h-12 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-bold uppercase tracking-wider text-xs transition-all shadow-sm">
               {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Confirmar Recebimento"}
             </Button>
           </div>
         </SheetContent>
       </Sheet>
 
-      {/* ENCAIXE SHEET */}
+      {/* ============ ENCAIXE SHEET ============ */}
       <Sheet open={showEncaixe} onOpenChange={setShowEncaixe}>
-        <SheetContent side="right" className="w-[480px] sm:max-w-[540px] p-0 border-l border-slate-200 bg-slate-50 flex flex-col shadow-xl overflow-hidden">
+        <SheetContent side="right" className="w-[500px] sm:max-w-[560px] p-0 border-l border-slate-200 bg-slate-50 flex flex-col shadow-xl overflow-hidden">
           <div className="p-6 bg-orange-500 text-white shrink-0">
             <div className="flex items-center justify-between mb-3">
               <div className="h-9 w-9 bg-white/20 rounded-xl flex items-center justify-center">
@@ -484,9 +594,9 @@ export default function ChegadaTab() {
 
           <div className="flex-1 overflow-y-auto p-6 space-y-5">
             <form id="encaixe-form" onSubmit={handleSubmitEncaixe} className="space-y-5">
-              {/* Patient Search */}
+              {/* Busca do paciente */}
               <div className="space-y-1 relative">
-                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Nome do Paciente</Label>
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Nome do Paciente <span className="text-rose-500">*</span></Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
@@ -512,47 +622,94 @@ export default function ChegadaTab() {
                 )}
               </div>
 
+              {/* CPF + CNS */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">CPF</Label>
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">CPF <span className="text-slate-300">(opcional)</span></Label>
                   <Input value={encaixeForm.cpf} onChange={e => setEncaixeForm(p => ({ ...p, cpf: maskCPF(e.target.value) }))} className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center focus:border-orange-400 outline-none" placeholder="000.000.000-00" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Cartão SUS</Label>
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">CNS / SUS <span className="text-slate-300">(opcional)</span></Label>
                   <Input value={encaixeForm.sus} onChange={e => setEncaixeForm(p => ({ ...p, sus: e.target.value }))} className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center focus:border-orange-400 outline-none" placeholder="000 0000 0000 0000" />
                 </div>
               </div>
 
+              {/* Nascimento */}
               <div className="space-y-1">
-                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Procedimento</Label>
-                <select value={encaixeForm.procedure_name} onChange={e => setEncaixeForm(p => ({ ...p, procedure_name: e.target.value, exam_type: dynamicTypes[e.target.value]?.[0] || "" }))} className="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 font-bold uppercase text-xs text-slate-700 outline-none focus:border-orange-400">
-                  {dynamicProcedures.map(p => <option key={p} value={p}>{p}</option>)}
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Data de Nascimento</Label>
+                <Input type="date" value={encaixeForm.birth_date} onChange={e => setEncaixeForm(p => ({ ...p, birth_date: e.target.value }))} className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-orange-400 outline-none" />
+              </div>
+
+              {/* ---- PROCEDIMENTOS (múltiplos) ---- */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Procedimentos Solicitados</Label>
+                  <button
+                    type="button"
+                    onClick={addEncaixeExam}
+                    className="h-7 px-3 bg-orange-50 border border-orange-200 text-orange-600 rounded-lg text-[9px] font-bold uppercase tracking-wide hover:bg-orange-100 transition-colors flex items-center gap-1"
+                  >
+                    <Plus className="h-3 w-3" /> Adicionar
+                  </button>
+                </div>
+
+                {encaixeExams.map((exam, idx) => (
+                  <div key={exam.id} className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 relative group/exam">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Exame {idx + 1}</span>
+                      {encaixeExams.length > 1 && (
+                        <button type="button" onClick={() => removeEncaixeExam(exam.id)} className="h-6 w-6 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-400 ml-1">Procedimento</Label>
+                        <select
+                          value={exam.procedure_name}
+                          onChange={e => updateEncaixeExam(exam.id, "procedure_name", e.target.value)}
+                          className="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 font-bold uppercase text-xs text-slate-700 outline-none focus:border-orange-400"
+                          required
+                        >
+                          <option value="">Selecione...</option>
+                          {dynamicProcedures.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-400 ml-1">Especificação</Label>
+                        <select
+                          value={exam.exam_type}
+                          onChange={e => updateEncaixeExam(exam.id, "exam_type", e.target.value)}
+                          className="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 font-bold uppercase text-xs text-slate-700 outline-none focus:border-orange-400"
+                        >
+                          <option value="">Nenhuma</option>
+                          {(dynamicTypes[exam.procedure_name] || []).map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    {slotWarnings[exam.id] && (
+                      <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                        <p className="text-[9px] font-bold text-amber-700 uppercase tracking-wide">{slotWarnings[exam.id]}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Prioridade */}
+              <div className="space-y-1">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Prioridade</Label>
+                <select value={encaixeForm.priority} onChange={e => setEncaixeForm(p => ({ ...p, priority: e.target.value }))} className="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 font-bold uppercase text-xs text-slate-700 outline-none focus:border-orange-400">
+                  <option value="Sem Prioridade">NORMAL</option>
+                  <option value="Idoso (60+)">IDOSO 60+</option>
+                  <option value="Gestante">GESTANTE</option>
+                  <option value="Prioritário">PRIORITÁRIO</option>
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Especificação</Label>
-                <select value={encaixeForm.exam_type} onChange={e => setEncaixeForm(p => ({ ...p, exam_type: e.target.value }))} className="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 font-bold uppercase text-xs text-slate-700 outline-none focus:border-orange-400">
-                  {(dynamicTypes[encaixeForm.procedure_name] || []).map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Nascimento</Label>
-                  <Input type="date" value={encaixeForm.birth_date} onChange={e => setEncaixeForm(p => ({ ...p, birth_date: e.target.value }))} className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-orange-400 outline-none" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Prioridade</Label>
-                  <select value={encaixeForm.priority} onChange={e => setEncaixeForm(p => ({ ...p, priority: e.target.value }))} className="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 font-bold uppercase text-xs text-slate-700 outline-none focus:border-orange-400">
-                    <option value="Sem Prioridade">NORMAL</option>
-                    <option value="Idoso (60+)">IDOSO 60+</option>
-                    <option value="Gestante">GESTANTE</option>
-                    <option value="Prioritário">PRIORITÁRIO</option>
-                  </select>
-                </div>
-              </div>
-
+              {/* Unidade de Origem */}
               <div className="space-y-1">
                 <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Unidade de Origem</Label>
                 <select value={encaixeForm.origin_id} onChange={e => setEncaixeForm(p => ({ ...p, origin_id: e.target.value }))} className="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 font-bold uppercase text-xs text-slate-700 outline-none focus:border-orange-400">
@@ -565,20 +722,30 @@ export default function ChegadaTab() {
                 <Input placeholder="NOME DA UNIDADE..." value={encaixeForm.new_origin_name} onChange={e => setEncaixeForm(p => ({ ...p, new_origin_name: e.target.value.toUpperCase() }))} className="h-11 bg-orange-50 border-orange-200 rounded-xl text-xs font-bold text-slate-700 focus:border-orange-400 outline-none" />
               )}
 
+              {/* Chave SISREG — condicional */}
               <div className="space-y-1">
-                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Chave SISREG (opcional)</Label>
-                <Input value={encaixeForm.chave_sisreg} onChange={e => setEncaixeForm(p => ({ ...p, chave_sisreg: e.target.value }))} className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-orange-400 outline-none" placeholder="OPCIONAL..." />
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">
+                  Chave SISREG {isEncaixeSisreg ? <span className="text-rose-500 ml-1">*obrigatória</span> : <span className="text-slate-300">(opcional)</span>}
+                </Label>
+                <Input
+                  value={encaixeForm.chave_sisreg}
+                  onChange={e => setEncaixeForm(p => ({ ...p, chave_sisreg: e.target.value }))}
+                  required={isEncaixeSisreg}
+                  placeholder={isEncaixeSisreg ? "OBRIGATÓRIO - APENAS NÚMEROS" : "OPCIONAL..."}
+                  className={`h-11 rounded-xl text-xs font-bold text-slate-700 outline-none ${isEncaixeSisreg ? 'bg-rose-50 border-rose-200 focus:border-rose-400' : 'bg-white border-slate-200 focus:border-orange-400'}`}
+                />
               </div>
             </form>
           </div>
 
           <div className="p-6 border-t border-slate-100 bg-white shrink-0">
             <Button form="encaixe-form" type="submit" disabled={isSubmittingEncaixe} className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold uppercase tracking-wider text-xs transition-all shadow-sm">
-              {isSubmittingEncaixe ? <Loader2 className="h-5 w-5 animate-spin" /> : "Confirmar Encaixe"}
+              {isSubmittingEncaixe ? <Loader2 className="h-5 w-5 animate-spin" /> : `Confirmar Encaixe (${encaixeExams.length} exame${encaixeExams.length > 1 ? 's' : ''})`}
             </Button>
           </div>
         </SheetContent>
       </Sheet>
+      <Footer />
     </div>
   )
 }

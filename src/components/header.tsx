@@ -61,7 +61,7 @@ export function Header() {
 
           {/* Navigation Tabs — horizontal scroll on small screens */}
           {tabs && tabs.length > 0 && (
-            <nav className="flex items-center p-1 bg-slate-100 rounded-2xl space-x-0.5 overflow-x-auto no-scrollbar min-w-0 flex-1">
+            <nav className="flex items-center p-1 bg-slate-100 rounded-2xl space-x-0.5 overflow-x-auto min-w-0 flex-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon
                 const isActive = activeTab === tab.id

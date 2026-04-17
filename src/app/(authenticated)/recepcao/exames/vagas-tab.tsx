@@ -1,4 +1,5 @@
 "use client"
+import { Footer } from "@/components/footer"
 import { useState, useEffect, useMemo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { Calendar as CalendarIcon, Save, Search, Trash2, Settings2, Loader2 } from "lucide-react"
@@ -276,6 +277,7 @@ export default function VagasTab() {
         onOpenChange={setIsManagerOpen}
         onUpdate={loadProcedures}
       />
+      <Footer />
     </div>
   )
 }
