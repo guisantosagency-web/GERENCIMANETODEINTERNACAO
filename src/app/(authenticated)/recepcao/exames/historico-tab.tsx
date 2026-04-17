@@ -135,7 +135,7 @@ export default function HistoricoTab() {
     })
   }, [appointments, searchTerm, selectedProcedures, selectedTypes, selectedStatuses, selectedReceptionist])
 
-  const groupedProcedures = useMemo(() => {
+  const availableProcedures = useMemo(() => {
     const set = new Set<string>()
     appointments.forEach(a => set.add(normalizeProcedureName(a.procedure_name)))
     return Array.from(set).sort()
