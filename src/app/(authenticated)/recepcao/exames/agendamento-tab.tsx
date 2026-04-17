@@ -422,7 +422,12 @@ export default function AgendamentoTab() {
 
     const mainAppt = examsToPrint[0] || appt
 
-    const content = `
+    try {
+      const examDateStr = mainAppt.exam_date 
+        ? new Date(mainAppt.exam_date.includes('T') ? mainAppt.exam_date : mainAppt.exam_date + 'T00:00:00').toLocaleDateString('pt-BR')
+        : '--'
+
+      const content = `
       <!DOCTYPE html><html><head>
         <title>Comprovação de Agendamento</title>
         <style>
@@ -523,7 +528,7 @@ export default function AgendamentoTab() {
                     </div>
                     <div class="data-item">
                       <span class="data-label">Data</span>
-                      <span class="data-value" style="font-size: 8pt;">${mainAppt.exam_date ? new Date(mainAppt.exam_date+'T00:00:00').toLocaleDateString('pt-BR') : '--'}</span>
+                      <span class="data-value" style="font-size: 8pt;">${examDateStr}</span>
                     </div>
                   </div>
                 </div>
@@ -556,13 +561,26 @@ export default function AgendamentoTab() {
           `).join('')}
         </div>
       </body></html>`
-    printWindow.document.write(content)
-    printWindow.document.close()
-    
-    // Aguarda um tempo para garantir que os logos carreguem antes de abrir o diálogo de impressão
-    setTimeout(() => {
-      printWindow.print()
-    }, 1800)
+      
+      printWindow.document.write(content)
+      printWindow.document.close()
+      
+      // Aguarda um tempo para garantir que os logos carreguem antes de abrir o diálogo de impressão
+      setTimeout(() => {
+        if (printWindow.closed) return
+        printWindow.print()
+      }, 1800)
+    } catch (err: any) {
+      console.error("Erro na geração do comprovante:", err)
+      printWindow.document.write(`
+        <div style="padding: 20px; font-family: sans-serif; color: red;">
+          <h2>Erro ao gerar comprovante</h2>
+          <p>${err?.message || "Erro desconhecido"}</p>
+          <pre>${JSON.stringify(appt, null, 2)}</pre>
+        </div>
+      `)
+      printWindow.document.close()
+    }
   }
 
   return (
