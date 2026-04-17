@@ -548,7 +548,7 @@ export default function AgendamentoTab() {
     // Aguarda um tempo para garantir que os logos carreguem antes de abrir o diálogo de impressão
     setTimeout(() => {
       printWindow.print()
-    }, 1500)
+    }, 1800)
   }
 
   return (
