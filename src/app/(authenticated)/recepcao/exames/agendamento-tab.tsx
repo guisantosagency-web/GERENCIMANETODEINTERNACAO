@@ -204,6 +204,17 @@ export default function AgendamentoTab() {
     }
   }
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   async function loadConfig() {
     const { data: pData } = await supabase.from("exam_procedures_list").select("name")
     const { data: tData } = await supabase.from("exam_types_list").select("name, procedure_name")
@@ -352,6 +363,48 @@ export default function AgendamentoTab() {
     if (!appointmentSearch) return dateAppointments
     return dateAppointments.filter(a => a.patient_name.toLowerCase().includes(appointmentSearch.toLowerCase()))
   }, [dateAppointments, appointmentSearch])
+
+  const cancelAppointment = async (id: string, name: string) => {
+    if (!confirm(`Cancelar o agendamento de ${name}?`)) return
+    try {
+      await supabase.from('exam_appointments').update({ status: 'cancelado' }).eq('id', id)
+      loadDateAppointments(selectedAgendadoDate)
+    } catch (err) {
+      console.error(err)
+      alert('Erro ao cancelar')
+    }
+  }
+
+  const printAppointment = (appt: any) => {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+    const content = `
+      <!DOCTYPE html><html><head>
+        <title>Comprovação de Agendamento</title>
+        <style>
+          @page { size: A5; margin: 15mm; }
+          body { font-family: Arial, sans-serif; color: #111; font-size: 11pt; }
+          h1 { font-size: 14pt; text-transform: uppercase; border-bottom: 2px solid #14b8a6; padding-bottom: 6px; margin-bottom: 12px; }
+          .row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+          .label { font-weight: bold; font-size: 9pt; color: #64748b; text-transform: uppercase; }
+          .value { font-weight: bold; font-size: 10pt; }
+          .footer { margin-top: 20px; font-size: 8pt; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 8px; text-align: center; }
+        </style>
+      </head><body>
+        <h1>Comprovante de Agendamento</h1>
+        <div class="row"><span class="label">Paciente</span><span class="value">${appt.patient_name}</span></div>
+        <div class="row"><span class="label">CPF</span><span class="value">${appt.cpf || '--'}</span></div>
+        <div class="row"><span class="label">SUS</span><span class="value">${appt.sus || '--'}</span></div>
+        <div class="row"><span class="label">Procedimento</span><span class="value">${appt.procedure_name} ${appt.exam_type ? '('+appt.exam_type+')' : ''}</span></div>
+        <div class="row"><span class="label">Data</span><span class="value">${appt.exam_date ? new Date(appt.exam_date+'T00:00:00').toLocaleDateString('pt-BR') : '--'}</span></div>
+        <div class="row"><span class="label">Hora</span><span class="value">${appt.exam_time || '--'}</span></div>
+        <div class="row"><span class="label">Status</span><span class="value">${appt.status}</span></div>
+        <div class="footer">HTO Caxias &mdash; Sistema de Gestão de Exames</div>
+      </body></html>`
+    printWindow.document.write(content)
+    printWindow.document.close()
+    printWindow.print()
+  }
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
@@ -568,7 +621,24 @@ export default function AgendamentoTab() {
                       <div className="flex items-center gap-1.5 text-slate-500 font-bold text-[9px]">
                         <Clock className="h-3.5 w-3.5 text-orange-400" /> {appt.exam_time}
                       </div>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"><Printer className="h-3.5 w-3.5" /></Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon" variant="ghost"
+                          onClick={() => printAppointment(appt)}
+                          title="Imprimir comprovante"
+                          className="h-7 w-7 rounded-lg text-slate-400 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                        >
+                          <Printer className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="icon" variant="ghost"
+                          onClick={() => cancelAppointment(appt.id, appt.patient_name)}
+                          title="Cancelar agendamento"
+                          className="h-7 w-7 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                    </div>
                  </div>
                </div>

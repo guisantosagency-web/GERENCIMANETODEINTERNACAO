@@ -11,14 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/lib/auth-context"
 import { format } from "date-fns"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
 
 export default function PacientesTab() {
   const [patients, setPatients] = useState<any[]>([])
@@ -287,99 +280,103 @@ export default function PacientesTab() {
         )}
       </div>
 
-      {/* MODAL DE EDIÇÃO LIGHT */}
-      <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="max-w-3xl p-0 border-none bg-transparent shadow-none">
-          <div className="bg-white rounded-3xl p-8 lg:p-10 border border-slate-100 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
-            
-            <DialogHeader className="mb-10">
-              <div className="flex items-center gap-6">
-                <div className="p-4 bg-teal-50 text-teal-600 rounded-2xl border border-teal-100 shadow-sm">
-                  <UserCircle className="h-8 w-8" />
-                </div>
-                <div>
-                  <DialogTitle className="text-2xl font-bold font-space uppercase tracking-tight text-slate-800 leading-tight">Configuração Dossiê</DialogTitle>
-                  <DialogDescription className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">ID Sistema Core: {selectedPatient?.id}</DialogDescription>
-                </div>
+      {/* SHEET DE EDIÇÃO — desliza da direita */}
+      <Sheet open={isEditing} onOpenChange={setIsEditing}>
+        <SheetContent side="right" className="w-[480px] sm:max-w-[520px] p-0 border-l border-slate-200 bg-slate-50 flex flex-col shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="p-6 bg-teal-500 text-white shrink-0">
+            <div className="flex items-center justify-between mb-3">
+              <div className="h-9 w-9 bg-white/20 rounded-xl flex items-center justify-center">
+                <UserCircle className="h-5 w-5" />
               </div>
-            </DialogHeader>
+              <button onClick={() => setIsEditing(false)} className="h-9 w-9 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <h3 className="text-xl font-bold uppercase tracking-tight">Configuração Dossiê</h3>
+            <p className="text-teal-100 text-[10px] font-bold uppercase tracking-wider mt-0.5 truncate">{selectedPatient?.full_name}</p>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-10">
-              <div className="md:col-span-2 space-y-2">
-                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Nome Completo do Paciente</Label>
-                <div className="relative group">
-                  <Input 
-                    value={selectedPatient?.full_name} 
-                    onChange={e => setSelectedPatient({ ...selectedPatient, full_name: e.target.value.toUpperCase() })}
-                    className="h-12 pl-4 bg-slate-50 border-slate-200 rounded-xl text-xs font-bold text-slate-700 uppercase focus:border-teal-400 transition-all outline-none"
-                  />
-                  <User className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-teal-500" />
-                </div>
+          {/* Form */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            <div className="space-y-1">
+              <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Nome Completo do Paciente</Label>
+              <div className="relative">
+                <Input
+                  value={selectedPatient?.full_name || ""}
+                  onChange={e => setSelectedPatient({ ...selectedPatient, full_name: e.target.value.toUpperCase() })}
+                  className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 uppercase focus:border-teal-400 outline-none pr-10"
+                />
+                <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Documento CPF</Label>
-                <Input 
-                  value={selectedPatient?.cpf} 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">CPF</Label>
+                <Input
+                  value={selectedPatient?.cpf || ""}
                   onChange={e => setSelectedPatient({ ...selectedPatient, cpf: e.target.value })}
-                  className="h-12 px-4 bg-slate-50 border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-teal-400 transition-all outline-none"
+                  className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center focus:border-teal-400 outline-none"
+                  placeholder="000.000.000-00"
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Cartão Nacional SUS</Label>
-                <Input 
-                  value={selectedPatient?.sus} 
+              <div className="space-y-1">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Cartão SUS</Label>
+                <Input
+                  value={selectedPatient?.sus || ""}
                   onChange={e => setSelectedPatient({ ...selectedPatient, sus: e.target.value })}
-                  className="h-12 px-4 bg-slate-50 border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-teal-400 transition-all outline-none"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Data de Nascimento</Label>
-                <Input 
-                  type="date"
-                  value={selectedPatient?.data_nascimento} 
-                  onChange={e => setSelectedPatient({ ...selectedPatient, data_nascimento: e.target.value })}
-                  className="h-12 px-4 bg-slate-50 border-slate-200 rounded-xl text-xs font-bold text-slate-700 uppercase focus:border-teal-400 transition-all outline-none"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Município de Residência</Label>
-                <Input 
-                  value={selectedPatient?.municipio} 
-                  onChange={e => setSelectedPatient({ ...selectedPatient, municipio: e.target.value.toUpperCase() })}
-                  className="h-12 px-4 bg-slate-50 border-slate-200 rounded-xl text-xs font-bold text-slate-700 uppercase focus:border-teal-400 transition-all outline-none"
+                  className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center focus:border-teal-400 outline-none"
+                  placeholder="000 0000 0000 0000"
                 />
               </div>
             </div>
 
-            <DialogFooter className="pt-6 border-t border-slate-100 flex items-center justify-between w-full">
-               <Button 
-                 variant="ghost" 
-                 onClick={() => setIsEditing(false)}
-                 className="h-12 px-6 rounded-xl font-bold uppercase text-[10px] tracking-wider text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-all"
-               >
-                 Descartar Alterações
-               </Button>
-               
-               <Button 
-                 onClick={savePatient} 
-                 disabled={isSaving}
-                 className="h-12 px-8 rounded-xl bg-teal-500 text-white font-bold uppercase tracking-wider text-[11px] shadow-sm hover:bg-teal-600 transition-all duration-300"
-               >
-                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                   <>
-                     <Save className="h-4 w-4 mr-2" />
-                     Salvar Dossiê
-                   </>
-                 )}
-               </Button>
-            </DialogFooter>
+            <div className="space-y-1">
+              <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Data de Nascimento</Label>
+              <Input
+                type="date"
+                value={selectedPatient?.data_nascimento || ""}
+                onChange={e => setSelectedPatient({ ...selectedPatient, data_nascimento: e.target.value })}
+                className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-teal-400 outline-none"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-1">Município de Residência</Label>
+              <Input
+                value={selectedPatient?.municipio || ""}
+                onChange={e => setSelectedPatient({ ...selectedPatient, municipio: e.target.value.toUpperCase() })}
+                placeholder="EX: IMPERATRIZ"
+                className="h-11 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 uppercase focus:border-teal-400 outline-none"
+              />
+            </div>
+
+            <div className="p-4 bg-slate-100 rounded-xl border border-slate-200">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1">ID Sistema Core</p>
+              <p className="text-[10px] font-bold text-slate-600 truncate">{selectedPatient?.id}</p>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          {/* Footer */}
+          <div className="p-6 border-t border-slate-100 bg-white shrink-0 flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setIsEditing(false)}
+              className="flex-1 h-11 rounded-xl font-bold uppercase text-[10px] tracking-wider text-slate-500 border-slate-200 hover:bg-slate-50"
+            >
+              Descartar
+            </Button>
+            <Button
+              onClick={savePatient}
+              disabled={isSaving}
+              className="flex-1 h-11 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold uppercase text-[10px] tracking-wider shadow-sm"
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-1.5" />Salvar Dossiê</>}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
