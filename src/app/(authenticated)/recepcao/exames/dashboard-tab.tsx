@@ -9,10 +9,10 @@ import {
   CalendarDays, TrendingDown, Target, Activity, Users, Clock
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useAuth } from "@/lib/auth-context"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 
 function DashboardCard({ title, value, label, icon: Icon, colorClass, percentage, secondaryText }: any) {
@@ -64,6 +64,10 @@ export default function ExamesDashboardTab() {
   const [selectedYear, setSelectedYear] = useState<string | null>(new Date().getFullYear().toString())
 
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
+
+  // Modals state
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const [selectedProcDetails, setSelectedProcDetails] = useState<{name: string, count: number, subDetails: {detailName: string, count: number}[]} | null>(null)
 
   const loadData = async () => {
     setIsLoading(true)
@@ -120,7 +124,8 @@ export default function ExamesDashboardTab() {
     const totalToday = todayRecs.length
 
     // Procedimentos agrupados com lógica de Tomografia
-    const procCounts: Record<string, number> = {}
+    const procMap: Record<string, any[]> = {}
+    
     filteredRecords.forEach(r => {
       let pName = (r.procedure_name || "NÃO INFORMADO").toUpperCase()
       const pType = (r.exam_type || "").toUpperCase()
@@ -132,11 +137,23 @@ export default function ExamesDashboardTab() {
            pName = "TOMOGRAFIA SEM CONTRASTE"
          }
       }
-      procCounts[pName] = (procCounts[pName] || 0) + 1
+      
+      if (!procMap[pName]) procMap[pName] = []
+      procMap[pName].push(r)
     })
     
-    const procedures = Object.entries(procCounts)
-      .map(([name, count]) => ({ name, count }))
+    const procedures = Object.entries(procMap)
+      .map(([name, records]) => {
+         const originalMap: Record<string, number> = {}
+         records.forEach(r => {
+            const statusStr = r.status === 'cancelado' ? ' (CANCELADO)' : ''
+            const typeStr = r.exam_type && String(r.exam_type).trim().length > 0 ? ` [${r.exam_type}]` : ''
+            const label = `${r.procedure_name || "NÃO INFORMADO"}${typeStr}${statusStr}`.toUpperCase()
+            originalMap[label] = (originalMap[label] || 0) + 1
+         })
+         const subDetails = Object.entries(originalMap).map(([detailName, count]) => ({ detailName, count })).sort((a,b) => b.count - a.count)
+         return { name, count: records.length, subDetails }
+      })
       .sort((a, b) => b.count - a.count)
 
     return {
@@ -342,11 +359,15 @@ export default function ExamesDashboardTab() {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-5">
                  {stats.procedures.length > 0 ? (
                    stats.procedures.map(p => (
-                     <div key={p.name} className="p-5 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-indigo-200 hover:shadow-sm border-b-[3px] hover:border-b-indigo-400 transition-all flex flex-col justify-between min-h-[140px]">
+                     <div 
+                       key={p.name} 
+                       onClick={() => { setSelectedProcDetails(p); setIsDetailsOpen(true); }}
+                       className="p-5 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-indigo-300 hover:shadow-md border-b-[3px] hover:border-b-indigo-500 cursor-pointer transition-all flex flex-col justify-between min-h-[140px]"
+                     >
                         <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 mb-6 leading-relaxed line-clamp-2">{p.name}</span>
                         <div className="flex items-baseline gap-2 mt-auto">
                            <h4 className="text-3xl font-black font-space tracking-tighter text-slate-800">{p.count}</h4>
-                           <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">exames</span>
+                           <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest group-hover:text-indigo-400 transition-colors">exames</span>
                         </div>
                      </div>
                    ))
@@ -359,6 +380,38 @@ export default function ExamesDashboardTab() {
            </div>
         </div>
       </div>
+
+      {/* Modal de Detalhes dos Procedimentos */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="sm:max-w-[600px] bg-white border-slate-200 p-0 overflow-hidden rounded-[2rem]">
+          <div className="p-6 bg-indigo-50 border-b border-indigo-100 flex items-center gap-4">
+             <div className="h-12 w-12 bg-white text-indigo-600 rounded-2xl flex items-center justify-center shadow-sm">
+                <Target className="h-6 w-6" />
+             </div>
+             <div>
+               <DialogTitle className="text-xl font-bold font-space uppercase tracking-tight text-slate-800">
+                 {selectedProcDetails?.name}
+               </DialogTitle>
+               <p className="text-xs font-bold text-slate-500 uppercase mt-1">
+                 Total no Período: <span className="text-indigo-600 font-black">{selectedProcDetails?.count}</span> exames
+               </p>
+             </div>
+          </div>
+          <div className="p-6 max-h-[60vh] overflow-y-auto">
+             {selectedProcDetails?.subDetails.map((sub, idx) => (
+                <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl mb-3 last:mb-0 hover:border-indigo-200 transition-all">
+                   <span className="text-xs font-bold text-slate-700 uppercase leading-snug max-w-[80%]">
+                     {sub.detailName}
+                   </span>
+                   <div className="h-8 min-w-[32px] px-3 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-xs font-black text-slate-800 shadow-sm">
+                     {sub.count}
+                   </div>
+                </div>
+             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
+
