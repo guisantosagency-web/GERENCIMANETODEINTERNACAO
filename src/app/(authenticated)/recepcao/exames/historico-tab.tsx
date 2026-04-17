@@ -15,27 +15,27 @@ import { useAuth } from "@/lib/auth-context"
 function MultiSelect({ label, options, selected, onChange, icon: Icon }: any) {
   return (
     <div className="space-y-1.5">
-      <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-2">{label}</Label>
+      <Label className="uppercase text-[9px] font-bold tracking-widest text-slate-500 ml-2">{label}</Label>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="w-full h-12 bg-[#161B22] border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest justify-between px-5 hover:bg-white/5 hover:border-[#FF6B35]/30 transition-all shadow-xl text-white">
+          <Button variant="outline" className="w-full h-12 bg-white border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest justify-between px-4 hover:bg-slate-50 hover:border-teal-300 transition-all shadow-sm text-slate-700">
             <div className="flex items-center gap-3 truncate">
-              {Icon && <Icon className="h-4 w-4 text-[#FF6B35]" />}
+              {Icon && <Icon className="h-4 w-4 text-teal-600" />}
               {selected.length === 0 ? "TODOS" : selected.length === 1 ? selected[0] : `${selected.length} SELECIONADOS`}
             </div>
-            <ChevronDown className="h-4 w-4 text-[#7E8C9A]" />
+            <ChevronDown className="h-4 w-4 text-slate-400" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-2 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-white/10 bg-[#161B22]/95 backdrop-blur-2xl z-50">
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-2 rounded-xl shadow-lg border-slate-100 bg-white z-50">
           <div className="max-h-[300px] overflow-y-auto no-scrollbar space-y-1">
             <button
               onClick={() => onChange([])}
-              className="w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase hover:bg-white/5 transition-colors flex items-center justify-between group text-[#7E8C9A] hover:text-white"
+              className="w-full text-left px-4 py-3 rounded-lg text-[10px] font-bold uppercase hover:bg-slate-50 transition-colors flex items-center justify-between group text-slate-600 hover:text-slate-800"
             >
               <span>MOSTRAR TODOS</span>
-              {selected.length === 0 && <Check className="h-4 w-4 text-[#FF6B35]" />}
+              {selected.length === 0 && <Check className="h-4 w-4 text-teal-600" />}
             </button>
-            <div className="h-px bg-white/5 my-1" />
+            <div className="h-px bg-slate-100 my-1" />
             {options.map((opt: string) => {
               const isSelected = selected.includes(opt)
               return (
@@ -45,10 +45,10 @@ function MultiSelect({ label, options, selected, onChange, icon: Icon }: any) {
                     if (isSelected) onChange(selected.filter((s: string) => s !== opt))
                     else onChange([...selected, opt])
                   }}
-                  className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-between group ${isSelected ? 'bg-[#FF6B35]/10 text-[#FF6B35]' : 'hover:bg-white/5 text-[#7E8C9A] hover:text-white'}`}
+                  className={`w-full text-left px-4 py-3 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center justify-between group ${isSelected ? 'bg-teal-50 text-teal-700' : 'hover:bg-slate-50 text-slate-600 hover:text-slate-800'}`}
                 >
                   <span className="truncate pr-4">{opt}</span>
-                  {isSelected && <Check className="h-4 w-4" />}
+                  {isSelected && <Check className="h-4 w-4 text-teal-600" />}
                 </button>
               )
             })}
@@ -228,69 +228,68 @@ export default function HistoricoTab() {
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 relative pb-40">
       {/* FILTROS PREMIUM */}
-      <div className="card-csgo rounded-[3.5rem] p-8 lg:p-12 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#FF6B35] to-transparent" />
-        <div className="flex flex-col gap-10">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-            <div className="flex items-center gap-5">
-              <div className="p-4 bg-[#FF6B35]/10 text-[#FF6B35] rounded-3xl shadow-xl border border-[#FF6B35]/20">
-                <Clock className="h-7 w-7" />
+      <div className="bg-white rounded-3xl p-8 lg:p-10 shadow-sm border border-slate-100 relative overflow-hidden">
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-teal-50 text-teal-600 rounded-2xl shadow-sm border border-teal-100">
+                <Clock className="h-6 w-6" />
               </div>
               <div>
-                <h2 className="text-4xl font-black font-space uppercase tracking-tight text-white leading-tight">Histórico Auditável</h2>
-                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#7E8C9A] mt-1">Terminal de Consulta e Relatórios</p>
+                <h2 className="text-2xl font-bold font-space uppercase tracking-tight text-slate-800 leading-tight">Histórico Auditável</h2>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Terminal de Consulta e Relatórios</p>
               </div>
             </div>
             
             <Button 
               onClick={generateRelatorioPDF}
-              className="h-16 px-10 rounded-2xl bg-[#00D9FF] text-white font-black uppercase tracking-widest text-[11px] hover:scale-[1.05] transition-all shadow-[0_10px_30px_rgba(0,217,255,0.3)] group"
+              className="h-12 px-8 rounded-xl bg-teal-500 text-white font-bold uppercase tracking-wider text-[11px] hover:bg-teal-600 transition-all shadow-sm group"
             >
-              <Download className="h-5 w-5 mr-3 group-hover:animate-bounce" />
+              <Download className="h-4 w-4 mr-2 group-hover:translate-y-0.5 transition-transform" />
               Exportar Protocolo
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-12 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-12 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100">
             <div className="xl:col-span-4 space-y-2">
-              <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-2">Identificação / Busca Geral</Label>
+              <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Identificação / Busca Geral</Label>
               <div className="relative group">
                 <Input
                   placeholder="NOME, CPF OU SUS..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className="pl-14 h-14 bg-[#161B22] border-white/5 rounded-2xl text-[11px] font-black uppercase text-white transition-all focus:border-[#FF6B35]/50 shadow-xl"
+                  className="pl-12 h-12 bg-white border-slate-200 rounded-xl text-[11px] font-bold uppercase text-slate-700 transition-all focus:border-teal-400 shadow-sm outline-none"
                 />
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7E8C9A] group-focus-within:text-[#FF6B35]" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-teal-500" />
               </div>
             </div>
 
             <div className="xl:col-span-2 space-y-2">
-              <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-2">Monitor Inicial</Label>
+              <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Data Inicial</Label>
               <Input
                 type="date"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
-                className="h-14 px-6 bg-[#161B22] border-white/5 rounded-2xl text-xs font-black text-white uppercase focus:border-[#FF6B35]/50 shadow-xl"
+                className="h-12 px-4 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 uppercase focus:border-teal-400 shadow-sm outline-none"
               />
             </div>
 
             <div className="xl:col-span-2 space-y-2">
-              <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-2">Monitor Final</Label>
+              <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Data Final</Label>
               <Input
                 type="date"
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
-                className="h-14 px-6 bg-[#161B22] border-white/5 rounded-2xl text-xs font-black text-white uppercase focus:border-[#FF6B35]/50 shadow-xl"
+                className="h-12 px-4 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 uppercase focus:border-teal-400 shadow-sm outline-none"
               />
             </div>
 
             <div className="xl:col-span-2 space-y-2">
-              <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-2">Atendente</Label>
+              <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Atendente</Label>
               <select
                 value={selectedReceptionist}
                 onChange={e => setSelectedReceptionist(e.target.value)}
-                className="w-full h-14 bg-[#161B22] border border-white/5 px-6 rounded-2xl text-[10px] font-black uppercase text-white shadow-xl focus:border-[#FF6B35]/50 outline-none appearance-none"
+                className="w-full h-12 bg-white border border-slate-200 px-4 rounded-xl text-[10px] font-bold uppercase text-slate-700 shadow-sm focus:border-teal-400 outline-none cursor-pointer"
               >
                 <option value="">TODOS</option>
                 {receptionists.map(r => <option key={r} value={r}>{r}</option>)}
@@ -298,9 +297,9 @@ export default function HistoricoTab() {
             </div>
 
             <div className="xl:col-span-2 flex items-end">
-              <div className="w-full h-14 bg-[#FF6B35]/5 rounded-2xl border border-[#FF6B35]/10 flex flex-col items-center justify-center">
-                <p className="text-[8px] font-black text-[#FF6B35]/60 uppercase tracking-widest">Registros</p>
-                <p className="text-xl font-black text-[#FF6B35] leading-none">{filteredAppointments.length}</p>
+              <div className="w-full h-12 bg-teal-50 rounded-xl border border-teal-100 flex flex-col items-center justify-center">
+                <p className="text-[8px] font-bold text-teal-600/70 uppercase tracking-widest">Registros</p>
+                <p className="text-lg font-bold text-teal-700 leading-none">{filteredAppointments.length}</p>
               </div>
             </div>
           </div>
@@ -309,84 +308,84 @@ export default function HistoricoTab() {
 
       {loading ? (
         <div className="h-64 flex flex-col items-center justify-center gap-4">
-          <Loader2 className="h-10 w-10 animate-spin text-purple-500" />
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-500/60">Carregando Histórico...</p>
+          <Loader2 className="h-10 w-10 animate-spin text-teal-500" />
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Carregando Histórico...</p>
         </div>
       ) : (
-        <div className="glass-premium rounded-[2.5rem] overflow-hidden shadow-premium">
+        <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm border border-slate-100">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Paciente</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Documentos</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Exame</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Data / Hora</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Chave SISREG</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Atendente</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Paciente</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Documentos</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Exame</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Data / Hora</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Chave SISREG</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Atendente</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filteredAppointments.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-8 py-20 text-center">
-                      <div className="flex flex-col items-center gap-4 opacity-20">
-                        <Search className="h-12 w-12" />
-                        <p className="font-black uppercase tracking-widest text-sm">Nenhum registro encontrado</p>
+                      <div className="flex flex-col items-center gap-4 opacity-40">
+                        <Search className="h-10 w-10 text-slate-400" />
+                        <p className="font-bold uppercase tracking-wider text-xs text-slate-500">Nenhum registro encontrado</p>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   filteredAppointments.map(appt => (
-                    <tr key={appt.id} onClick={() => setSelectedPatient(appt)} className="hover:bg-gradient-to-r hover:from-slate-50/60 hover:to-blue-50/30 transition-all duration-200 group cursor-pointer border-b border-slate-50">
-                      <td className="px-8 py-5">
+                    <tr key={appt.id} onClick={() => setSelectedPatient(appt)} className="hover:bg-slate-50 transition-colors duration-200 cursor-pointer border-b border-slate-50">
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center font-black text-blue-600 text-xs">
+                          <div className="h-10 w-10 rounded-xl bg-teal-50 flex items-center justify-center font-bold text-teal-600 text-xs border border-teal-100">
                             {appt.patient_name.charAt(0)}
                           </div>
-                          <span className="font-black text-slate-700 uppercase text-sm">{appt.patient_name}</span>
+                          <span className="font-bold text-slate-800 uppercase text-sm">{appt.patient_name}</span>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-6 py-4">
                         <div className="space-y-1">
-                          <p className="text-[9px] font-bold text-slate-400">CPF: {appt.cpf || "---"}</p>
-                          <p className="text-[9px] font-bold text-slate-400">SUS: {appt.sus || "---"}</p>
+                          <p className="text-[9px] font-bold text-slate-500 uppercase">CPF: <span className="text-slate-700">{appt.cpf || "---"}</span></p>
+                          <p className="text-[9px] font-bold text-slate-500 uppercase">SUS: <span className="text-slate-700">{appt.sus || "---"}</span></p>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-6 py-4">
                         <div className="space-y-1">
-                          <p className="font-black text-slate-700 text-xs uppercase">{appt.procedure_name}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">{appt.exam_type}</p>
+                          <p className="font-bold text-slate-800 text-xs uppercase">{appt.procedure_name}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">{appt.exam_type}</p>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-2 text-slate-600">
-                          <Calendar className="h-3 w-3 text-blue-500" />
-                          <span className="text-xs font-black uppercase tracking-tighter">
+                          <Calendar className="h-3 w-3 text-emerald-500" />
+                          <span className="text-xs font-bold uppercase tracking-tight">
                             {format(parseISO(appt.exam_date), 'dd/MM/yyyy')}
                           </span>
-                          <span className="text-xs font-black text-slate-400 ml-2">{appt.exam_time}</span>
+                          <span className="text-xs font-bold text-slate-400 ml-1">{appt.exam_time}</span>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-purple-600 bg-purple-50 px-3 py-1.5 rounded-full inline-block">
+                      <td className="px-6 py-4">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md inline-block border border-purple-100">
                           {(appt.chave_sisreg && !appt.chave_sisreg.includes('IMPORT_SISREG')) ? appt.chave_sisreg : "N/A"}
                         </span>
                       </td>
-                      <td className="px-8 py-5">
-                        <span className="text-[10px] font-black uppercase text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
+                      <td className="px-6 py-4">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-slate-600 bg-white border border-slate-200 shadow-sm px-2.5 py-1 rounded-md">
                           {appt.receptionist_name || "SISTEMA"}
                         </span>
                       </td>
-                      <td className="px-8 py-5">
-                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${appt.status === 'presente' ? 'bg-emerald-100 text-emerald-600' :
-                            appt.status === 'falta' ? 'bg-red-100 text-red-600' :
-                              'bg-blue-100 text-blue-600'
+                      <td className="px-6 py-4">
+                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider ${appt.status === 'presente' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                            appt.status === 'falta' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                              'bg-cyan-50 text-cyan-600 border border-cyan-100'
                           }`}>
                           <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${appt.status === 'presente' ? 'bg-emerald-500' :
-                              appt.status === 'falta' ? 'bg-red-500' :
-                                'bg-blue-500'
+                              appt.status === 'falta' ? 'bg-rose-500' :
+                                'bg-cyan-500'
                             }`} />
                           {appt.status}
                         </div>
@@ -398,22 +397,19 @@ export default function HistoricoTab() {
             </table>
           </div>
 
-          <div className="bg-gradient-to-r from-slate-50 to-slate-50/50 px-8 py-5 border-t border-slate-100/80 flex items-center justify-between">
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+          <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
               Total de registros filtrados: <span className="text-slate-800">{filteredAppointments.length}</span>
             </div>
             <div className="flex items-center gap-3">
               {(selectedProcedures.length > 0 || selectedStatuses.length > 0 || searchTerm) && (
                 <button
                   onClick={() => { setSelectedProcedures([]); setSelectedStatuses([]); setSearchTerm("") }}
-                  className="text-[10px] font-black uppercase text-rose-500 hover:text-rose-600 transition-colors px-4"
+                  className="text-[9px] font-bold uppercase tracking-wider text-rose-500 hover:text-rose-600 transition-colors px-3 py-1.5 bg-rose-50 rounded-md border border-rose-100"
                 >
                   LIMPAR FILTROS ✕
                 </button>
               )}
-              <Button variant="ghost" onClick={generateRelatorioPDF} className="rounded-xl text-[10px] font-black uppercase tracking-widest gap-2 hover:bg-white shadow-sm border border-transparent hover:border-slate-100 transition-all">
-                <Download className="h-4 w-4" /> Exportar Relatório
-              </Button>
             </div>
           </div>
         </div>
@@ -421,71 +417,71 @@ export default function HistoricoTab() {
 
       {/* PAINEL LATERAL COM DETALHES DO PACIENTE E HISTÓRICO COMPLETO */}
       <Sheet open={!!selectedPatient} onOpenChange={(open) => !open && setSelectedPatient(null)}>
-        <SheetContent side="right" className="min-w-[400px] w-[500px] sm:max-w-[600px] sm:w-[90vw] p-0 border-l border-white/20 bg-slate-50/95 backdrop-blur-xl overflow-hidden flex flex-col shadow-2xl">
+        <SheetContent side="right" className="min-w-[400px] w-[500px] sm:max-w-[600px] sm:w-[90vw] p-0 border-l border-slate-200 bg-slate-50 overflow-hidden flex flex-col shadow-2xl">
           <SheetHeader className="p-8 bg-white border-b border-slate-100 shrink-0 relative z-10">
             <div className="flex items-center gap-5">
-              <div className="h-16 w-16 rounded-[1.5rem] bg-blue-100 text-blue-600 flex items-center justify-center font-black text-2xl shadow-inner uppercase">
+              <div className="h-14 w-14 rounded-2xl bg-teal-50 border border-teal-100 text-teal-600 flex items-center justify-center font-bold text-xl uppercase shadow-sm">
                 {selectedPatient?.patient_name.charAt(0)}
               </div>
               <div>
-                <SheetTitle className="text-2xl font-black font-space uppercase tracking-tight text-slate-800">
+                <SheetTitle className="text-xl font-bold font-space uppercase tracking-tight text-slate-800">
                   {selectedPatient?.patient_name}
                 </SheetTitle>
-                <div className="flex items-center gap-4 mt-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> Histórico de Exames</span>
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-teal-400" /> Histórico de Exames</span>
                 </div>
               </div>
             </div>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto p-8 space-y-8">
-            <div className="glass-card bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 space-y-5">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Dados do Paciente</h3>
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+              <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2 border-b border-slate-50 pb-2">Dados do Paciente</h3>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">CPF</p>
-                  <p className="font-bold text-slate-700 text-sm whitespace-nowrap">{selectedPatient?.cpf || "Não Informado"}</p>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">CPF</p>
+                  <p className="font-bold text-slate-700 text-xs whitespace-nowrap">{selectedPatient?.cpf || "Não Informado"}</p>
                 </div>
-                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Cartão SUS</p>
-                  <p className="font-bold text-slate-700 text-sm whitespace-nowrap">{selectedPatient?.sus || "Não Informado"}</p>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cartão SUS</p>
+                  <p className="font-bold text-slate-700 text-xs whitespace-nowrap">{selectedPatient?.sus || "Não Informado"}</p>
                 </div>
-                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 col-span-2">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Chave SISREG</p>
-                  <p className="font-black text-purple-600 uppercase text-sm">{(selectedPatient?.chave_sisreg && !selectedPatient.chave_sisreg.includes('IMPORT_SISREG')) ? selectedPatient.chave_sisreg : "Não Informado"}</p>
+                <div className="bg-purple-50 p-3 rounded-xl border border-purple-100 col-span-2">
+                  <p className="text-[9px] font-bold text-purple-400 uppercase tracking-wider mb-1">Chave SISREG</p>
+                  <p className="font-bold text-purple-700 uppercase text-xs">{(selectedPatient?.chave_sisreg && !selectedPatient.chave_sisreg.includes('IMPORT_SISREG')) ? selectedPatient.chave_sisreg : "Não Informado"}</p>
                 </div>
               </div>
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Todos os Agendamentos Cadastrados</h3>
-              <div className="space-y-3 relative pl-4 border-l-2 border-slate-200">
+              <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 pb-2">Todos os Agendamentos Cadastrados</h3>
+              <div className="space-y-3 relative pl-4 border-l-2 border-teal-100">
                 {appointments.filter(a => (a.cpf === selectedPatient?.cpf && a.cpf) || (a.sus === selectedPatient?.sus && a.sus)).length > 0
                   ? appointments.filter(a => (a.cpf === selectedPatient?.cpf && a.cpf) || (a.sus === selectedPatient?.sus && a.sus)).map((historyItem, idx) => (
-                    <div key={idx} className="relative bg-white p-5 rounded-2xl shadow-sm border border-slate-100 ml-2">
-                      <div className="absolute top-8 -left-[27px] w-3 h-3 rounded-full bg-blue-500 border-[3px] border-slate-50 shadow-sm" />
+                    <div key={idx} className="relative bg-white p-5 rounded-2xl shadow-sm border border-slate-100 ml-2 hover:border-teal-200 transition-colors">
+                      <div className="absolute top-6 -left-[23px] w-3 h-3 rounded-full bg-teal-400 border-[3px] border-slate-50 shadow-sm" />
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <p className="text-sm font-black text-slate-700 uppercase">{historyItem.procedure_name}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">{historyItem.exam_type}</p>
+                          <p className="text-xs font-bold text-slate-800 uppercase">{historyItem.procedure_name}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">{historyItem.exam_type}</p>
                         </div>
-                        <span className={`px-2.5 py-1 text-[9px] rounded-full uppercase font-black tracking-widest ${historyItem.status === 'presente' ? 'bg-emerald-100 text-emerald-600' :
-                            historyItem.status === 'falta' ? 'bg-red-100 text-red-600' :
-                              'bg-blue-100 text-blue-600'
+                        <span className={`px-2 py-1 text-[8px] rounded-md uppercase font-bold tracking-wider border ${historyItem.status === 'presente' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                            historyItem.status === 'falta' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                              'bg-cyan-50 text-cyan-600 border-cyan-100'
                           }`}>
                           {historyItem.status}
                         </span>
                       </div>
-                      <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-500">
-                        <span className="flex items-center gap-1.5"><Calendar className="h-3 w-3 text-blue-500" /> {format(parseISO(historyItem.exam_date), 'dd/MM/yyyy')}</span>
-                        <span className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-emerald-500" /> {historyItem.exam_time}</span>
-                        <span className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-full">{historyItem.receptionist_name || "SISTEMA"}</span>
-                      </div>
+                      <div className="mt-3 pt-3 border-t border-slate-50 flex items-center justify-between text-[9px] font-bold text-slate-500">
+                        <span className="flex items-center gap-1.5"><Calendar className="h-3 w-3 text-emerald-500" /> {format(parseISO(historyItem.exam_date), 'dd/MM/yyyy')}</span>
+                        <span className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-orange-400" /> {historyItem.exam_time}</span>
+                        <span className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-md">{historyItem.receptionist_name || "SISTEMA"}</span>
+                       </div>
                     </div>
                   ))
                   : (
-                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 ml-2">
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Nenhum histórico passado encontrado.</p>
+                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 ml-2">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Nenhum histórico passado encontrado.</p>
                     </div>
                   )
                 }

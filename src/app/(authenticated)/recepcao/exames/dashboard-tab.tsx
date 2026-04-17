@@ -16,7 +16,7 @@ import { useAuth } from "@/lib/auth-context"
 
 const ExamsCharts = dynamic(() => import("@/components/exams-charts").then(m => m.ExamsCharts), {
   ssr: false,
-  loading: () => <div className="h-[300px] w-full flex items-center justify-center animate-pulse bg-[#161B22] border border-white/5 rounded-[3rem]">Carregando gráficos estratégicos...</div>
+  loading: () => <div className="h-[300px] w-full flex items-center justify-center animate-pulse bg-slate-50 border border-slate-100 rounded-[1.5rem] text-slate-500">Carregando gráficos estratégicos...</div>
 })
 
 const MONTHS_NAMES = [
@@ -28,19 +28,19 @@ function LiquidCard({ title, value, label, icon: Icon, gradient, trend, trendVal
   const isPositive = parseFloat(trendValue) >= 0
   
   return (
-    <div className={`card-csgo group relative overflow-hidden rounded-2xl p-5 text-white shadow-xl transition-all duration-500 hover:scale-[1.02] h-[140px] border border-white/5`}>
-      {/* Immersive Glow Overlay */}
-      <div className={`absolute inset-0 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-700 ${gradient}`} />
+    <div className={`card-health group relative overflow-hidden bg-white rounded-2xl p-5 text-slate-800 shadow-sm border border-slate-100 hover:shadow-md hover:border-slate-200 transition-all duration-500 h-[140px]`}>
+      {/* Soft gradient background inset */}
+      <div className={`absolute inset-0 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-700 ${gradient}`} />
       
       <div className="relative z-10 flex flex-col h-full justify-between">
         <div className="flex items-center justify-between">
-          <div className="rounded-xl bg-[#161B22] p-2.5 border border-white/10 shadow-lg group-hover:border-[#00D9FF]/30 transition-all">
-            <Icon className="h-4 w-4 text-white/80 group-hover:text-[#00D9FF]" />
+          <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100 shadow-sm group-hover:border-teal-200 transition-all text-teal-600">
+            <Icon className="h-4 w-4" />
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-[#7E8C9A] mb-1">{title}</span>
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-1">{title}</span>
             {trendValue && (
-              <span className={`text-[10px] font-black flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/20 ${isPositive ? 'text-[#00FF88]' : 'text-[#FF1493]'}`}>
+              <span className={`text-[10px] font-bold flex items-center gap-1 px-2 py-0.5 rounded-full ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                 {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                 {trendValue}%
               </span>
@@ -51,10 +51,10 @@ function LiquidCard({ title, value, label, icon: Icon, gradient, trend, trendVal
         <div className="flex items-end justify-between px-1">
           <div>
             <div className="flex items-baseline gap-2">
-               <h4 className="text-3xl font-black font-space tracking-tighter leading-none">{value}</h4>
-               {trend && <span className="text-[10px] font-black text-[#00D9FF] lowercase opacity-50 tracking-widest">{trend}</span>}
+               <h4 className="text-3xl font-black font-space tracking-tight text-slate-800 leading-none">{value}</h4>
+               {trend && <span className="text-[10px] font-bold text-teal-600 lowercase opacity-70 tracking-wide">{trend}</span>}
             </div>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#7E8C9A] mt-2 line-clamp-1">{label}</p>
+            <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-400 mt-2 line-clamp-1">{label}</p>
           </div>
           
           {sparkline && (
@@ -63,19 +63,18 @@ function LiquidCard({ title, value, label, icon: Icon, gradient, trend, trendVal
                   <path 
                     d={`M ${sparkline.map((v: number, i: number) => `${i * 16},${30 - (v * 1)}`).join(' L ')}`} 
                     fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="4" 
+                    stroke="var(--primary)" 
+                    strokeWidth="3" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
-                    className="text-[#00D9FF]"
                   />
                </svg>
             </div>
           )}
         </div>
 
-        <div className="h-1.5 w-full bg-[#161B22] rounded-full overflow-hidden mt-3 border border-white/5">
-           <div className={`h-full bg-gradient-to-r from-[#00D9FF] to-[#0088FF] rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(0,217,255,0.5)]`} style={{ width: total > 0 ? `${(value/total)*100}%` : '0%' }} />
+        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-3">
+           <div className={`h-full bg-teal-500 rounded-full transition-all duration-1000`} style={{ width: total > 0 ? `${(value/total)*100}%` : '0%' }} />
         </div>
       </div>
     </div>
@@ -192,7 +191,7 @@ export default function ExamesDashboardTab() {
           value={stats.presentes}
           label="Pacientes Confirmados"
           icon={CheckCircle2}
-          gradient="bg-[#00FF88]"
+          gradient="bg-emerald-500"
           trend={`${stats.rate}%`}
           trendValue={stats.trendValue}
           sparkline={stats.sparkline}
@@ -203,7 +202,7 @@ export default function ExamesDashboardTab() {
           value={stats.faltas}
           label="Faltas Registradas"
           icon={CalendarX2}
-          gradient="bg-[#FF1493]"
+          gradient="bg-rose-500"
           trend={`${stats.absenteeRate}%`}
           trendValue={(-parseFloat(stats.trendValue) * 0.5).toFixed(0)}
           sparkline={stats.sparkline.map(v => v * 0.2)}
@@ -214,7 +213,7 @@ export default function ExamesDashboardTab() {
           value={stats.agendados}
           label="Aguardando Atendimento"
           icon={Clock3}
-          gradient="bg-[#00D9FF]"
+          gradient="bg-cyan-500"
           total={stats.total}
         />
         <LiquidCard 
@@ -222,127 +221,120 @@ export default function ExamesDashboardTab() {
           value={stats.total}
           label="Carga Total do Período"
           icon={BarChart3}
-          gradient="bg-[#FF6B35]"
+          gradient="bg-orange-500"
           total={stats.total}
         />
       </div>
 
-      <div className="card-csgo rounded-2xl p-6 lg:p-8 shadow-xl relative overflow-hidden backdrop-blur-3xl">
-        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#00D9FF] to-transparent" />
+      <div className="bg-white rounded-2xl p-6 lg:p-8 shadow-sm border border-slate-100 relative overflow-hidden">
         
         {/* FILTERS COMMAND CENTER */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
-          <div className="flex items-center gap-8">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-[#00D9FF] blur-2xl opacity-20" />
-              <div className="p-4 bg-gradient-to-br from-[#00D9FF] to-[#0088FF] text-white rounded-xl shadow-lg relative border border-white/20">
-                <Target className="h-6 w-6" />
-              </div>
+          <div className="flex items-center gap-6">
+            <div className="p-3 bg-teal-50 text-teal-600 rounded-xl shadow-sm border border-teal-100">
+              <Target className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-black font-space uppercase tracking-tight text-white leading-tight">Painel de Dados</h2>
-              <div className="flex items-center gap-3 mt-3">
-                <div className="h-2 w-2 rounded-full bg-[#00FF88] animate-pulse" />
-                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#7E8C9A]">Filtros Estratégicos Ativos</p>
+              <h2 className="text-xl font-bold font-space uppercase tracking-tight text-slate-800 leading-tight">Painel de Dados</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Filtros Ativos</p>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-6 bg-[#161B22] p-5 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-x-auto no-scrollbar">
-             <div className="space-y-1.5 flex flex-col items-center">
-                <Label className="text-[8px] font-black tracking-[0.2em] uppercase text-[#7E8C9A]">Ano</Label>
-                <select value={selectedYear || ""} onChange={e => setSelectedYear(e.target.value)} className="h-12 bg-white/5 border-none rounded-xl text-[11px] font-black text-white px-6 focus:ring-2 focus:ring-[#00D9FF]/20">
+          <div className="flex flex-wrap items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 overflow-x-auto no-scrollbar">
+             <div className="space-y-1 flex flex-col items-start px-2">
+                <Label className="text-[9px] font-bold tracking-wider uppercase text-slate-500">Ano</Label>
+                <select value={selectedYear || ""} onChange={e => setSelectedYear(e.target.value)} className="h-10 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 px-3 cursor-pointer focus:ring-1 focus:ring-teal-500 outline-none">
                   <option value="">TODOS</option>
                   {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
              </div>
-             <div className="h-12 w-px bg-white/5 mx-2" />
-             <div className="space-y-1.5 flex flex-col items-center">
-                <Label className="text-[8px] font-black tracking-[0.2em] uppercase text-[#7E8C9A]">Mês</Label>
-                <select value={selectedMonth || ""} onChange={e => setSelectedMonth(e.target.value)} className="h-12 bg-white/5 border-none rounded-xl text-[11px] font-black text-white px-6 focus:ring-2 focus:ring-[#00D9FF]/20">
+             
+             <div className="space-y-1 flex flex-col items-start px-2">
+                <Label className="text-[9px] font-bold tracking-wider uppercase text-slate-500">Mês</Label>
+                <select value={selectedMonth || ""} onChange={e => setSelectedMonth(e.target.value)} className="h-10 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 px-3 cursor-pointer focus:ring-1 focus:ring-teal-500 outline-none">
                    <option value="">TODOS</option>
-                   {MONTHS_NAMES.map((m, i) => <option key={i} value={i+1}>{m.toUpperCase()}</option>)}
+                   {MONTHS_NAMES.map((m, i) => <option key={i} value={i+1}>{m}</option>)}
                 </select>
              </div>
-             <div className="h-12 w-px bg-white/5 mx-2" />
-             <div className="space-y-1.5 flex flex-col items-center">
-                <Label className="text-[8px] font-black tracking-[0.2em] uppercase text-[#7E8C9A]">Dia</Label>
-                <select value={selectedDay || ""} onChange={e => setSelectedDay(e.target.value)} className="h-12 bg-white/5 border-none rounded-xl text-[11px] font-black text-white px-6 focus:ring-2 focus:ring-[#00D9FF]/20 text-center w-24">
+             
+             <div className="space-y-1 flex flex-col items-start px-2">
+                <Label className="text-[9px] font-bold tracking-wider uppercase text-slate-500">Dia</Label>
+                <select value={selectedDay || ""} onChange={e => setSelectedDay(e.target.value)} className="h-10 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 px-3 cursor-pointer focus:ring-1 focus:ring-teal-500 outline-none text-center w-20">
                    <option value="">---</option>
                    {Array.from({length: 31}, (_, i) => <option key={i} value={i+1}>{i+1}</option>)}
                 </select>
              </div>
-             <Button onClick={() => { setSelectedDay(null); setSelectedMonth(null); setSelectedYear(null); setSelectedProcedure(""); setSelectedStatus(""); setSelectedMunicipio(""); }} variant="ghost" className="h-12 w-12 rounded-xl text-[#FF1493] hover:bg-[#FF1493] hover:text-white transition-all ml-2">
-                <CalendarX2 className="h-5 w-5" />
+             
+             <Button onClick={() => { setSelectedDay(null); setSelectedMonth(null); setSelectedYear(null); setSelectedProcedure(""); setSelectedStatus(""); setSelectedMunicipio(""); }} variant="ghost" className="h-10 w-10 mt-4 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-600 border border-transparent hover:border-rose-100 p-0 flex items-center justify-center">
+                <CalendarX2 className="h-4 w-4" />
              </Button>
           </div>
         </div>
 
         {/* ANALYTICS ENGINE */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-           <div className="lg:col-span-8 space-y-10">
-              <div className="bg-[#161B22]/50 rounded-2xl p-6 border border-white/5 shadow-lg relative overflow-hidden group">
-                 <div className="absolute top-0 right-0 p-12 opacity-[0.02] group-hover:scale-125 transition-transform duration-1000">
-                    <Activity className="h-64 w-64 text-white" />
+           <div className="lg:col-span-8 space-y-6">
+              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 p-8 opacity-[0.05] group-hover:scale-110 transition-transform duration-700">
+                    <Activity className="h-40 w-40 text-teal-600" />
                  </div>
                  <div className="flex items-center justify-between mb-6 relative z-10">
-                    <h3 className="text-lg font-black font-space uppercase tracking-wide text-[#00D9FF] flex items-center gap-3">
-                       <TrendingUp className="h-5 w-5" /> Mapa de Desempenho
+                    <h3 className="text-sm font-bold font-space uppercase text-slate-700 flex items-center gap-2">
+                       <TrendingUp className="h-4 w-4 text-teal-500" /> Desempenho Operacional
                     </h3>
-                    <div className="flex items-center gap-6">
-                       <span className="flex items-center gap-2 text-[9px] font-black text-[#00FF88] uppercase tracking-[0.2em]"><div className="h-2 w-2 rounded-full bg-[#00FF88]" /> Confirmados</span>
-                       <span className="flex items-center gap-2 text-[9px] font-black text-[#FF1493] uppercase tracking-[0.2em]"><div className="h-2 w-2 rounded-full bg-[#FF1493]" /> Absenteísmo</span>
+                    <div className="flex items-center gap-4">
+                       <span className="flex items-center gap-1 text-[10px] font-bold text-slate-600 uppercase"><div className="h-2 w-2 rounded-full bg-emerald-500" /> Confirmados</span>
+                       <span className="flex items-center gap-1 text-[10px] font-bold text-slate-600 uppercase"><div className="h-2 w-2 rounded-full bg-rose-500" /> Faltas</span>
                     </div>
                  </div>
                  <ExamsCharts records={filteredRecords} slots={occupancy} onFilterChange={(t, v) => t === 'procedure' ? setSelectedProcedure(v) : setSelectedStatus(v)} />
               </div>
            </div>
 
-           <div className="lg:col-span-4 space-y-8">
-              <div className="bg-[#161B22]/50 rounded-2xl p-6 border border-white/5 shadow-lg">
-                 <h3 className="text-[11px] font-black uppercase tracking-widest text-[#7E8C9A] mb-6 flex items-center gap-3 px-1">
-                    <Zap className="h-4 w-4 text-[#FF6B35]" /> Procedimentos
+           <div className="lg:col-span-4 space-y-6">
+              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-5 flex items-center gap-2 px-1">
+                    <Zap className="h-4 w-4 text-orange-400" /> Procedimentos Altamente Demanandados
                  </h3>
-                 <div className="space-y-4">
+                 <div className="space-y-3">
                     {stats.procedureTops.slice(0, 5).map(([name, count], idx) => (
-                       <div key={idx} className="group p-5 rounded-2xl bg-[#0F1419] border border-white/[0.03] hover:border-[#00D9FF]/40 transition-all duration-500 flex items-center justify-between relative overflow-hidden">
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.01] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                          <div className="flex items-center gap-4 relative z-10">
-                             <div className="h-10 w-10 flex items-center justify-center bg-white/5 rounded-xl text-[10px] font-black text-white group-hover:bg-[#00D9FF] group-hover:text-[#0F1419] transition-all">
+                       <div key={idx} className="group p-4 rounded-xl bg-white border border-slate-200 hover:border-teal-300 hover:shadow-sm transition-all duration-300 flex items-center justify-between">
+                          <div className="flex items-center gap-3 relative z-10">
+                             <div className="h-8 w-8 flex items-center justify-center bg-slate-50 rounded-lg text-xs font-bold text-slate-500 group-hover:bg-teal-50 group-hover:text-teal-600 transition-colors">
                                 {idx + 1}
                              </div>
-                             <p className="text-[10px] font-black text-white uppercase tracking-tight group-hover:text-[#00D9FF] transition-colors">{name}</p>
+                             <p className="text-[10px] font-bold text-slate-700 uppercase group-hover:text-teal-700 transition-colors">{name}</p>
                           </div>
-                          <span className="text-lg font-black font-space text-white/50 relative z-10 group-hover:text-white transition-colors">{count}</span>
+                          <span className="text-sm font-bold text-slate-400 group-hover:text-teal-600 transition-colors">{count}</span>
                        </div>
                     ))}
                  </div>
               </div>
 
-              <div className="bg-[#161B22]/50 rounded-2xl p-6 border border-white/5 shadow-lg relative overflow-hidden">
-                 <div className="absolute bottom-0 right-0 p-8 opacity-[0.03]">
-                    <BarChart3 className="h-40 w-40 text-white" />
-                 </div>
-                 <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-[#7E8C9A] mb-8 px-2 flex items-center gap-4">
-                    <Clock3 className="h-4 w-4 text-[#00FF88]" /> Resumo do Dia
+              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 relative overflow-hidden">
+                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-6 flex items-center gap-2">
+                    <Clock3 className="h-4 w-4 text-teal-500" /> Resumo do Dia
                  </h3>
-                 <div className="grid grid-cols-2 gap-4 relative z-10">
-                    <div className="p-5 rounded-2xl bg-[#0F1419]/80 border border-white/5 text-center">
-                       <p className="text-[8px] font-black text-[#7E8C9A] uppercase tracking-widest mb-1">Na Fila</p>
-                       <p className="text-3xl font-black text-white font-space">{stats.todayAgendados}</p>
+                 <div className="grid grid-cols-2 gap-3 relative z-10">
+                    <div className="p-4 rounded-xl bg-white border border-slate-200 text-center">
+                       <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Na Fila</p>
+                       <p className="text-2xl font-bold text-slate-800">{stats.todayAgendados}</p>
                     </div>
-                    <div className="p-5 rounded-2xl bg-[#0F1419]/80 border border-white/5 text-center">
-                       <p className="text-[8px] font-black text-[#00FF88] uppercase tracking-widest mb-1">Presentes</p>
-                       <p className="text-3xl font-black text-white font-space">{stats.todayPresentes}</p>
+                    <div className="p-4 rounded-xl bg-white border border-slate-200 text-center">
+                       <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider mb-1">Presentes</p>
+                       <p className="text-2xl font-bold text-slate-800">{stats.todayPresentes}</p>
                     </div>
                  </div>
-                 <div className="mt-4 p-6 rounded-2xl bg-[#0F1419]/80 border border-white/5 group hover:border-[#FF6B35]/40 transition-all">
-                    <div className="flex justify-between items-center mb-3">
-                       <span className="text-[9px] font-black text-[#7E8C9A] uppercase tracking-widest">Volume Total de Operações</span>
-                       <span className="text-xl font-black font-space text-white">{stats.todayTotal}</span>
+                 <div className="mt-4 p-5 rounded-xl bg-white border border-slate-200">
+                    <div className="flex justify-between items-center mb-2">
+                       <span className="text-[10px] font-bold text-slate-500 uppercase">Total Operações</span>
+                       <span className="text-lg font-bold text-slate-800">{stats.todayTotal}</span>
                     </div>
-                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
-                       <div className="h-full bg-[#FF6B35] rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(255,107,53,0.4)]" style={{ width: stats.total > 0 ? `${(stats.todayTotal / stats.total) * 100}%` : '0%' }} />
+                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                       <div className="h-full bg-orange-400 rounded-full transition-all duration-1000" style={{ width: stats.total > 0 ? `${(stats.todayTotal / stats.total) * 100}%` : '0%' }} />
                     </div>
                  </div>
               </div>

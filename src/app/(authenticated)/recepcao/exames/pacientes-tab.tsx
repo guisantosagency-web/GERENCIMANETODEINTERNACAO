@@ -156,41 +156,37 @@ export default function PacientesTab() {
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 relative pb-32">
       {/* HEADER COMMAND SECTION */}
-      <div className="card-csgo rounded-2xl p-6 lg:p-8 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#00D9FF] to-transparent" />
+      <div className="bg-white rounded-2xl p-6 lg:p-8 shadow-sm border border-slate-100 relative overflow-hidden">
         <div className="flex flex-col xl:grid xl:grid-cols-12 items-center gap-10">
-          <div className="xl:col-span-4 flex items-center gap-8 w-full">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-[#00D9FF] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity animate-pulse" />
-              <div className="h-14 w-14 bg-gradient-to-br from-[#00D9FF] to-[#0088FF] rounded-xl flex items-center justify-center text-white shadow-lg relative border border-white/20">
-                <Users className="h-7 w-7" />
-              </div>
+          <div className="xl:col-span-4 flex items-center gap-6 w-full">
+            <div className="p-4 bg-teal-50 text-teal-600 rounded-xl shadow-sm border border-teal-100">
+              <Users className="h-7 w-7" />
             </div>
             <div>
-              <h1 className="text-2xl font-black font-space uppercase tracking-tight text-white leading-tight">Base de Pacientes</h1>
-              <div className="flex items-center gap-3 mt-2">
-                <div className="h-2 w-2 rounded-full bg-[#00FF88] animate-pulse" />
-                <p className="text-[10px] font-black uppercase tracking-[0.6em] text-[#7E8C9A]">Sincronização Ativa • {patients.length} Registros</p>
+              <h1 className="text-xl font-bold font-space uppercase tracking-tight text-slate-800 leading-tight">Base de Pacientes</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Sincronização Ativa • {patients.length} Registros</p>
               </div>
             </div>
           </div>
 
-          <div className="xl:col-span-8 flex flex-col md:flex-row items-stretch md:items-center gap-6 w-full justify-end">
-            <div className="relative group min-w-[400px]">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7E8C9A] group-focus-within:text-[#00D9FF] transition-colors" />
+          <div className="xl:col-span-8 flex flex-col md:flex-row items-stretch md:items-center gap-4 w-full justify-end">
+            <div className="relative group min-w-[300px] flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
               <Input
                 placeholder="PROCURAR POR NOME, CPF OU CARTÃO SUS..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="h-14 pl-14 pr-6 bg-[#161B22] border-white/5 rounded-2xl text-[11px] font-black uppercase text-white placeholder:text-white/20 transition-all focus:border-[#00D9FF]/50 shadow-lg w-full"
+                className="h-12 pl-12 pr-4 bg-slate-50 border-slate-200 rounded-xl text-xs font-semibold uppercase text-slate-700 placeholder:text-slate-400 transition-all focus:border-teal-400 shadow-sm w-full outline-none"
               />
             </div>
             <Button 
               onClick={loadData} 
               disabled={isLoading}
-              className="h-16 px-10 rounded-3xl bg-white/[0.03] text-[#00D9FF] border border-[#00D9FF]/20 hover:bg-[#00D9FF] hover:text-white transition-all duration-500 font-black uppercase text-[11px] tracking-widest gap-4 shadow-xl"
+              className="h-12 px-8 rounded-xl bg-teal-50 text-teal-600 border border-teal-200 hover:bg-teal-500 hover:text-white transition-all duration-300 font-bold uppercase text-[11px] tracking-wider gap-3 shadow-none focus:ring-0"
             >
-              <RefreshCw className={`h-6 w-6 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
               ATUALIZAR
             </Button>
           </div>
@@ -198,53 +194,49 @@ export default function PacientesTab() {
       </div>
 
       {/* PATIENTS DATA GRID */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {isLoading && patients.length === 0 ? (
-          <div className="py-60 flex flex-col items-center justify-center gap-8">
-            <div className="relative">
-              <Loader2 className="h-24 w-24 text-[#00D9FF] animate-spin" />
-              <div className="absolute inset-0 h-24 w-24 text-[#00D9FF] animate-pulse blur-3xl opacity-20" />
-            </div>
-            <p className="text-[11px] font-black uppercase tracking-[0.8em] text-[#7E8C9A] animate-pulse ml-4">Descriptografando Master Patients...</p>
+          <div className="py-40 flex flex-col items-center justify-center gap-6">
+            <Loader2 className="h-12 w-12 text-teal-500 animate-spin" />
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 animate-pulse">Consultando Master Patients...</p>
           </div>
         ) : filteredPatients.length === 0 ? (
-          <div className="py-60 card-csgo rounded-[4rem] flex flex-col items-center justify-center text-center opacity-30 border-white/5">
-            <div className="w-40 h-40 rounded-[3rem] bg-[#161B22] border border-dashed border-white/10 flex items-center justify-center mb-10 overflow-hidden relative">
-               <div className="absolute inset-0 bg-gradient-to-br from-transparent via-[#00D9FF]/5 to-transparent rotate-45 animate-pulse" />
-               <Search className="h-20 w-20 text-white relative z-10" />
+          <div className="py-40 bg-white rounded-3xl flex flex-col items-center justify-center text-center opacity-80 border border-slate-100 shadow-sm">
+            <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mb-6 overflow-hidden relative">
+               <Search className="h-10 w-10 text-slate-300 relative z-10" />
             </div>
-            <h3 className="text-3xl font-black font-space uppercase tracking-[0.2em] text-[#7E8C9A]">Nenhum Resultado</h3>
-            <p className="text-xs font-black uppercase tracking-[0.5em] text-[#7E8C9A]/30 mt-6 max-w-sm">Refine seus parâmetros de busca no terminal de pesquisa.</p>
+            <h3 className="text-xl font-bold font-space uppercase tracking-wider text-slate-500">Nenhum Resultado</h3>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-3 max-w-sm">Refine seus parâmetros de busca no terminal.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-4">
             {filteredPatients.map((p) => {
               const isSisreg = sisregMap[p.sus] || (p.cpf && sisregMap[p.cpf])
               return (
-                <div key={p.id} className="card-csgo p-6 lg:p-8 rounded-2xl relative group border border-white/5 hover:border-[#00D9FF]/40 transition-all duration-500 overflow-hidden">
-                   <div className="absolute top-0 right-0 p-12 opacity-[0.01] group-hover:opacity-[0.05] group-hover:scale-125 transition-all text-white pointer-events-none">
-                      <UserCircle className="h-64 w-64" />
+                <div key={p.id} className="card-health p-5 lg:p-6 bg-white rounded-2xl relative group border border-slate-200 hover:border-teal-300 transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md">
+                   <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.04] group-hover:scale-110 transition-all text-slate-800 pointer-events-none">
+                      <UserCircle className="h-40 w-40" />
                    </div>
 
-                   <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-12">
-                      <div className="flex items-center gap-10">
-                         <div className={`h-16 w-16 rounded-xl flex flex-col items-center justify-center shadow-lg transition-all border shrink-0 ${isSisreg ? 'bg-[#00D9FF]/10 text-[#00D9FF] border-[#00D9FF]/30' : 'bg-[#161B22] text-[#7E8C9A] border-white/5'}`}>
-                            {isSisreg ? <Globe className="h-6 w-6 mb-1" /> : <User className="h-6 w-6 mb-1" />}
-                            <span className="text-[7px] font-black tracking-widest uppercase">{isSisreg ? 'SISREG' : 'LOCAL'}</span>
+                   <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                      <div className="flex items-center gap-6">
+                         <div className={`h-14 w-14 rounded-xl flex flex-col items-center justify-center shadow-sm transition-all border shrink-0 ${isSisreg ? 'bg-teal-50 text-teal-600 border-teal-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                            {isSisreg ? <Globe className="h-5 w-5 mb-0.5" /> : <User className="h-5 w-5 mb-0.5" />}
+                            <span className="text-[7px] font-bold tracking-widest uppercase">{isSisreg ? 'SISREG' : 'LOCAL'}</span>
                          </div>
                          
-                         <div className="space-y-3">
-                            <h4 className="text-xl font-black text-white uppercase tracking-tight group-hover:text-[#00D9FF] transition-colors leading-tight">{p.full_name}</h4>
-                            <div className="flex flex-wrap items-center gap-6">
-                               <div className="flex items-center gap-3">
-                                  <CalendarDays className="h-4 w-4 text-[#FF6B35]" />
-                                  <span className="text-[10px] font-black text-white uppercase tracking-widest leading-none">
+                         <div className="space-y-2">
+                            <h4 className="text-sm font-bold text-slate-800 uppercase tracking-tight group-hover:text-teal-600 transition-colors leading-tight">{p.full_name}</h4>
+                            <div className="flex flex-wrap items-center gap-4">
+                               <div className="flex items-center gap-2">
+                                  <CalendarDays className="h-3 w-3 text-emerald-500" />
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider leading-none">
                                     {p.data_nascimento ? format(new Date(p.data_nascimento + 'T00:00:00'), 'dd/MM/yyyy') : "NASC. NÃO IDENTIFICADO"}
                                   </span>
                                </div>
-                               <div className="flex items-center gap-3">
-                                  <MapPin className="h-4 w-4 text-[#FF1493]" />
-                                  <span className="text-[10px] font-black text-white uppercase tracking-widest leading-none">
+                               <div className="flex items-center gap-2">
+                                  <MapPin className="h-3 w-3 text-orange-400" />
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider leading-none">
                                     {p.municipio || "SÃO LUÍS"} • {p.estado || "MA"}
                                   </span>
                                </div>
@@ -252,36 +244,38 @@ export default function PacientesTab() {
                          </div>
                       </div>
 
-                      <div className="flex flex-col md:flex-row items-center gap-10 lg:gap-20 shrink-0">
-                         <div className="grid grid-cols-1 gap-4 w-full md:w-auto">
-                            <div className="flex items-center gap-4 px-6 py-3 bg-[#161B22] border border-white/5 rounded-2xl group/doc transition-all hover:border-[#00D9FF]/30">
-                               <CreditCard className="h-4 w-4 text-[#00D9FF]" />
+                      <div className="flex flex-col md:flex-row items-center gap-6 lg:gap-12 shrink-0">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full md:w-auto">
+                            <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg transition-all group-hover:border-teal-200 w-[200px]">
+                               <CreditCard className="h-4 w-4 text-teal-500 shrink-0" />
                                <div className="flex flex-col">
-                                  <span className="text-[8px] font-black text-[#7E8C9A] uppercase tracking-widest mb-0.5">CPF</span>
-                                  <span className="text-[11px] font-black text-white tracking-widest">{p.cpf || "--- . --- . --- - --"}</span>
+                                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">CPF</span>
+                                  <span className="text-[10px] font-bold text-slate-700 tracking-wider truncate">{p.cpf || "--- . --- . --- - --"}</span>
                                </div>
                             </div>
-                            <div className="flex items-center gap-4 px-6 py-3 bg-[#161B22] border border-white/5 rounded-2xl group/doc transition-all hover:border-[#00FF88]/30">
-                               <ClipboardList className="h-4 w-4 text-[#00FF88]" />
+                            <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg transition-all group-hover:border-emerald-200 w-[200px]">
+                               <ClipboardList className="h-4 w-4 text-emerald-500 shrink-0" />
                                <div className="flex flex-col">
-                                  <span className="text-[8px] font-black text-[#7E8C9A] uppercase tracking-widest mb-0.5">Cartão SUS</span>
-                                  <span className="text-[11px] font-black text-white tracking-widest">{p.sus || "--- ---- ---- ----"}</span>
+                                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Cartão SUS</span>
+                                  <span className="text-[10px] font-bold text-slate-700 tracking-wider truncate">{p.sus || "--- ---- ---- ----"}</span>
                                </div>
                             </div>
                          </div>
 
-                         <div className="flex items-center gap-4">
+                         <div className="flex items-center gap-2">
                             <Button
                               onClick={() => handleEdit(p)}
-                              className="h-16 w-16 rounded-[1.5rem] bg-[#161B22] border border-white/5 text-[#FF6B35] hover:bg-[#FF6B35] hover:text-white transition-all duration-500 shadow-xl group/btn"
+                              className="h-10 w-10 text-slate-500 bg-white border border-slate-200 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-all duration-300 shadow-sm p-0 flex items-center justify-center rounded-lg"
+                              title="Editar Paciente"
                             >
-                              <Edit3 className="h-6 w-6 group-btn-hover:scale-110" />
+                              <Edit3 className="h-4 w-4" />
                             </Button>
                             <Button
                               onClick={() => handleDelete(p.id, p.full_name)}
-                              className="h-16 w-16 rounded-[1.5rem] bg-[#161B22] border border-white/5 text-[#7E8C9A] hover:bg-[#FF1493] hover:text-white transition-all duration-500 shadow-xl group/btn"
+                              className="h-10 w-10 text-slate-500 bg-white border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all duration-300 shadow-sm p-0 flex items-center justify-center rounded-lg"
+                              title="Excluir Paciente"
                             >
-                              <Trash2 className="h-6 w-6 group-btn-hover:rotate-12" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                          </div>
                       </div>
@@ -293,98 +287,95 @@ export default function PacientesTab() {
         )}
       </div>
 
-      {/* MODAL DE EDIÇÃO CYBER-MODERN */}
+      {/* MODAL DE EDIÇÃO LIGHT */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="max-w-4xl p-0 border-none bg-transparent shadow-none">
-          <div className="card-csgo rounded-[4rem] p-12 border-white/10 relative overflow-hidden backdrop-blur-3xl animate-in zoom-in-95 duration-500">
-            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#FF6B35] to-transparent" />
+        <DialogContent className="max-w-3xl p-0 border-none bg-transparent shadow-none">
+          <div className="bg-white rounded-3xl p-8 lg:p-10 border border-slate-100 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
             
-            <DialogHeader className="mb-14">
-              <div className="flex items-center gap-8">
-                <div className="p-6 bg-[#FF6B35]/10 text-[#FF6B35] rounded-[2rem] border border-[#FF6B35]/20 shadow-xl">
-                  <UserCircle className="h-10 w-10" />
+            <DialogHeader className="mb-10">
+              <div className="flex items-center gap-6">
+                <div className="p-4 bg-teal-50 text-teal-600 rounded-2xl border border-teal-100 shadow-sm">
+                  <UserCircle className="h-8 w-8" />
                 </div>
                 <div>
-                  <DialogTitle className="text-4xl font-black font-space uppercase tracking-tight text-white leading-tight">Configuração Dossiê</DialogTitle>
-                  <DialogDescription className="text-[9px] font-black uppercase tracking-[0.6em] text-[#7E8C9A] mt-2">ID Sistema Core: {selectedPatient?.id}</DialogDescription>
+                  <DialogTitle className="text-2xl font-bold font-space uppercase tracking-tight text-slate-800 leading-tight">Configuração Dossiê</DialogTitle>
+                  <DialogDescription className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">ID Sistema Core: {selectedPatient?.id}</DialogDescription>
                 </div>
               </div>
             </DialogHeader>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10 mb-14">
-              <div className="md:col-span-2 space-y-3">
-                <Label className="uppercase text-[10px] font-black tracking-widest text-[#7E8C9A] ml-6">Nome Completo do Paciente</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-10">
+              <div className="md:col-span-2 space-y-2">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Nome Completo do Paciente</Label>
                 <div className="relative group">
                   <Input 
                     value={selectedPatient?.full_name} 
                     onChange={e => setSelectedPatient({ ...selectedPatient, full_name: e.target.value.toUpperCase() })}
-                    className="h-16 pl-8 bg-[#161B22] border-white/5 rounded-3xl text-sm font-black text-white uppercase focus:border-[#FF6B35]/50 transition-all shadow-2xl"
+                    className="h-12 pl-4 bg-slate-50 border-slate-200 rounded-xl text-xs font-bold text-slate-700 uppercase focus:border-teal-400 transition-all outline-none"
                   />
-                  <User className="absolute right-6 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7E8C9A] group-focus-within:text-[#FF6B35]" />
+                  <User className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-teal-500" />
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Label className="uppercase text-[10px] font-black tracking-widest text-[#7E8C9A] ml-6">Documento CPF</Label>
+              <div className="space-y-2">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Documento CPF</Label>
                 <Input 
                   value={selectedPatient?.cpf} 
                   onChange={e => setSelectedPatient({ ...selectedPatient, cpf: e.target.value })}
-                  className="h-16 px-8 bg-[#161B22] border-white/5 rounded-3xl text-sm font-black text-white focus:border-[#FF6B35]/50 transition-all shadow-2xl"
+                  className="h-12 px-4 bg-slate-50 border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-teal-400 transition-all outline-none"
                 />
               </div>
 
-              <div className="space-y-3">
-                <Label className="uppercase text-[10px] font-black tracking-widest text-[#7E8C9A] ml-6">Cartão Nacional SUS</Label>
+              <div className="space-y-2">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Cartão Nacional SUS</Label>
                 <Input 
                   value={selectedPatient?.sus} 
                   onChange={e => setSelectedPatient({ ...selectedPatient, sus: e.target.value })}
-                  className="h-16 px-8 bg-[#161B22] border-white/5 rounded-3xl text-sm font-black text-white focus:border-[#FF6B35]/50 transition-all shadow-2xl"
+                  className="h-12 px-4 bg-slate-50 border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-teal-400 transition-all outline-none"
                 />
               </div>
 
-              <div className="space-y-3">
-                <Label className="uppercase text-[10px] font-black tracking-widest text-[#7E8C9A] ml-6">Data de Nascimento</Label>
+              <div className="space-y-2">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Data de Nascimento</Label>
                 <Input 
                   type="date"
                   value={selectedPatient?.data_nascimento} 
                   onChange={e => setSelectedPatient({ ...selectedPatient, data_nascimento: e.target.value })}
-                  className="h-16 px-8 bg-[#161B22] border-white/5 rounded-3xl text-sm font-black text-white uppercase focus:border-[#FF6B35]/50 transition-all shadow-2xl"
+                  className="h-12 px-4 bg-slate-50 border-slate-200 rounded-xl text-xs font-bold text-slate-700 uppercase focus:border-teal-400 transition-all outline-none"
                 />
               </div>
 
-              <div className="space-y-3">
-                <Label className="uppercase text-[10px] font-black tracking-widest text-[#7E8C9A] ml-6">Município de Residência</Label>
+              <div className="space-y-2">
+                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Município de Residência</Label>
                 <Input 
                   value={selectedPatient?.municipio} 
                   onChange={e => setSelectedPatient({ ...selectedPatient, municipio: e.target.value.toUpperCase() })}
-                  className="h-16 px-8 bg-[#161B22] border-white/5 rounded-3xl text-sm font-black text-white uppercase focus:border-[#FF6B35]/50 transition-all shadow-2xl"
+                  className="h-12 px-4 bg-slate-50 border-slate-200 rounded-xl text-xs font-bold text-slate-700 uppercase focus:border-teal-400 transition-all outline-none"
                 />
               </div>
             </div>
 
-            <DialogFooter className="pt-10 border-t border-white/10 mt-10">
-              <div className="flex items-center justify-between w-full">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setIsEditing(false)}
-                  className="h-16 px-10 rounded-2xl font-black uppercase text-[10px] tracking-widest text-[#7E8C9A] hover:text-white transition-all"
-                >
-                  Descartar Alterações
-                </Button>
-                
-                <Button 
-                  onClick={savePatient} 
-                  disabled={isSaving}
-                  className="h-16 px-12 rounded-2xl bg-white text-[#161B22] font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl hover:bg-[#00D9FF] hover:text-white transition-all duration-500"
-                >
-                  {isSaving ? <Loader2 className="h-6 w-6 animate-spin" /> : (
-                    <>
-                      <Save className="h-5 w-5 mr-3" />
-                      Salvar Alterações
-                    </>
-                  )}
-                </Button>
-              </div>
+            <DialogFooter className="pt-6 border-t border-slate-100 flex items-center justify-between w-full">
+               <Button 
+                 variant="ghost" 
+                 onClick={() => setIsEditing(false)}
+                 className="h-12 px-6 rounded-xl font-bold uppercase text-[10px] tracking-wider text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-all"
+               >
+                 Descartar Alterações
+               </Button>
+               
+               <Button 
+                 onClick={savePatient} 
+                 disabled={isSaving}
+                 className="h-12 px-8 rounded-xl bg-teal-500 text-white font-bold uppercase tracking-wider text-[11px] shadow-sm hover:bg-teal-600 transition-all duration-300"
+               >
+                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                   <>
+                     <Save className="h-4 w-4 mr-2" />
+                     Salvar Dossiê
+                   </>
+                 )}
+               </Button>
             </DialogFooter>
           </div>
         </DialogContent>

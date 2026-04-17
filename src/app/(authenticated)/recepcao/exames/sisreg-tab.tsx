@@ -124,52 +124,50 @@ export default function SisregTab() {
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000 relative pb-32">
       {/* TERMINAL HEADER SECTION */}
-      <div className="card-csgo rounded-[3.5rem] p-8 lg:p-12 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#00D9FF] to-transparent" />
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-12">
-          <div className="flex items-center gap-8">
+      <div className="bg-white rounded-[3rem] p-8 lg:p-12 shadow-sm border border-slate-100 relative overflow-hidden">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-10">
+          <div className="flex items-center gap-6">
             <div className="relative group">
-              <div className="absolute inset-0 bg-[#00D9FF] blur-2xl opacity-20 animate-pulse" />
-              <div className="h-20 w-20 bg-gradient-to-br from-[#00D9FF] to-[#0088FF] rounded-[2rem] flex items-center justify-center text-white shadow-2xl relative border border-white/20">
-                <Globe className="h-10 w-10" />
+              <div className="h-16 w-16 bg-teal-50 rounded-2xl flex items-center justify-center text-teal-600 shadow-sm border border-teal-100 relative">
+                <Globe className="h-8 w-8" />
               </div>
             </div>
             <div>
-              <h2 className="text-5xl font-black font-space uppercase tracking-tight text-white leading-tight">Triagem SISREG</h2>
-              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#7E8C9A] mt-2 ml-1">Terminal de Ingestão e Processamento</p>
+              <h2 className="text-3xl font-bold font-space uppercase tracking-tight text-slate-800 leading-tight">Triagem SISREG</h2>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">Terminal de Ingestão e Processamento</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-6 bg-[#161B22] border border-white/5 p-4 rounded-[2.5rem] shadow-2xl">
-            <div className="space-y-1.5">
-              <Label className="uppercase text-[8px] font-black tracking-widest text-[#7E8C9A] ml-4">Monitoramento Data</Label>
+          <div className="flex flex-wrap items-center gap-5 bg-slate-50 border border-slate-200 p-5 rounded-3xl shadow-sm">
+            <div className="space-y-1.5 flex-1 min-w-[150px]">
+              <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Monitoramento Data</Label>
               <Input 
                 type="date" 
                 value={date} 
                 onChange={e => setDate(e.target.value)} 
-                className="h-14 bg-white/5 border-white/5 rounded-2xl text-[11px] font-black text-white w-48 shadow-xl uppercase transition-all focus:border-[#00D9FF]/50" 
+                className="h-12 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 w-full shadow-sm uppercase transition-colors focus:border-teal-400 outline-none" 
               />
             </div>
 
-            <div className="space-y-1.5 min-w-[350px]">
-              <Label className="uppercase text-[8px] font-black tracking-widest text-[#7E8C9A] ml-4">Scanner de Paciente</Label>
+            <div className="space-y-1.5 flex-1 min-w-[280px]">
+              <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Scanner de Paciente</Label>
               <div className="relative group">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7E8C9A] group-focus-within:text-[#00D9FF] transition-colors" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
                 <Input 
                   placeholder="DIGITE NOME OU CNS..." 
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className="h-14 pl-14 pr-6 bg-white/5 border-white/5 rounded-2xl text-[11px] font-black text-white shadow-xl uppercase transition-all focus:border-[#00D9FF]/50" 
+                  className="h-12 pl-12 pr-4 bg-white border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 shadow-sm uppercase transition-colors focus:border-teal-400 outline-none" 
                 />
               </div>
             </div>
 
-            <div className="flex items-end self-end">
+            <div className="flex items-end self-end shrink-0">
               <Button 
                 onClick={loadImports} 
-                className="h-14 px-10 rounded-2xl bg-[#00D9FF] text-white font-black uppercase text-[11px] tracking-widest gap-4 shadow-[0_10px_30px_rgba(0,217,255,0.2)] hover:scale-[1.05] transition-all"
+                className="h-12 px-8 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold uppercase text-[10px] tracking-wider gap-3 shadow-sm transition-all"
               >
-                <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} /> 
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} /> 
                 Sincronizar
               </Button>
             </div>
@@ -180,79 +178,72 @@ export default function SisregTab() {
       {/* DATA FLOW MONITOR */}
       <div className="space-y-6">
         {isLoading && imports.length === 0 ? (
-          <div className="py-60 flex flex-col items-center justify-center gap-8">
-            <div className="relative">
-              <Loader2 className="h-24 w-24 text-[#00D9FF] animate-spin" />
-              <div className="absolute inset-0 h-24 w-24 text-[#00D9FF] animate-pulse blur-3xl opacity-20" />
-            </div>
-            <p className="text-[11px] font-black uppercase tracking-[0.8em] text-[#7E8C9A] animate-pulse">Parseando Protocolos SISREG...</p>
+          <div className="py-40 flex flex-col items-center justify-center gap-6">
+            <Loader2 className="h-16 w-16 text-teal-400 animate-spin" />
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 animate-pulse">Parseando Protocolos SISREG...</p>
           </div>
         ) : filteredImports.length === 0 ? (
-          <div className="py-60 card-csgo rounded-[4rem] flex flex-col items-center justify-center text-center opacity-30 border-white/5">
-             <div className="w-40 h-40 rounded-[3rem] bg-[#161B22] border border-dashed border-white/10 flex items-center justify-center mb-10">
-               <Globe className="h-20 w-20 text-white" />
+          <div className="py-40 bg-white rounded-[3rem] border border-slate-100 flex flex-col items-center justify-center text-center shadow-sm">
+             <div className="w-24 h-24 rounded-[2rem] bg-slate-50 border border-slate-200 flex items-center justify-center mb-6">
+               <Globe className="h-10 w-10 text-slate-300" />
              </div>
-             <p className="text-xl font-black uppercase tracking-[0.5em] text-[#7E8C9A]">Nenhum Dado Recebido</p>
-             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#7E8C9A]/40 mt-6 max-w-sm">Verifique a sincronização com o rádio-operador SISREG.</p>
+             <p className="text-sm font-bold uppercase tracking-widest text-slate-500">Nenhum Dado Recebido</p>
+             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-3 max-w-sm">Verifique a sincronização com o rádio-operador SISREG.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-5">
             {filteredImports.map((item, idx) => {
               const isConfirmed = item.status === 'confirmed'
               return (
-                <div key={idx} className={`card-csgo p-8 lg:p-10 rounded-[4rem] relative group border transition-all duration-700 overflow-hidden ${isConfirmed ? 'border-[#00FF88]/20 bg-[#00FF88]/5 shadow-[0_0_50px_rgba(0,255,136,0.05)]' : 'border-white/5 hover:border-[#00D9FF]/40'}`}>
-                   <div className="absolute top-0 right-0 p-12 opacity-[0.01] group-hover:opacity-[0.05] group-hover:scale-125 transition-all text-white pointer-events-none">
-                      <Search className="h-64 w-64" />
-                   </div>
-
-                   <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-12">
-                      <div className="flex flex-1 items-center gap-10">
-                         <div className={`h-24 w-24 rounded-[2.5rem] flex items-center justify-center font-black text-4xl transition-all border shrink-0 ${isConfirmed ? 'bg-[#00FF88] text-white' : 'bg-[#161B22] text-[#7E8C9A] border-white/5 shadow-2xl group-hover:text-[#00D9FF] group-hover:border-[#00D9FF]/30'}`}>
+                <div key={idx} className={`bg-white p-6 lg:p-8 rounded-[2.5rem] relative group border transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md ${isConfirmed ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-100 hover:border-teal-300'}`}>
+                   <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8 pl-2">
+                      <div className="flex flex-1 items-center gap-6">
+                         <div className={`h-16 w-16 rounded-[1.5rem] flex items-center justify-center font-bold text-xl transition-colors border shrink-0 ${isConfirmed ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-slate-50 text-slate-500 border-slate-200 group-hover:bg-teal-50 group-hover:text-teal-600 group-hover:border-teal-200'}`}>
                             {item.patient_name.charAt(0)}
                          </div>
                          <div>
-                            <h4 className="text-3xl font-black text-white uppercase tracking-tight group-hover:text-[#00D9FF] transition-colors leading-tight">{item.patient_name}</h4>
-                            <div className="flex items-center gap-4 mt-3">
-                               <div className="px-5 py-2 rounded-2xl bg-[#161B22] border border-white/5 text-[10px] font-black text-[#7E8C9A] uppercase tracking-widest flex items-center gap-3">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#00D9FF] animate-pulse" />
-                                  SUS: {item.cns}
+                            <h4 className="text-xl font-bold text-slate-800 uppercase tracking-tight group-hover:text-teal-700 transition-colors">{item.patient_name}</h4>
+                            <div className="flex items-center gap-3 mt-2">
+                               <div className="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 shadow-sm">
+                                  <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isConfirmed ? 'bg-emerald-500' : 'bg-teal-400'}`} />
+                                  SUS: <span className="text-slate-700">{item.cns}</span>
                                </div>
                             </div>
                          </div>
                       </div>
 
-                      <div className="flex-1 max-w-2xl">
-                         <div className="flex flex-wrap gap-3">
+                      <div className="flex-1 max-w-2xl px-4 border-l border-slate-100">
+                         <div className="flex flex-wrap gap-2">
                             {item.procedures.map((p: string, pi: number) => (
-                               <div key={pi} className="px-5 py-3 rounded-2xl bg-white/[0.03] border border-white/5 text-[10px] font-black text-white/60 uppercase tracking-tight hover:border-[#00D9FF]/40 transition-all">
+                               <div key={pi} className="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wider hover:border-teal-300 transition-colors shadow-sm">
                                   {p}
                                </div>
                             ))}
                          </div>
                       </div>
 
-                      <div className="flex items-center justify-end gap-6 shrink-0">
+                      <div className="flex items-center justify-end gap-3 shrink-0">
                          {isConfirmed ? (
-                            <div className="flex items-center gap-4">
-                               <div className="px-8 py-4 bg-[#00FF88]/10 text-[#00FF88] rounded-3xl font-black text-[11px] uppercase tracking-widest flex items-center gap-4 border border-[#00FF88]/20 shadow-xl">
-                                  <CheckCircle2 className="h-5 w-5" /> 
-                                  Confirmed
+                            <div className="flex flex-col items-end gap-3">
+                               <div className="px-5 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl font-bold text-[10px] uppercase tracking-wider flex items-center gap-2 border border-emerald-100 shadow-sm">
+                                  <CheckCircle2 className="h-4 w-4" /> 
+                                  Autorizado
                                </div>
                                <Button 
                                   variant="ghost"
                                   onClick={() => handleUnconfirm(item)}
-                                  className="h-16 px-8 rounded-3xl bg-white/5 text-[#7E8C9A] hover:bg-[#FF1493] hover:text-white transition-all duration-500 font-black text-[10px] uppercase tracking-widest gap-4 border border-white/5"
+                                  className="h-9 px-4 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors font-bold text-[9px] uppercase tracking-wider gap-2 border border-slate-100 hover:border-rose-100 shadow-sm"
                                >
-                                  <Undo2 className="h-5 w-5" /> Desfazer
+                                  <Undo2 className="h-3 w-3" /> Desfazer
                                 </Button>
                             </div>
                          ) : (
                             <Button 
                               onClick={() => handleDirectSchedule(item)}
                               disabled={processingId === item.cns}
-                              className="h-16 px-10 rounded-3xl bg-[#00D9FF] text-white font-black text-[11px] uppercase tracking-widest gap-4 shadow-[0_10px_40px_rgba(0,217,255,0.3)] hover:scale-[1.05] transition-all"
+                              className="h-14 px-8 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold text-[10px] uppercase tracking-wider gap-3 shadow-sm transition-all group/btn"
                             >
-                              {processingId === item.cns ? <Loader2 className="h-6 w-6 animate-spin" /> : <UserPlus className="h-6 w-6" />}
+                              {processingId === item.cns ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserPlus className="h-5 w-5 group-hover/btn:scale-110 transition-transform" />}
                               Autorizar Entrada
                             </Button>
                          )}
@@ -261,9 +252,9 @@ export default function SisregTab() {
                            <Button 
                             variant="ghost" 
                             onClick={() => handleDelete(item.ids)} 
-                            className="h-16 w-16 rounded-[1.5rem] bg-white/5 text-white/5 hover:text-[#FF1493] transition-all duration-500 group/del"
+                            className="h-10 w-10 ml-2 rounded-xl text-slate-300 hover:bg-rose-50 hover:text-rose-500 transition-colors border border-transparent hover:border-rose-100 shadow-sm"
                            >
-                              <Trash2 className="h-6 w-6" />
+                              <Trash2 className="h-4 w-4" />
                            </Button>
                          )}
                       </div>

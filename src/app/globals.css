@@ -4,68 +4,66 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ═══════════════════════════════════════
-   PREMIUM LIGHT — Design System v2
-   Inspirado em: Stripe, Notion AI, Linear
+   HEALTHCARE LIGHT — Design System v3
+   Inspirado em: Medical Apps, Clean UI, Trust
    ═══════════════════════════════════════ */
 :root {
-  /* 
-     CSGOSTAR DARK PREMIUM PALETTE
-     Base: Deep Charcoal / Navy Mix
-  */
-  --background: #0F1419;
-  --foreground: #F0F2F5;
+  /* Refined Light Palette */
+  --background: #F4F7F9;
+  --foreground: #1E293B; /* Slate 800 */
   
-  --card: #161B22;
-  --card-foreground: #F0F2F5;
+  --card: #FFFFFF;
+  --card-foreground: #1E293B;
   
-  --popover: #161B22;
-  --popover-foreground: #F0F2F5;
+  --popover: #FFFFFF;
+  --popover-foreground: #1E293B;
 
-  /* Accent Colors - Ultra Vibrant */
-  --primary: #FF6B35;       /* CSGO Orange */
+  /* Accent Colors - Medical & Trust */
+  --primary: #20B2AA;       /* Soft Teal / Medical Cyan */
   --primary-foreground: #FFFFFF;
   
-  --secondary: #FF1493;     /* Cyber Pink */
-  --secondary-foreground: #FFFFFF;
+  --secondary: #F8FAFC;     /* Slate 50 */
+  --secondary-foreground: #475569; /* Slate 600 */
   
-  --accent-cyan: #00D9FF;
-  --accent-green: #00FF88;
+  --accent-cyan: #13B4A6;   /* Richer Teal */
+  --accent-green: #10B981;  /* Success Emerald */
 
-  /* Neutrals for Dark Mode */
-  --muted: #1A2026;
-  --muted-foreground: #7E8C9A;
+  /* Neutrals */
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
   
-  --accent: #1E252E;
-  --accent-foreground: #FFFFFF;
+  --accent: #E2E8F0;
+  --accent-foreground: #0F172A;
 
-  --destructive: #FF4D4D;
+  --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
 
   /* Structural Elements */
-  --border: rgba(255, 255, 255, 0.08);
-  --input: #1A2026;
-  --ring: #FF6B35;
-  --radius: 1rem;
+  --border: rgba(0, 0, 0, 0.06);
+  --input: #FFFFFF;
+  --ring: #20B2AA;
+  --radius: 1.5rem; /* Softer, standard radius */
 
   /* Sidebar Tokens */
-  --sidebar: #0F1419;
-  --sidebar-foreground: #F0F2F5;
-  --sidebar-primary: #FF6B35;
-  --sidebar-accent: #1E252E;
-  --sidebar-border: rgba(255, 255, 255, 0.05);
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #1E293B;
+  --sidebar-primary: #20B2AA;
+  --sidebar-accent: #F8FAFC;
+  --sidebar-border: rgba(0, 0, 0, 0.05);
 
-  /* Glass/Glow Tokens */
-  --glass-bg: rgba(22, 27, 34, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glow-orange: 0 0 30px rgba(255, 107, 53, 0.25);
-  --glow-pink: 0 0 30px rgba(255, 20, 147, 0.2);
-  --glow-cyan: 0 0 30px rgba(0, 217, 255, 0.2);
+  /* Soft Glow Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.05);
+  --glow-primary: 0 10px 40px rgba(32, 178, 170, 0.15);
+  --glow-teal: 0 10px 30px rgba(19, 180, 166, 0.15);
 }
 
-/* Force dark mode behavior defaults */
+/* We force light mode behavior by overriding dark */
 .dark {
-  --background: #0F1419;
-  --foreground: #F0F2F5;
+  --background: #F4F7F9;
+  --foreground: #1E293B;
+  --card: #FFFFFF;
+  --card-foreground: #1E293B;
 }
 
 @theme inline {
@@ -92,11 +90,6 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -330,38 +323,38 @@
 }
 
 /* ─────────────────────────────────────────
-   CSGO PREMIUM UTILITIES
+   HEALTHCARE APP CLASSES (Replaces CSGO)
 ───────────────────────────────────────── */
 .card-csgo {
-  @apply bg-[#161B22] border border-white/5 shadow-2xl transition-all duration-300;
-  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.5);
+  @apply bg-white border border-slate-100 shadow-sm transition-all duration-300;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 }
 .card-csgo:hover {
-  @apply border-white/10 -translate-y-1;
-  box-shadow: 0 12px 48px -4px rgba(0, 0, 0, 0.7);
+  @apply border-slate-200 -translate-y-[2px];
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.04);
 }
 
 .btn-csgo-primary {
-  @apply bg-gradient-to-r from-[#FF6B35] to-[#FF8C00] text-white font-bold uppercase tracking-wider shadow-lg transition-all duration-300;
+  @apply bg-[var(--primary)] text-white font-bold tracking-wider shadow-sm transition-all duration-300 rounded-xl;
 }
 .btn-csgo-primary:hover {
-  @apply scale-[1.02] shadow-[#FF6B35]/20;
-  box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+  @apply scale-[1.02];
+  box-shadow: 0 10px 30px rgba(32, 178, 170, 0.2);
 }
 
-.glow-orange { box-shadow: 0 0 20px rgba(255, 107, 53, 0.15); }
-.glow-pink   { box-shadow: 0 0 20px rgba(255, 20, 147, 0.15); }
-.glow-cyan   { box-shadow: 0 0 20px rgba(0, 217, 255, 0.15); }
+.glow-orange { box-shadow: 0 10px 30px rgba(251, 146, 60, 0.15); }
+.glow-pink   { box-shadow: 0 10px 30px rgba(244, 63, 94, 0.15); }
+.glow-cyan   { box-shadow: 0 10px 30px rgba(32, 178, 170, 0.15); }
 
 /* ─────────────────────────────────────────
-   INPUT PREMIUM DARK
+   INPUT PREMIUM LIGHT
 ───────────────────────────────────────── */
 .input-premium {
-  @apply bg-[#1A2026] border border-white/10 font-medium transition-all duration-300 text-white;
+  @apply bg-white border border-slate-200 font-medium transition-all duration-300 text-slate-800;
 }
 .input-premium:focus {
-  @apply border-[#FF6B35]/40 outline-none;
-  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1), 0 0 20px rgba(255, 107, 53, 0.05);
+  @apply border-[var(--primary)] outline-none;
+  box-shadow: 0 0 0 3px rgba(32, 178, 170, 0.1);
 }
 
 /* ─────────────────────────────────────────

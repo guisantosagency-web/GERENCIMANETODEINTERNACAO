@@ -48,10 +48,10 @@ export default function ExamesHubPage() {
       {/* Compact Header */}
       <div className="flex items-center gap-3">
         <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00FF88] opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00FF88]"></span>
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
         </span>
-        <p className="text-xs font-bold text-[#7E8C9A] uppercase tracking-widest">Painel operacional em tempo real</p>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Painel operacional em tempo real</p>
       </div>
 
       <div className="pt-2">

@@ -38,22 +38,22 @@ function SearchableAdder({ label, placeholder, value, onSelect, onAddNew, option
 
   return (
     <div className="space-y-2 relative" ref={containerRef}>
-      <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-4">{label}</Label>
+      <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">{label}</Label>
       <div 
         onClick={() => setOpen(!open)}
-        className="h-14 bg-[#161B22] border border-white/5 rounded-2xl flex items-center px-6 cursor-pointer group hover:border-[#FF6B35]/30 transition-all shadow-xl"
+        className="h-12 bg-white border border-slate-200 rounded-xl flex items-center px-4 cursor-pointer group hover:border-teal-400 transition-all shadow-sm"
       >
-        <span className={`text-xs font-black uppercase flex-1 ${value ? 'text-white' : 'text-[#7E8C9A]'}`}>{value || placeholder}</span>
-        <ChevronRight className={`h-4 w-4 text-[#7E8C9A] transition-transform ${open ? 'rotate-90 text-[#FF6B35]' : ''}`} />
+        <span className={`text-[10px] font-bold uppercase flex-1 ${value ? 'text-slate-800' : 'text-slate-400'}`}>{value || placeholder}</span>
+        <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform ${open ? 'rotate-90 text-teal-500' : ''}`} />
       </div>
 
       {open && (
-        <div className="absolute z-50 mt-2 w-full bg-[#1A1F26] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
-          <div className="p-3 border-b border-white/5">
+        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95">
+          <div className="p-2 border-b border-slate-100 bg-slate-50">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#7E8C9A]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
               <input 
-                className="w-full bg-[#0F1419] border-none rounded-xl py-2 pl-9 text-[10px] font-black uppercase text-white focus:ring-0" 
+                className="w-full bg-white border border-slate-200 rounded-lg py-2 pl-9 text-[10px] font-bold uppercase text-slate-700 outline-none focus:border-teal-400 transition-colors" 
                 placeholder="FILTRAR..." 
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -66,7 +66,7 @@ function SearchableAdder({ label, placeholder, value, onSelect, onAddNew, option
               <button 
                 key={o} 
                 onClick={() => { onSelect(o); setOpen(false); }}
-                className="w-full text-left px-5 py-3 text-[10px] font-black uppercase text-[#7E8C9A] hover:bg-[#FF6B35]/10 hover:text-[#FF6B35] transition-colors"
+                className="w-full text-left px-4 py-2.5 text-[10px] font-bold uppercase text-slate-600 hover:bg-slate-50 hover:text-teal-600 transition-colors"
               >
                 {o}
               </button>
@@ -74,7 +74,7 @@ function SearchableAdder({ label, placeholder, value, onSelect, onAddNew, option
             {search && !options.includes(search.toUpperCase()) && canAdd && (
               <button 
                 onClick={() => { onAddNew(search.toUpperCase()); onSelect(search.toUpperCase()); setOpen(false); }}
-                className="w-full text-left px-5 py-3 text-[10px] font-black uppercase text-[#00FF88] bg-[#00FF88]/5 hover:bg-[#00FF88]/10"
+                className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase text-teal-600 bg-teal-50 hover:bg-teal-100 transition-colors mt-1 border-t border-teal-100"
               >
                 + CADASTRAR "{search.toUpperCase()}"
               </button>
@@ -96,55 +96,55 @@ function HumanModel({ procedure }: { procedure: string }) {
 
   return (
     <div className="relative w-full aspect-[3/4] max-h-[500px] flex items-center justify-center p-8 group">
-      <div className="absolute inset-0 bg-[#FF6B35]/5 rounded-full blur-3xl group-hover:bg-[#FF6B35]/10 transition-all duration-1000" />
+      <div className="absolute inset-0 bg-teal-50 rounded-full blur-[80px] group-hover:bg-teal-100 transition-all duration-1000 opacity-60" />
       
       <div className="relative z-10 w-full h-full flex items-center justify-center">
-        {/* Esqueleto Holográfico */}
+        {/* Esqueleto Holográfico Light */}
         <svg viewBox="0 0 200 500" className="w-[80%] h-full">
           <defs>
-            <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#252B33" />
-              <stop offset="100%" stopColor="#161B22" />
+            <linearGradient id="bodyGradientLight" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#e2e8f0" />
+              <stop offset="100%" stopColor="#f8fafc" />
             </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+            <filter id="glowLight">
+              <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
               <feMerge>
                 <feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/>
               </feMerge>
             </filter>
           </defs>
           
-          <g filter="url(#glow)">
+          <g filter="url(#glowLight)">
             {/* Cabeça */}
             <circle cx="100" cy="50" r="30" 
-              className={`transition-all duration-500 ${isHead ? 'fill-[#FF6B35]/80' : isLaboratorial ? 'fill-[#FF6B35]/20' : 'fill-[url(#bodyGradient)]'}`} 
+              className={`transition-all duration-500 ${isHead ? 'fill-teal-300 opacity-80' : isLaboratorial ? 'fill-teal-100 opacity-50' : 'fill-[url(#bodyGradientLight)]'}`} 
             />
             {/* Tronco */}
             <path d="M70 90 L130 90 L140 250 L60 250 Z" 
-              className={`transition-all duration-500 ${isTorax || isAbdomen ? 'fill-[#FF6B35]/60' : isLaboratorial ? 'fill-[#FF6B35]/20' : 'fill-[url(#bodyGradient)]'}`} 
+              className={`transition-all duration-500 ${isTorax || isAbdomen ? 'fill-teal-300 opacity-80' : isLaboratorial ? 'fill-teal-100 opacity-50' : 'fill-[url(#bodyGradientLight)]'}`} 
             />
             {/* Braços */}
-            <path d="M60 100 L20 250 L40 255 L70 110 Z" className="fill-[#161B22]" />
-            <path d="M140 100 L180 250 L160 255 L130 110 Z" className="fill-[#161B22]" />
+            <path d="M60 100 L20 250 L40 255 L70 110 Z" className="fill-slate-200" />
+            <path d="M140 100 L180 250 L160 255 L130 110 Z" className="fill-slate-200" />
             {/* Pernas */}
-            <path d="M70 260 L60 480 L90 480 L100 280 Z" className="fill-[#161B22]" />
-            <path d="M130 260 L140 480 L110 480 L100 280 Z" className="fill-[#161B22]" />
+            <path d="M70 260 L60 480 L90 480 L100 280 Z" className="fill-slate-200" />
+            <path d="M130 260 L140 480 L110 480 L100 280 Z" className="fill-slate-200" />
           </g>
 
           {/* Animação de Scan */}
-          <line x1="0" y1="0" x2="200" y2="0" stroke="#FF6B35" strokeWidth="2" className="animate-scan" />
+          <line x1="0" y1="0" x2="200" y2="0" stroke="#0ea5e9" strokeWidth="1.5" className="animate-scan" />
         </svg>
       </div>
 
       <div className="absolute top-8 left-8">
-        <div className="bg-[#161B22]/80 backdrop-blur-2xl p-4 border border-white/5 rounded-3xl shadow-2xl flex items-center gap-4">
+        <div className="bg-white/80 backdrop-blur-md py-3 px-4 border border-slate-100 rounded-2xl flex items-center gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
           <div className="relative">
-            <div className={`w-3 h-3 rounded-full ${procedure ? 'bg-[#FF6B35]' : 'bg-white/10'}`} />
-            <div className={`absolute inset-0 rounded-full animate-ping ${procedure ? 'bg-[#FF6B35]/50' : 'bg-white/5'}`} />
+            <div className={`w-2.5 h-2.5 rounded-full ${procedure ? 'bg-teal-500' : 'bg-slate-300'}`} />
+            <div className={`absolute inset-0 rounded-full animate-ping ${procedure ? 'bg-teal-400 opacity-50' : 'bg-slate-200 opacity-0'}`} />
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#7E8C9A] leading-none mb-1">Status Holo-Scan</p>
-            <p className="text-sm font-black text-white uppercase tracking-tight">{procedure || "Ocioso"}</p>
+            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-1">Diagnóstico Visual</p>
+            <p className="text-xs font-bold text-slate-800 uppercase tracking-tight">{procedure || "Aguardando"}</p>
           </div>
         </div>
       </div>
@@ -168,7 +168,6 @@ export default function AgendamentoTab() {
   const [selectedAgendadoDate, setSelectedAgendadoDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [appointmentSearch, setAppointmentSearch] = useState("")
-  const [procedurePatients, setProcedurePatients] = useState<Record<string, any[]>>({})
 
   const [formData, setFormData] = useState({
     patient_name: "",
@@ -216,7 +215,6 @@ export default function AgendamentoTab() {
     }, {})
     setDynamicTypes(typeMap)
     
-    // Set initial exam procedure if empty
     if (exams[0] && !exams[0].procedure_name && pData && pData.length > 0) {
       const pName = pData[0].name
       setExams([{
@@ -357,33 +355,31 @@ export default function AgendamentoTab() {
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
         
         {/* FORM SIDE */}
-        <div className="xl:col-span-8 flex flex-col gap-8">
-          <div className="glass-premium rounded-[3rem] p-10 shadow-2xl relative overflow-hidden group border border-white/5">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#FF6B35] via-[#00D9FF] to-[#00FF88]" />
-            
-            <div className="flex items-center justify-between mb-12">
-              <h2 className="text-3xl font-black font-space uppercase tracking-tight text-white flex items-center gap-4">
-                <div className="p-4 bg-[#FF6B35] text-white rounded-2xl shadow-lg shadow-[#FF6B35]/20">
+        <div className="xl:col-span-8 flex flex-col gap-6">
+          <div className="bg-white rounded-[2rem] p-8 lg:p-10 shadow-sm border border-slate-100 relative overflow-hidden group">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold font-space uppercase tracking-tight text-slate-800 flex items-center gap-4">
+                <div className="p-3 bg-teal-50 text-teal-600 rounded-xl shadow-sm border border-teal-100">
                   <CalendarDays className="h-6 w-6" />
                 </div>
                 Novo Agendamento
               </h2>
               {isAdmin && (
-                <Button onClick={() => setIsManagerOpen(true)} className="bg-white/5 hover:bg-white/10 text-[#7E8C9A] border-none font-black uppercase text-[10px] tracking-widest gap-2">
-                  <Settings2 className="h-4 w-4" /> Config
+                <Button onClick={() => setIsManagerOpen(true)} variant="ghost" className="bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold uppercase text-[10px] tracking-wider gap-2 rounded-xl">
+                  <Settings2 className="h-4 w-4" /> Ajustes Oficiais
                 </Button>
               )}
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-10">
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-5">
                 
                 {/* Paciente Section */}
-                <div className="md:col-span-6 space-y-2 relative" ref={dropdownRef}>
-                  <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-4">Nome do Paciente</Label>
+                <div className="md:col-span-6 space-y-1 relative" ref={dropdownRef}>
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Nome Completo do Paciente</Label>
                   <div className="relative group">
                     <Input 
                       required 
@@ -391,81 +387,81 @@ export default function AgendamentoTab() {
                       placeholder="BUSCAR OU DIGITAR NOME..." 
                       value={formData.patient_name} 
                       onChange={e => handleNameInput(e.target.value)}
-                      className="h-16 pl-14 bg-[#161B22] border-white/5 rounded-2xl text-sm font-black uppercase text-white shadow-xl focus:border-[#FF6B35]/50 transition-all"
+                      className="h-14 pl-12 bg-white border-slate-200 rounded-xl text-xs font-bold uppercase text-slate-700 shadow-sm focus:border-teal-400 focus:ring-1 focus:ring-teal-100 outline-none transition-all"
                     />
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7E8C9A] group-focus-within:text-[#FF6B35]" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-teal-500" />
                   </div>
                   {showDropdown && (
-                    <div className="absolute z-50 mt-2 w-full bg-[#1A1F26] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
-                      <div className="max-h-60 overflow-y-auto">
+                    <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95">
+                      <div className="max-h-60 overflow-y-auto divide-y divide-slate-100">
                         {searchResults.length > 0 ? (
                           searchResults.map(p => (
-                            <button key={p.id} type="button" onClick={() => handleSelectPatient(p)} className="w-full text-left px-6 py-4 flex items-center justify-between hover:bg-[#FF6B35]/10 group transition-all">
+                            <button key={p.id} type="button" onClick={() => handleSelectPatient(p)} className="w-full text-left px-5 py-3 flex items-center justify-between hover:bg-slate-50 group transition-all text-slate-700">
                               <div>
-                                <p className="font-black text-white uppercase text-xs tracking-tight group-hover:text-[#FF6B35]">{p.full_name || p.paciente}</p>
-                                <p className="text-[9px] text-[#7E8C9A] font-bold mt-1">CPF: {maskCPF(p.cpf || "")} {p.municipio ? `• ${p.municipio}` : ''}</p>
+                                <p className="font-bold uppercase text-[11px] tracking-tight group-hover:text-teal-600">{p.full_name || p.paciente}</p>
+                                <p className="text-[9px] text-slate-500 font-bold mt-0.5">CPF: {maskCPF(p.cpf || "")} {p.municipio ? `• ${p.municipio}` : ''}</p>
                               </div>
-                              <ChevronRight className="h-4 w-4 text-[#7E8C9A] group-hover:text-[#FF6B35]" />
+                              <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-teal-500" />
                             </button>
                           ))
                         ) : (
-                          <div className="p-6 text-center text-[10px] font-black uppercase text-[#7E8C9A]">Nenhum cadastro encontrado. <span className="text-white">Deseja cadastrar como novo?</span></div>
+                          <div className="p-5 text-center text-[10px] font-bold uppercase text-slate-500">Nenhum cadastro encontrado. <span className="text-teal-600">Deseja cadastrar como novo?</span></div>
                         )}
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="md:col-span-2 space-y-2">
-                  <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-4">Cpf</Label>
+                <div className="md:col-span-2 space-y-1">
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">CPF</Label>
                   <div className="relative">
-                    <Input value={formData.cpf} onChange={e => setFormData(p => ({ ...p, cpf: maskCPF(e.target.value) }))} className="h-14 pl-12 bg-[#161B22] border-white/5 rounded-2xl text-xs font-black text-white text-center shadow-xl focus:border-[#FF6B35]/50" placeholder="000.000.000-00" />
-                    <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7E8C9A]" />
+                    <Input value={formData.cpf} onChange={e => setFormData(p => ({ ...p, cpf: maskCPF(e.target.value) }))} className="h-12 pl-10 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center shadow-sm focus:border-teal-400 outline-none transition-colors" placeholder="000.000.000-00" />
+                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   </div>
                 </div>
 
-                <div className="md:col-span-2 space-y-2">
-                  <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-4">Cartão Sus</Label>
+                <div className="md:col-span-2 space-y-1">
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Cartão SUS</Label>
                   <div className="relative">
-                    <Input value={formData.sus} onChange={e => setFormData(p => ({ ...p, sus: e.target.value }))} className="h-14 pl-12 bg-[#161B22] border-white/5 rounded-2xl text-xs font-black text-white text-center shadow-xl focus:border-[#FF6B35]/50" placeholder="000 0000 0000 0000" />
-                    <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7E8C9A]" />
+                    <Input value={formData.sus} onChange={e => setFormData(p => ({ ...p, sus: e.target.value }))} className="h-12 pl-10 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center shadow-sm focus:border-teal-400 outline-none transition-colors" placeholder="000 0000 0000 0000" />
+                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   </div>
                 </div>
 
-                <div className="md:col-span-2 space-y-2">
-                  <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-4">Chave Sisreg</Label>
+                <div className="md:col-span-2 space-y-1">
+                  <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Chave SISREG</Label>
                   <div className="relative">
-                    <Input value={formData.chave_sisreg} onChange={e => setFormData(p => ({ ...p, chave_sisreg: e.target.value }))} className="h-14 pl-12 bg-[#161B22] border-white/5 rounded-2xl text-xs font-black text-white text-center shadow-xl focus:border-[#FF6B35]/50" placeholder="APENAS NÚMEROS" />
-                    <FileText className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7E8C9A]" />
+                    <Input value={formData.chave_sisreg} onChange={e => setFormData(p => ({ ...p, chave_sisreg: e.target.value }))} className="h-12 pl-10 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center shadow-sm focus:border-purple-400 outline-none transition-colors" placeholder="APENAS NÚMEROS" />
+                    <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   </div>
                 </div>
 
-                <div className="md:col-span-3 space-y-2">
-                   <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-4">Maranhão (Estado)</Label>
-                   <Input value={formData.estado} disabled className="h-14 bg-[#161B22]/50 border-white/5 rounded-2xl text-xs font-black text-white/50 text-center" />
+                <div className="md:col-span-3 space-y-1">
+                   <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Estado</Label>
+                   <Input value={formData.estado} disabled className="h-12 bg-slate-50 border-slate-200 rounded-xl text-xs font-bold text-slate-400 text-center cursor-not-allowed" />
                 </div>
 
-                <div className="md:col-span-3 space-y-2">
-                   <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-4">Município</Label>
-                   <Input value={formData.municipio} onChange={e => setFormData(p => ({ ...p, municipio: e.target.value.toUpperCase() }))} className="h-14 bg-[#161B22] border-white/5 rounded-2xl text-xs font-black text-white text-center shadow-xl focus:border-[#FF6B35]/50" placeholder="EX: IMPERATRIZ" />
+                <div className="md:col-span-3 space-y-1">
+                   <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Município</Label>
+                   <Input value={formData.municipio} onChange={e => setFormData(p => ({ ...p, municipio: e.target.value.toUpperCase() }))} className="h-12 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 uppercase text-center shadow-sm focus:border-teal-400 outline-none transition-colors" placeholder="EX: IMPERATRIZ" />
                 </div>
 
                 {/* Exames List */}
-                <div className="md:col-span-6 pt-6 space-y-6">
-                  <div className="flex items-center justify-between px-2">
-                    <h3 className="text-sm font-black uppercase text-white tracking-[0.2em] font-space flex items-center gap-3">
-                      <Plus className="h-4 w-4 text-[#00FF88]" /> Procedimentos
+                <div className="md:col-span-6 pt-6 space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-50">
+                    <h3 className="text-xs font-bold uppercase text-slate-500 tracking-wider flex items-center gap-2">
+                      <Plus className="h-4 w-4 text-teal-500" /> Detalhes dos Procedimentos
                     </h3>
                   </div>
 
                   <div className="space-y-4">
                     {exams.map((exam, idx) => (
-                      <div key={exam.id} className="bg-[#161B22]/40 border border-white/5 rounded-3xl p-6 relative group/item hover:bg-[#161B22]">
-                        <button type="button" onClick={() => removeExam(exam.id)} className="absolute -top-2 -right-2 h-8 w-8 bg-black/20 text-[#7E8C9A] hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover/item:opacity-100 shadow-xl border border-white/5">
-                          <Trash2 className="h-4 w-4" />
+                      <div key={exam.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-5 relative group/item hover:border-teal-200 transition-colors">
+                        <button type="button" onClick={() => removeExam(exam.id)} className="absolute -top-3 -right-2 h-7 w-7 bg-white text-slate-400 hover:bg-rose-50 hover:text-rose-600 rounded-full flex items-center justify-center transition-all opacity-0 group-hover/item:opacity-100 shadow-sm border border-slate-200 hover:border-rose-200">
+                          <Trash2 className="h-3 w-3" />
                         </button>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                           <div className="md:col-span-1">
                             <SearchableAdder 
                               label="Procedimento"
@@ -484,27 +480,27 @@ export default function AgendamentoTab() {
                               onSelect={(v: string) => updateExam(exam.id, 'exam_type', v)}
                             />
                           </div>
-                          <div className="md:col-span-1 space-y-2">
-                            <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-4">Data</Label>
-                            <Input type="date" value={exam.exam_date} onChange={e => updateExam(exam.id, 'exam_date', e.target.value)} className="h-14 bg-[#161B22] border-white/5 rounded-2xl text-xs font-black text-white text-center" />
+                          <div className="md:col-span-1 space-y-1">
+                            <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Data</Label>
+                            <Input type="date" value={exam.exam_date} onChange={e => updateExam(exam.id, 'exam_date', e.target.value)} className="h-12 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center shadow-sm focus:border-teal-400 outline-none transition-colors" />
                           </div>
-                          <div className="md:col-span-1 space-y-2">
-                            <Label className="uppercase text-[9px] font-black tracking-widest text-[#7E8C9A] ml-4">Hora</Label>
-                            <Input type="time" value={exam.exam_time} onChange={e => updateExam(exam.id, 'exam_time', e.target.value)} className="h-14 bg-[#161B22] border-white/5 rounded-2xl text-xs font-black text-white text-center" />
+                          <div className="md:col-span-1 space-y-1">
+                            <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Hora</Label>
+                            <Input type="time" value={exam.exam_time} onChange={e => updateExam(exam.id, 'exam_time', e.target.value)} className="h-12 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center shadow-sm focus:border-teal-400 outline-none transition-colors" />
                           </div>
                         </div>
                       </div>
                     ))}
-                    <Button type="button" onClick={addExam} className="w-full h-14 border-dashed border-white/10 hover:border-[#FF6B35]/40 text-[#7E8C9A] hover:text-[#FF6B35] bg-white/[0.02] hover:bg-[#FF6B35]/5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all">
+                    <Button type="button" onClick={addExam} className="w-full h-12 border border-dashed border-slate-300 hover:border-teal-400 text-slate-500 hover:text-teal-600 bg-slate-50 hover:bg-teal-50 rounded-xl font-bold uppercase text-[10px] tracking-wider transition-all">
                       + ADICIONAR OUTRO EXAME
                     </Button>
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-end pt-8">
-                <Button type="submit" disabled={isSubmitting} className="h-16 px-12 bg-[#FF6B35] hover:bg-[#FF8C00] text-white rounded-3xl font-black uppercase tracking-[0.2em] text-sm shadow-2xl shadow-[#FF6B35]/20 gap-3 group">
-                  {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+              <div className="flex justify-end pt-6 border-t border-slate-100">
+                <Button type="submit" disabled={isSubmitting} className="h-14 px-10 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-bold uppercase tracking-wider text-xs shadow-sm gap-2 group">
+                  {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5 group-hover:scale-110 transition-transform" />}
                   Confirmar Agendamento
                 </Button>
               </div>
@@ -513,13 +509,13 @@ export default function AgendamentoTab() {
         </div>
 
         {/* HOLO MODELS SIDE */}
-        <div className="xl:col-span-4 flex flex-col gap-10">
-           <div className="glass-premium rounded-[3rem] p-10 border border-white/5 shadow-2xl flex flex-col items-center sticky top-8 overflow-hidden">
-             <div className="absolute top-0 right-0 w-20 h-20 bg-[#FF6B35]/10 blur-[50px] rounded-full" />
+        <div className="xl:col-span-4 flex flex-col gap-6">
+           <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm flex flex-col items-center sticky top-8 overflow-hidden hover:shadow-md transition-shadow">
+             <div className="absolute top-0 right-0 w-20 h-20 bg-teal-50 blur-[40px] rounded-full" />
              <HumanModel procedure={exams[0]?.procedure_name || ""} />
-             <div className="mt-8 p-6 bg-[#161B22]/50 border border-white/5 rounded-3xl w-full text-center">
-               <p className="text-[10px] font-bold text-[#7E8C9A] uppercase tracking-widest leading-relaxed">
-                 Sistema de visualização para o procedimento <span className="text-[#FF6B35] font-black">{exams[0]?.procedure_name || "NÃO SELECIONADO"}</span>. Verifique orientações no espelho de consulta.
+             <div className="mt-8 p-5 bg-slate-50 border border-slate-100 rounded-2xl w-full text-center">
+               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-relaxed">
+                 Análise estrutural para <span className="text-teal-600 font-black">{exams[0]?.procedure_name || "NÃO SELECIONADO"}</span>. Sistema de validação integrado.
                </p>
              </div>
            </div>
@@ -527,52 +523,52 @@ export default function AgendamentoTab() {
       </div>
 
       {/* LISTA DE AGENDADOS */}
-      <div className="glass-premium rounded-[3rem] p-10 border border-white/5 shadow-2xl mt-12 bg-[#0F1419]/40">
-         <div className="flex items-center justify-between mb-10 pb-6 border-b border-white/5">
-            <h3 className="text-2xl font-black font-space text-white uppercase tracking-tight flex items-center gap-4">
-               <div className="p-3 bg-[#00D9FF] text-white rounded-2xl shadow-lg shadow-[#00D9FF]/20">
-                 <ClipboardList className="h-6 w-6" />
+      <div className="bg-white rounded-[2rem] p-8 lg:p-10 border border-slate-100 shadow-sm mt-8">
+         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 pb-6 border-b border-slate-100 gap-6">
+            <h3 className="text-xl font-bold font-space text-slate-800 uppercase tracking-tight flex items-center gap-3">
+               <div className="p-2.5 bg-blue-50 text-blue-500 rounded-xl border border-blue-100 shadow-sm">
+                 <ClipboardList className="h-5 w-5" />
                </div>
                Agenda Diária
             </h3>
-            <div className="flex items-center gap-4">
-              <div className="bg-[#161B22] border border-white/5 p-2 px-6 rounded-2xl flex flex-col">
-                <span className="text-[8px] font-black text-[#7E8C9A] uppercase tracking-widest leading-none mb-1">Visualizando</span>
-                <input type="date" value={selectedAgendadoDate} onChange={e => setSelectedAgendadoDate(e.target.value)} className="bg-transparent border-none text-[11px] font-black text-white focus:ring-0 p-0 uppercase" />
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="bg-slate-50 border border-slate-200 p-2 px-5 rounded-xl flex flex-col min-w-[140px]">
+                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider leading-none mb-1">Data Filtro</span>
+                <input type="date" value={selectedAgendadoDate} onChange={e => setSelectedAgendadoDate(e.target.value)} className="bg-transparent border-none text-[11px] font-bold text-slate-700 outline-none p-0 uppercase" />
               </div>
-              <div className="relative group">
-                <Input value={appointmentSearch} onChange={e => setAppointmentSearch(e.target.value)} className="bg-[#161B22] border-white/5 rounded-2xl h-12 w-64 pl-10 text-[10px] font-black uppercase text-white shadow-xl focus:border-[#00D9FF]/50" placeholder="BUSCAR NA LISTA..." />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7E8C9A] group-focus-within:text-[#00D9FF]" />
+              <div className="relative group flex-1 min-w-[200px]">
+                <Input value={appointmentSearch} onChange={e => setAppointmentSearch(e.target.value)} className="bg-white border-slate-200 rounded-xl h-12 w-full pl-10 text-[10px] font-bold uppercase text-slate-700 shadow-sm focus:border-teal-400 outline-none transition-colors" placeholder="LOCALIZAR PACIENTE..." />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-teal-500" />
               </div>
             </div>
          </div>
 
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
            {filteredAppointments.length === 0 ? (
-             <div className="col-span-full py-20 text-center opacity-30">
-               <div className="inline-block p-8 border-2 border-dashed border-[#7E8C9A] rounded-full mb-4"><CalendarDays className="h-10 w-10 text-[#7E8C9A]" /></div>
-               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#7E8C9A]">Nenhum agendamento para esta data</p>
+             <div className="col-span-full py-16 text-center opacity-70">
+               <div className="inline-flex p-6 bg-slate-50 border border-slate-200 rounded-2xl mb-4"><CalendarDays className="h-8 w-8 text-slate-400" /></div>
+               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Nenhum agendamento para esta data</p>
              </div>
            ) : (
              filteredAppointments.map(appt => (
-               <div key={appt.id} className="bg-[#161B22]/40 hover:bg-[#161B22] border border-white/5 rounded-3xl p-6 transition-all group hover:scale-[1.02] hover:shadow-2xl">
+               <div key={appt.id} className="bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl p-5 transition-colors group">
                  <div className="flex items-start justify-between mb-4">
-                    <div className="h-12 w-12 rounded-2xl bg-[#1D232A] flex items-center justify-center font-black text-[#7E8C9A] text-lg shadow-xl group-hover:bg-[#FF6B35] group-hover:text-white transition-all">
+                    <div className="h-10 w-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center font-bold text-teal-600 text-sm shadow-sm group-hover:bg-teal-500 group-hover:text-white transition-colors">
                       {appt.patient_name.charAt(0)}
                     </div>
-                    <span className="text-[8px] font-black bg-[#00FF88]/10 text-[#00FF88] px-3 py-1 rounded-full uppercase tracking-[0.2em]">{appt.status}</span>
+                    <span className="text-[8px] font-bold bg-cyan-50 text-cyan-600 border border-cyan-100 px-2.5 py-1 rounded-md uppercase tracking-wider">{appt.status}</span>
                  </div>
-                 <div className="space-y-4">
-                   <p className="text-xs font-black text-white uppercase tracking-tight truncate">{appt.patient_name}</p>
-                   <div className="flex flex-col gap-1">
-                      <p className="text-[9px] font-black text-[#00D9FF] uppercase tracking-widest">{appt.procedure_name}</p>
-                      <p className="text-[8px] font-bold text-[#7E8C9A] uppercase">{appt.exam_type}</p>
+                 <div className="space-y-3">
+                   <p className="text-xs font-bold text-slate-800 uppercase tracking-tight truncate" title={appt.patient_name}>{appt.patient_name}</p>
+                   <div className="flex flex-col gap-0.5">
+                      <p className="text-[9px] font-bold text-teal-600 uppercase tracking-wider">{appt.procedure_name}</p>
+                      <p className="text-[8px] font-bold text-slate-500 uppercase">{appt.exam_type}</p>
                    </div>
-                   <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                      <div className="flex items-center gap-2 text-[#7E8C9A] font-black text-[9px]">
-                        <Clock className="h-3.5 w-3.5" /> {appt.exam_time}
+                   <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                      <div className="flex items-center gap-1.5 text-slate-500 font-bold text-[9px]">
+                        <Clock className="h-3.5 w-3.5 text-orange-400" /> {appt.exam_time}
                       </div>
-                      <Button size="icon" variant="ghost" className="h-10 w-10 rounded-xl text-[#7E8C9A] hover:bg-[#FF6B35]/10 hover:text-[#FF6B35]"><Printer className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"><Printer className="h-3.5 w-3.5" /></Button>
                    </div>
                  </div>
                </div>

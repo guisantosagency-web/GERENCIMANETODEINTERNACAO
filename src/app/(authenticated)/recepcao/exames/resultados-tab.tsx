@@ -74,7 +74,6 @@ export default function ResultadosTab() {
         .eq("id", id)
 
       if (error) {
-        // If it's a missing column error, we might want to try using metadata or inform the user
         if (error.code === "PGRST204" || error.message.includes("column")) {
            toast.error("Erro: A tabela do banco de dados ainda não possui as colunas para controle de entrega.")
            return
@@ -128,74 +127,69 @@ export default function ResultadosTab() {
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 relative pb-32">
       {/* HUD DASHBOARD SECTION */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card-csgo p-8 rounded-[3rem] border-white/5 shadow-2xl relative overflow-hidden group">
-          <div className="absolute inset-0 bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors" />
-          <div className="relative z-10 flex items-center gap-8">
-            <div className="h-20 w-20 bg-[#161B22] border border-white/10 text-[#00D9FF] rounded-[1.8rem] flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-500">
-              <ClipboardCheck className="h-10 w-10" />
+        <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+          <div className="absolute inset-0 bg-blue-50 group-hover:bg-blue-100/50 transition-colors opacity-50" />
+          <div className="relative z-10 flex items-center gap-6">
+            <div className="h-16 w-16 bg-blue-50 text-blue-500 border border-blue-100 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-500">
+              <ClipboardCheck className="h-8 w-8" />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#7E8C9A] mb-1">Total Scan</p>
-              <p className="text-4xl font-black text-white tracking-tighter font-space">{stats.total}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Total Analisado</p>
+              <p className="text-3xl font-bold text-slate-800 tracking-tight font-space">{stats.total}</p>
             </div>
           </div>
         </div>
 
-        <div className="card-csgo p-8 rounded-[3rem] border-white/5 shadow-2xl relative overflow-hidden group">
-          <div className="absolute inset-0 bg-[#FF6B35]/5 group-hover:bg-[#FF6B35]/10 transition-colors" />
-          <div className="relative z-10 flex items-center gap-8">
-            <div className="h-20 w-20 bg-[#161B22] border border-white/10 text-[#FF6B35] rounded-[1.8rem] flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-500">
-              <Clock className="h-10 w-10 animate-pulse text-[#FF6B35]" />
+        <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+          <div className="absolute inset-0 bg-orange-50 group-hover:bg-orange-100/50 transition-colors opacity-50" />
+          <div className="relative z-10 flex items-center gap-6">
+            <div className="h-16 w-16 bg-orange-50 text-orange-500 border border-orange-100 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-500">
+              <Clock className="h-8 w-8 animate-pulse" />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#7E8C9A] mb-1">Queued Results</p>
-              <p className="text-4xl font-black text-white tracking-tighter font-space">{stats.pendentes}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Fila de Espera</p>
+              <p className="text-3xl font-bold text-slate-800 tracking-tight font-space">{stats.pendentes}</p>
             </div>
           </div>
         </div>
 
-        <div className="card-csgo p-8 rounded-[3rem] border-white/5 shadow-2xl relative overflow-hidden group">
-          <div className="absolute inset-0 bg-[#00FF88]/5 group-hover:bg-[#00FF88]/10 transition-colors" />
-          <div className="relative z-10 flex items-center gap-8">
-            <div className="h-20 w-20 bg-[#161B22] border border-white/10 text-[#00FF88] rounded-[1.8rem] flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-500">
-              <UserCheck className="h-10 w-10" />
+        <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+          <div className="absolute inset-0 bg-teal-50 group-hover:bg-teal-100/50 transition-colors opacity-50" />
+          <div className="relative z-10 flex items-center gap-6">
+            <div className="h-16 w-16 bg-teal-50 text-teal-500 border border-teal-100 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-500">
+              <UserCheck className="h-8 w-8" />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#7E8C9A] mb-1">Released Files</p>
-              <p className="text-4xl font-black text-white tracking-tighter font-space">{stats.entregues}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Resultados Liberados</p>
+              <p className="text-3xl font-bold text-slate-800 tracking-tight font-space">{stats.entregues}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* SEARCH COMMAND CENTER */}
-      <div className="card-csgo rounded-[4rem] p-10 lg:p-14 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#00D9FF] to-transparent" />
-        
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12 mb-14">
+      <div className="bg-white rounded-[2rem] p-8 lg:p-10 shadow-sm border border-slate-100 relative overflow-hidden">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8 mb-10">
           <div>
-            <div className="flex items-center gap-6 mb-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-[#00D9FF] blur-2xl opacity-20" />
-                <div className="p-4 bg-gradient-to-br from-[#00D9FF] to-[#0088FF] text-white rounded-xl shadow-lg relative border border-white/20">
-                  <PackageCheck className="h-6 w-6" />
-                </div>
+            <div className="flex items-center gap-4 mb-2">
+              <div className="p-3 bg-teal-50 text-teal-600 rounded-xl shadow-sm border border-teal-100">
+                <PackageCheck className="h-6 w-6" />
               </div>
-              <h2 className="text-3xl font-black font-space uppercase tracking-tight text-white leading-tight">Entrega de Resultados</h2>
+              <h2 className="text-2xl font-bold font-space uppercase tracking-tight text-slate-800 leading-tight">Entrega de Resultados</h2>
             </div>
-            <p className="text-[#7E8C9A] text-[9px] font-black uppercase tracking-[0.3em] ml-20">PROTOCOLO DE ENTREGA DE RESULTADOS MÉDICOS • MONITORAMENTO ATIVO</p>
+            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider ml-14">Protocolo Ativo • Área de Recepção</p>
           </div>
 
-          <div className="flex items-center gap-3 bg-[#161B22] p-2 rounded-[2rem] border border-white/5">
+          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200">
              {[
-               { id: 'todos', label: 'Todos', color: 'text-white' },
-               { id: 'pendentes', label: 'Pendentes', color: 'text-[#FF6B35]' },
-               { id: 'entregues', label: 'Entregues', color: 'text-[#00FF88]' }
+               { id: 'todos', label: 'Todos', activeColor: 'text-slate-800 bg-white shadow-sm' },
+               { id: 'pendentes', label: 'Aguardando', activeColor: 'text-orange-600 bg-white shadow-sm' },
+               { id: 'entregues', label: 'Concluídos', activeColor: 'text-teal-600 bg-white shadow-sm' }
              ].map((t) => (
                <button 
                  key={t.id}
                  onClick={() => setFilter(t.id as any)}
-                 className={`px-8 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${filter === t.id ? `bg-white ${t.color.replace('text-', 'text-[#0F1419]')} shadow-2xl scale-105` : 'text-[#7E8C9A] hover:text-white'}`}
+                 className={`px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ${filter === t.id ? t.activeColor : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
                >
                  {t.label}
                </button>
@@ -204,96 +198,95 @@ export default function ResultadosTab() {
         </div>
 
         {/* SEARCH BAR TERMINAL */}
-        <div className="relative mb-14 group">
-          <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-7 w-7 text-[#7E8C9A] group-focus-within:text-[#00D9FF] transition-all" />
+        <div className="relative mb-10 group">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-400 group-focus-within:text-teal-500 transition-all" />
           <Input 
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             placeholder="PROCURAR POR NOME DO PACIENTE, CPF OU ID..."
-            className="h-16 pl-20 pr-10 text-[11px] font-black uppercase tracking-[0.2em] rounded-3xl bg-[#161B22] border-white/5 shadow-xl text-white placeholder:text-white/10 transition-all focus:border-[#00D9FF]/40"
+            className="h-14 pl-16 pr-6 text-[11px] font-bold uppercase tracking-wider rounded-2xl bg-white border border-slate-200 shadow-sm text-slate-800 placeholder:text-slate-400 focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition-all outline-none"
           />
         </div>
 
         {/* RESULTS FLOW */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-40 gap-8 animate-pulse">
-              <div className="h-16 w-16 border-[6px] border-[#00D9FF]/20 border-t-[#00D9FF] rounded-full animate-spin shadow-[0_0_30px_rgba(0,217,255,0.2)]" />
-              <p className="text-[11px] font-black uppercase tracking-[0.6em] text-[#7E8C9A]">Acessando Registros...</p>
+            <div className="flex flex-col items-center justify-center py-24 gap-6">
+              <Loader2 className="h-12 w-12 text-teal-500 animate-spin" />
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Verificando arquivos...</p>
             </div>
           ) : filteredData.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-40 opacity-30">
-              <div className="w-40 h-40 rounded-[3rem] bg-[#161B22] border border-dashed border-white/10 flex items-center justify-center mb-10 overflow-hidden relative">
-                 <div className="absolute inset-0 bg-gradient-to-br from-transparent via-[#00D9FF]/5 to-transparent rotate-45 animate-pulse" />
-                 <SearchX className="h-20 w-20 text-white relative z-10" />
+            <div className="flex flex-col items-center justify-center py-24 bg-slate-50 rounded-3xl border border-slate-100">
+              <div className="w-24 h-24 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-6 shadow-sm">
+                 <SearchX className="h-10 w-10 text-slate-300" />
               </div>
-              <p className="text-2xl font-black font-space uppercase tracking-[0.2em] text-[#7E8C9A]">Nenhum Resultado Encontrado</p>
+              <p className="text-lg font-bold font-space uppercase tracking-wider text-slate-500">A Busca Não Retornou Resultados</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 gap-4">
               {filteredData.map(a => (
                 <div 
                   key={a.id} 
-                  className={`p-8 lg:p-10 rounded-[4rem] border transition-all duration-700 flex flex-col xl:flex-row xl:items-center justify-between gap-10 group relative overflow-hidden ${a.result_delivered ? 'bg-[#00FF88]/5 border-[#00FF88]/20' : 'card-csgo border-white/5 hover:border-[#00D9FF]/40 shadow-2xl'}`}
+                  className={`p-6 lg:p-8 rounded-3xl border transition-all duration-300 flex flex-col xl:flex-row xl:items-center justify-between gap-8 group/card relative overflow-hidden ${a.result_delivered ? 'bg-teal-50/50 border-teal-100 shadow-sm' : 'bg-white border-slate-200 hover:border-teal-300 shadow-sm hover:shadow-md'}`}
                 >
-                   <div className="absolute top-0 right-0 p-12 opacity-[0.01] group-hover:opacity-[0.05] group-hover:scale-125 transition-all text-white pointer-events-none">
-                      <History className="h-64 w-64" />
+                   <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover/card:opacity-[0.04] group-hover/card:scale-110 transition-transform duration-700 pointer-events-none">
+                      <History className="h-40 w-40 text-slate-800" />
                    </div>
 
-                  <div className="flex flex-1 items-center gap-10 relative z-10">
-                    <div className={`h-24 w-24 rounded-[2.5rem] flex items-center justify-center font-black text-4xl transition-all duration-700 border shadow-2xl shrink-0 ${a.result_delivered ? 'bg-[#00FF88] text-white border-white/20' : 'bg-[#161B22] text-[#7E8C9A] border-white/5 group-hover:text-[#00D9FF] group-hover:border-[#00D9FF]/30'}`}>
+                  <div className="flex flex-1 items-center gap-6 relative z-10">
+                    <div className={`h-16 w-16 rounded-2xl flex items-center justify-center font-bold text-2xl transition-colors border shrink-0 ${a.result_delivered ? 'bg-teal-500 text-white border-teal-600' : 'bg-slate-50 text-slate-400 border-slate-200 group-hover/card:text-teal-500 group-hover/card:bg-teal-50 group-hover/card:border-teal-200'}`}>
                       {a.patient_name.charAt(0)}
                     </div>
-                    <div className="space-y-4">
-                      <h4 className="font-black text-3xl text-white uppercase tracking-tight group-hover:text-[#00D9FF] transition-colors leading-tight">{a.patient_name}</h4>
-                      <div className="flex flex-wrap items-center gap-6">
-                        <div className="flex items-center gap-3 px-5 py-2 rounded-2xl bg-[#161B22] border border-white/5">
-                          <Calendar className="h-4 w-4 text-[#FF6B35]" />
-                          <span className="text-[10px] font-black text-white uppercase tracking-widest">{format(parseISO(a.exam_date), 'dd/MM/yyyy')}</span>
+                    <div className="space-y-3">
+                      <h4 className="font-bold text-lg text-slate-800 uppercase tracking-tight group-hover/card:text-teal-600 transition-colors leading-tight truncate max-w-[300px] md:max-w-full">{a.patient_name}</h4>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
+                          <Calendar className="h-3 w-3 text-cyan-500" />
+                          <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">{format(parseISO(a.exam_date), 'dd/MM/yyyy')}</span>
                         </div>
-                        <div className="flex items-center gap-3 px-5 py-2 rounded-2xl bg-[#161B22] border border-white/5">
-                          <Truck className="h-4 w-4 text-[#FF1493]" />
-                          <span className="text-[10px] font-black text-white uppercase tracking-widest">{a.exam_type}</span>
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
+                          <Truck className="h-3 w-3 text-orange-400" />
+                          <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">{a.exam_type}</span>
                         </div>
-                        <div className="px-5 py-2 bg-white/[0.03] text-white/50 border border-white/5 rounded-2xl text-[9px] font-black uppercase tracking-widest group-hover:text-[#00D9FF] group-hover:border-[#00D9FF]/20 transition-all">
+                        <div className="px-3 py-1.5 bg-slate-50 text-slate-500 border border-slate-200 rounded-lg text-[9px] font-bold uppercase tracking-wider group-hover/card:text-teal-600 group-hover/card:border-teal-200 group-hover/card:bg-teal-50 transition-colors">
                           {a.procedure_name}
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-col lg:flex-row items-center gap-12 shrink-0 relative z-10">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-6 shrink-0 relative z-10">
                     {a.result_delivered && (
-                      <div className="flex flex-col items-center lg:items-end animate-in fade-in slide-in-from-right-10 duration-700">
-                        <div className="px-6 py-2 bg-[#00FF88]/10 text-[#00FF88] rounded-full mb-3 flex items-center gap-3 border border-[#00FF88]/20 shadow-xl">
-                          <div className="w-2 h-2 rounded-full bg-[#00FF88] animate-ping" />
-                          <span className="text-[9px] font-black uppercase tracking-[0.1em]">ARQUIVO ENTREGUE</span>
+                      <div className="flex flex-col items-start lg:items-end bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                        <div className="px-3 py-1.5 bg-teal-50 text-teal-600 rounded-md mb-2 flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+                          <span className="text-[9px] font-bold uppercase tracking-wider">Arquivo Entregue</span>
                         </div>
-                        <span className="text-[11px] font-black text-white uppercase tracking-wider mb-1">POR: {a.result_delivered_by || "SISTEMA AUTORIZADO"}</span>
-                        <span className="text-[9px] font-bold text-[#7E8C9A] uppercase tracking-widest">{format(parseISO(a.result_delivered_at), 'dd/MM/yy • HH:mm')}</span>
+                        <span className="text-[9px] font-bold text-slate-700 uppercase mb-0.5">Por: {a.result_delivered_by || "AUTORIZADO"}</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{format(parseISO(a.result_delivered_at), 'dd/MM/yy • HH:mm')}</span>
                       </div>
                     )}
 
-                    <div className="w-full lg:w-auto">
+                    <div className="w-full lg:w-max">
                       {a.result_delivered ? (
                         <Button 
                           variant="ghost" 
                           disabled={isUpdating === a.id}
                           onClick={() => handleDelivery(a.id, false)}
-                          className="h-16 w-full lg:w-48 rounded-[1.5rem] bg-white/5 text-[#7E8C9A] hover:bg-[#FF1493] hover:text-white transition-all duration-500 font-black uppercase text-[10px] tracking-widest gap-4 border border-white/5"
+                          className="h-12 w-full lg:w-40 rounded-xl bg-slate-50 text-slate-500 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 transition-all font-bold uppercase text-[10px] tracking-wider gap-2 border border-slate-200 shadow-sm"
                         >
-                          {isUpdating === a.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <XCircle className="h-5 w-5" />}
+                          {isUpdating === a.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
                           Desfazer
                         </Button>
                       ) : (
                         <Button 
                           disabled={isUpdating === a.id}
                           onClick={() => handleDelivery(a.id, true)}
-                          className="h-16 w-full lg:w-auto px-10 rounded-2xl bg-white text-[#0F1419] hover:bg-[#00D9FF] hover:text-white transition-all duration-500 font-black uppercase text-[11px] tracking-[0.1em] shadow-xl gap-4 group/btn"
+                          className="h-12 w-full lg:w-auto px-6 rounded-xl bg-teal-500 hover:bg-teal-600 text-white transition-all font-bold uppercase text-[11px] tracking-wider shadow-sm gap-3 group/btn focus:ring-2 focus:ring-teal-200"
                         >
-                          {isUpdating === a.id ? <Loader2 className="h-6 w-6 animate-spin text-[#00D9FF]" /> : <CheckCircle2 className="h-6 w-6 group-hover:scale-125 transition-transform" />}
-                          Entregar Resultado
-                          <ArrowRight className="h-5 w-5 group-hover:translate-x-3 transition-transform duration-500" />
+                          {isUpdating === a.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5 group-hover/btn:scale-110 transition-transform" />}
+                          Confirmar Entrega
+                          <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1.5 transition-transform" />
                         </Button>
                       )}
                     </div>
@@ -307,4 +300,3 @@ export default function ResultadosTab() {
     </div>
   )
 }
-
