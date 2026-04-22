@@ -9,13 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
+  Sheet,
+  SheetContent,
+} from "@/components/ui/sheet"
 
 interface ExamManagerModalProps {
   isOpen: boolean
@@ -125,8 +121,8 @@ export function ExamManagerModal({ isOpen, onOpenChange, onUpdate }: ExamManager
   }, [examTypes, selectedProc])
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl h-[85vh] p-0 border-none bg-slate-50/95 backdrop-blur-2xl shadow-3xl overflow-hidden rounded-[3rem]">
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-[95vw] sm:max-w-[1000px] h-full p-0 border-none bg-slate-50/95 backdrop-blur-2xl shadow-3xl overflow-hidden rounded-l-[3rem]">
         <div className="flex h-full">
           
           {/* SIDEBAR: PROCEDURES */}
@@ -290,7 +286,8 @@ export function ExamManagerModal({ isOpen, onOpenChange, onUpdate }: ExamManager
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
+

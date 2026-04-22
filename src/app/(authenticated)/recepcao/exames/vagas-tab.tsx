@@ -108,16 +108,14 @@ export default function VagasTab() {
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Configuração de Disponibilidade</p>
             </div>
           </div>
-          {isAdmin && (
-            <Button
-              type="button"
-              onClick={() => setIsManagerOpen(true)}
-              className="h-10 px-5 rounded-xl bg-slate-700 hover:bg-slate-800 text-white font-bold uppercase text-[10px] tracking-wider gap-2 shadow-sm"
-            >
-              <Settings2 className="h-4 w-4" />
-              Editar Procedimentos
-            </Button>
-          )}
+          <Button
+            type="button"
+            onClick={() => setIsManagerOpen(true)}
+            className="h-10 px-5 rounded-xl bg-slate-700 hover:bg-slate-800 text-white font-bold uppercase text-[10px] tracking-wider gap-2 shadow-sm"
+          >
+            <Settings2 className="h-4 w-4" />
+            Editar Procedimentos
+          </Button>
         </div>
 
         <div className="grid lg:grid-cols-[1fr_360px] gap-10">

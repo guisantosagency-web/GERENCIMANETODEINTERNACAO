@@ -299,6 +299,20 @@ export default function AgendamentoTab() {
     }))
   }
 
+  const handleAddNewType = async (procedure_name: string, new_type: string) => {
+    if (!procedure_name || !new_type) return
+    try {
+      const { error } = await supabase.from("exam_types_list").insert([{ 
+        name: new_type.toUpperCase(), 
+        procedure_name: procedure_name 
+      }])
+      if (error) throw error
+      await loadConfig()
+    } catch (e: any) {
+      alert("Erro ao cadastrar especificação: " + e.message)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -440,13 +454,11 @@ export default function AgendamentoTab() {
         <meta charset="UTF-8">
         <title>Comprovação de Agendamento</title>
         <style>
-          @page { size: A4 landscape; margin: 0; }
-          body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.4; margin: 0; padding: 0; background: #fff; }
+          @page { size: A5 portrait; margin: 0; }
+          body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #000000; line-height: 1.4; margin: 0; padding: 0; background: #fff; }
           
-          .a4-landscape { display: flex; width: 297mm; height: 210mm; overflow: hidden; }
-          .receipt-copy { width: 50%; height: 100%; padding: 10mm; position: relative; box-sizing: border-box; display: flex; flex-direction: column; }
-          .divider { width: 0; border-left: 1px dashed #cbd5e1; height: 100%; position: relative; }
-          .divider::after { content: '✂️'; position: absolute; top: 10mm; left: -8px; font-size: 12pt; background: white; padding: 2px; }
+          .a5-portrait { display: flex; width: 148mm; height: 210mm; overflow: hidden; }
+          .receipt-copy { width: 100%; height: 100%; padding: 10mm; position: relative; box-sizing: border-box; display: flex; flex-direction: column; }
 
           /* Header */
           .header { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 2px solid #14b8a6; padding-bottom: 4mm; margin-bottom: 6mm; }
@@ -456,8 +468,8 @@ export default function AgendamentoTab() {
           .logo-gov { height: 7mm; opacity: 0.8; }
           .logo-sus { height: 8mm; opacity: 0.9; }
           .doc-title { text-align: right; }
-          .doc-title h1 { margin: 0; font-size: 11pt; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
-          .doc-title p { margin: 1mm 0 0 0; font-size: 7pt; color: #64748b; font-weight: bold; text-transform: uppercase; }
+          .doc-title h1 { margin: 0; font-size: 11pt; color: #000000; text-transform: uppercase; letter-spacing: 0.5px; }
+          .doc-title p { margin: 1mm 0 0 0; font-size: 7pt; color: #000000; font-weight: bold; text-transform: uppercase; }
 
           /* Sections */
           .section { margin-bottom: 5mm; }
@@ -466,105 +478,102 @@ export default function AgendamentoTab() {
           /* Data Grid */
           .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; background: #f8fafc; padding: 3mm; border-radius: 8px; border: 1px solid #f1f5f9; }
           .data-item { display: flex; flex-direction: column; }
-          .data-label { font-size: 6.5pt; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.5mm; }
-          .data-value { font-size: 9pt; font-weight: 700; color: #1e293b; overflow: hidden; text-overflow: ellipsis; }
+          .data-label { font-size: 6.5pt; font-weight: bold; color: #000000; text-transform: uppercase; margin-bottom: 0.5mm; }
+          .data-value { font-size: 9pt; font-weight: 700; color: #000000; overflow: hidden; text-overflow: ellipsis; }
           .full-width { grid-column: span 2; }
 
           /* Guidelines Box */
           .guidelines { padding: 4mm; background: #f0fdfa; border-radius: 12px; border: 1px solid #ccfbf1; margin-top: auto; }
-          .guidelines h3 { margin: 0 0 2mm 0; font-size: 8pt; text-transform: uppercase; color: #0d9488; }
-          .guidelines ul { margin: 0; padding-left: 4mm; font-size: 8.5pt; color: #334155; }
+          .guidelines h3 { margin: 0 0 2mm 0; font-size: 8pt; text-transform: uppercase; color: #000000; }
+          .guidelines ul { margin: 0; padding-left: 4mm; font-size: 8.5pt; color: #000000; }
           .guidelines li { margin-bottom: 1mm; }
 
           /* Footer */
-          .footer { margin-top: 5mm; font-size: 7pt; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 3mm; display: flex; justify-content: space-between; align-items: flex-end; }
-          .signature { border-top: 1px solid #cbd5e1; width: 45mm; text-align: center; padding-top: 1mm; font-size: 6.5pt; color: #64748b; font-weight: bold; text-transform: uppercase; }
+          .footer { margin-top: 5mm; font-size: 7pt; color: #000000; border-top: 1px solid #f1f5f9; padding-top: 3mm; display: flex; justify-content: space-between; align-items: flex-end; }
+          .signature { border-top: 1px solid #cbd5e1; width: 45mm; text-align: center; padding-top: 1mm; font-size: 6.5pt; color: #000000; font-weight: bold; text-transform: uppercase; }
           
           @media print { body { -webkit-print-color-adjust: exact; } }
         </style>
       </head><body>
-        <div class="a4-landscape">
-          ${[1, 2].map(copyNum => `
-            <div class="receipt-copy">
-              <div class="header">
-                <div class="logo-box">
-                  ${logos.logo_hto ? `<img src="${logos.logo_hto}" class="logo-hospital" />` : `<img src="/images/hto-20nova.png" class="logo-hospital" />`}
-                  ${logos.logo_instituto ? `<img src="${logos.logo_instituto}" class="logo-invisa" />` : ""}
-                  ${logos.logo_maranhao ? `<img src="${logos.logo_maranhao}" class="logo-gov" />` : `<img src="/images/logo-20gov.png" class="logo-gov" />`}
-                  ${logos.logo_sus ? `<img src="${logos.logo_sus}" class="logo-sus" />` : ""}
-                </div>
-                <div class="doc-title">
-                  <h1>Exames</h1>
-                  <p>HTO Caxias</p>
-                  <p style="font-size: 6pt; margin-top: 2px; color: #14b8a6; font-weight: 800;">VIA ${copyNum === 1 ? 'PACIENTE' : 'INTERNA'}</p>
-                </div>
+        <div class="a5-portrait">
+          <div class="receipt-copy">
+            <div class="header">
+              <div class="logo-box">
+                ${logos.logo_hto ? `<img src="${logos.logo_hto}" class="logo-hospital" />` : `<img src="/images/hto-20nova.png" class="logo-hospital" />`}
+                ${logos.logo_instituto ? `<img src="${logos.logo_instituto}" class="logo-invisa" />` : ""}
+                ${logos.logo_maranhao ? `<img src="${logos.logo_maranhao}" class="logo-gov" />` : `<img src="/images/logo-20gov.png" class="logo-gov" />`}
+                ${logos.logo_sus ? `<img src="${logos.logo_sus}" class="logo-sus" />` : ""}
               </div>
-
-              <div class="section">
-                <div class="section-title">Dados do Paciente</div>
-                <div class="data-grid">
-                  <div class="data-item full-width">
-                    <span class="data-label">Paciente</span>
-                    <span class="data-value">${mainAppt.patient_name || '--'}</span>
-                  </div>
-                  <div class="data-item">
-                    <span class="data-label">CPF</span>
-                    <span class="data-value">${mainAppt.cpf || '--'}</span>
-                  </div>
-                  <div class="data-item">
-                    <span class="data-label">Cartão SUS</span>
-                    <span class="data-value">${mainAppt.sus || '--'}</span>
-                  </div>
-                </div>
+              <div class="doc-title">
+                <h1>Exames</h1>
+                <p>HTO Caxias</p>
+                <p style="font-size: 6pt; margin-top: 2px; color: #14b8a6; font-weight: 800;">VIA PACIENTE</p>
               </div>
+            </div>
 
-              <div class="section" style="flex: 1; min-height: 0;">
-                <div class="section-title">Informações dos Exames</div>
-                <div class="data-grid" style="grid-template-columns: 1fr 1fr; gap: 2mm 4mm; align-content: start;">
-                  ${examsToPrint.map((a: any) => `
-                    <div class="data-item" style="border-left: 2px solid #e2e8f0; padding-left: 2mm; margin-bottom: 1mm;">
-                      <span class="data-label" style="line-height: 1;">${a.exam_time || ''} — ${a.procedure_name || ''}</span>
-                      <span class="data-value" style="font-size: 7.5pt; color: #334155;">${a.exam_type || 'PADRÃO'}</span>
-                    </div>
-                  `).join('')}
-                  <div class="data-item full-width" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; margin-top: 2mm; padding-top: 2mm; border-top: 1px dashed #e2e8f0;">
-                    <div class="data-item">
-                      <span class="data-label">Status Geral</span>
-                      <span class="data-value" style="color: #059669; font-size: 8pt;">AGENDADOS</span>
-                    </div>
-                    <div class="data-item">
-                      <span class="data-label">Data</span>
-                      <span class="data-value" style="font-size: 8pt;">${examDateStr}</span>
-                    </div>
-                  </div>
+            <div class="section">
+              <div class="section-title">Dados do Paciente</div>
+              <div class="data-grid">
+                <div class="data-item full-width">
+                  <span class="data-label">Paciente</span>
+                  <span class="data-value">${mainAppt.patient_name || '--'}</span>
                 </div>
-              </div>
-
-              <div class="guidelines">
-                <h3>Orientações</h3>
-                <ul>
-                  <li>Chegar com <strong>20 min</strong> de antecedência.</li>
-                  <li>Documento com foto e Cartão SUS obrigatórios.</li>
-                  ${needsFasting ? `
-                    <li><strong>JEJUM:</strong> 04 a 06 horas (água permitida).</li>
-                    <li>Trazer exames anteriores da região.</li>
-                  ` : '<li>Não é necessário preparo especial.</li>'}
-                </ul>
-              </div>
-
-              <div class="footer">
-                <div class="footer-info">
-                  <strong>HTO Caxias</strong> — Serviço de Excelência<br/>
-                  Impresso em ${new Date().toLocaleString('pt-BR')}<br/>
-                  <span style="font-size: 5.5pt; color: #cbd5e1; margin-top: 1mm; display: block;">Desenvolvido por Guilherme Santos — Avero Agency</span>
+                <div class="data-item">
+                  <span class="data-label">CPF</span>
+                  <span class="data-value">${mainAppt.cpf || '--'}</span>
                 </div>
-                <div class="signature">
-                  Carimbo e Visto
+                <div class="data-item">
+                  <span class="data-label">Cartão SUS</span>
+                  <span class="data-value">${mainAppt.sus || '--'}</span>
                 </div>
               </div>
             </div>
-            ${copyNum === 1 ? '<div class="divider"></div>' : ''}
-          `).join('')}
+
+            <div class="section" style="flex: 1; min-height: 0;">
+              <div class="section-title">Informações dos Exames</div>
+              <div class="data-grid" style="grid-template-columns: 1fr 1fr; gap: 2mm 4mm; align-content: start;">
+                ${examsToPrint.map((a: any) => `
+                  <div class="data-item" style="border-left: 2px solid #e2e8f0; padding-left: 2mm; margin-bottom: 1mm;">
+                    <span class="data-label" style="line-height: 1;">${a.exam_time || ''} — ${a.procedure_name || ''}</span>
+                    <span class="data-value" style="font-size: 7.5pt; color: #000000;">${a.exam_type || 'PADRÃO'}</span>
+                  </div>
+                `).join('')}
+                <div class="data-item full-width" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; margin-top: 2mm; padding-top: 2mm; border-top: 1px dashed #e2e8f0;">
+                  <div class="data-item">
+                    <span class="data-label">Status Geral</span>
+                    <span class="data-value" style="color: #000000; font-size: 8pt;">AGENDADOS</span>
+                  </div>
+                  <div class="data-item">
+                    <span class="data-label">Data</span>
+                    <span class="data-value" style="font-size: 8pt;">${examDateStr}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="guidelines">
+              <h3>Orientações</h3>
+              <ul>
+                <li>Chegar com <strong>20 min</strong> de antecedência.</li>
+                <li>Documento com foto e Cartão SUS obrigatórios.</li>
+                ${needsFasting ? `
+                  <li><strong>JEJUM:</strong> 04 a 06 horas (água permitida).</li>
+                  <li>Trazer exames anteriores da região.</li>
+                ` : '<li>Não é necessário preparo especial.</li>'}
+              </ul>
+            </div>
+
+            <div class="footer">
+              <div class="footer-info">
+                <strong>HTO Caxias</strong> — Serviço de Excelência<br/>
+                Impresso em ${new Date().toLocaleString('pt-BR')}<br/>
+                <span style="font-size: 5.5pt; color: #000000; margin-top: 1mm; display: block;">Desenvolvido por Guilherme Santos — Avero Agency</span>
+              </div>
+              <div class="signature">
+                Carimbo e Visto
+              </div>
+            </div>
+          </div>
         </div>
       </body></html>`
 
@@ -603,11 +612,9 @@ export default function AgendamentoTab() {
                 </div>
                 Novo Agendamento
               </h2>
-              {isAdmin && (
-                <Button onClick={() => setIsManagerOpen(true)} variant="ghost" className="bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold uppercase text-[10px] tracking-wider gap-2 rounded-xl">
-                  <Settings2 className="h-4 w-4" /> Ajustes Oficiais
-                </Button>
-              )}
+              <Button onClick={() => setIsManagerOpen(true)} variant="ghost" className="bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold uppercase text-[10px] tracking-wider gap-2 rounded-xl">
+                <Settings2 className="h-4 w-4" /> Ajustes Oficiais
+              </Button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
@@ -714,6 +721,8 @@ export default function AgendamentoTab() {
                               value={exam.exam_type}
                               options={dynamicTypes[exam.procedure_name] || []}
                               onSelect={(v: string) => updateExam(exam.id, 'exam_type', v)}
+                              canAdd={!!exam.procedure_name}
+                              onAddNew={(v: string) => handleAddNewType(exam.procedure_name, v)}
                             />
                           </div>
                           <div className="md:col-span-1 space-y-1">
