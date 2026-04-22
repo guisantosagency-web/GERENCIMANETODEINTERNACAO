@@ -454,10 +454,10 @@ export default function AgendamentoTab() {
         <meta charset="UTF-8">
         <title>Comprovação de Agendamento</title>
         <style>
-          @page { size: A5 portrait; margin: 0; }
+          @page { size: A4 portrait; margin: 0; }
           body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #000000; line-height: 1.4; margin: 0; padding: 0; background: #fff; }
           
-          .a5-portrait { display: flex; width: 148mm; height: 210mm; overflow: hidden; }
+          .a4-portrait { display: flex; width: 210mm; height: 297mm; overflow: hidden; }
           .receipt-copy { width: 100%; height: 100%; padding: 10mm; position: relative; box-sizing: border-box; display: flex; flex-direction: column; }
 
           /* Header */
@@ -495,7 +495,7 @@ export default function AgendamentoTab() {
           @media print { body { -webkit-print-color-adjust: exact; } }
         </style>
       </head><body>
-        <div class="a5-portrait">
+        <div class="a4-portrait">
           <div class="receipt-copy">
             <div class="header">
               <div class="logo-box">
