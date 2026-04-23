@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
 import { Calendar } from "@/components/ui/calendar"
 import { useAuth } from "@/lib/auth-context"
 import { ExamManagerModal } from "@/components/exam-manager-modal"
@@ -131,6 +132,7 @@ export default function VagasTab() {
                     selected={selectedDates}
                     onSelect={(dates) => dates && setSelectedDates(dates)}
                     className="p-2 text-slate-700"
+                    locale={ptBR}
                   />
                 </div>
                 <div className="flex items-center justify-center">
