@@ -436,7 +436,19 @@ export default function AgendamentoTab() {
 
     const needsFasting = examsToPrint.some((a: any) => {
       const p = (a.procedure_name || "").toUpperCase()
-      return p.includes("TOMOGRAFIA") || p.includes("ULTRASSONOGRAFIA") || p.includes("USG") || p.includes("ANGIOTOMOGRAFIA")
+      const t = (a.exam_type || "").toUpperCase()
+
+      // Angiotomografia e USG sempre mostram jejum (conforme padrão anterior)
+      if (p.includes("ANGIOTOMOGRAFIA") || p.includes("ULTRASSONOGRAFIA") || p.includes("USG")) {
+        return true
+      }
+
+      // Tomografia normal não precisa de jejum, apenas se tiver "CONTRASTE" no nome ou tipo
+      if (p.includes("TOMOGRAFIA")) {
+        return p.includes("CONTRASTE") || t.includes("CONTRASTE")
+      }
+
+      return false
     })
 
     const mainAppt = examsToPrint[0] || appt
