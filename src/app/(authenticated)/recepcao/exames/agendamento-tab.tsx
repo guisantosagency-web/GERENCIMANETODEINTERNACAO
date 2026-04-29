@@ -981,96 +981,96 @@ export default function AgendamentoTab() {
               </p>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* LISTA DE AGENDADOS */}
-      <div className="bg-white rounded-[2rem] p-8 lg:p-10 border border-slate-100 shadow-sm mt-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 pb-6 border-b border-slate-100 gap-6">
-          <h3 className="text-xl font-bold font-space text-slate-800 uppercase tracking-tight flex items-center gap-3">
-            <div className="p-2.5 bg-blue-50 text-blue-500 rounded-xl border border-blue-100 shadow-sm">
-              <ClipboardList className="h-5 w-5" />
+          {/* LISTA DE AGENDADOS - RELOCATED TO SIDEBAR */}
+          <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col gap-6">
+            <div className="flex flex-col gap-4">
+              <h3 className="text-lg font-bold font-space text-slate-800 uppercase tracking-tight flex items-center gap-3">
+                <div className="p-2 bg-blue-50 text-blue-500 rounded-xl border border-blue-100 shadow-sm">
+                  <ClipboardList className="h-4 w-4" />
+                </div>
+                Agenda Diária
+              </h3>
+              
+              <div className="flex flex-col gap-3">
+                <div className="bg-slate-50 border border-slate-200 p-2 px-4 rounded-xl flex flex-col">
+                  <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider leading-none mb-1">Data Filtro</span>
+                  <input type="date" value={selectedAgendadoDate} onChange={e => setSelectedAgendadoDate(e.target.value)} className="bg-transparent border-none text-[10px] font-bold text-slate-700 outline-none p-0 uppercase" />
+                </div>
+                <div className="relative group">
+                  <Input value={appointmentSearch} onChange={e => setAppointmentSearch(e.target.value)} className="bg-white border-slate-200 rounded-xl h-10 w-full pl-9 text-[10px] font-bold uppercase text-slate-700 shadow-sm focus:border-teal-400 outline-none transition-colors" placeholder="LOCALIZAR..." />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-teal-500" />
+                </div>
+              </div>
             </div>
-            Agenda Diária
-          </h3>
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="bg-slate-50 border border-slate-200 p-2 px-5 rounded-xl flex flex-col min-w-[140px]">
-              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider leading-none mb-1">Data Filtro</span>
-              <input type="date" value={selectedAgendadoDate} onChange={e => setSelectedAgendadoDate(e.target.value)} className="bg-transparent border-none text-[11px] font-bold text-slate-700 outline-none p-0 uppercase" />
-            </div>
-            <div className="relative group flex-1 min-w-[200px]">
-              <Input value={appointmentSearch} onChange={e => setAppointmentSearch(e.target.value)} className="bg-white border-slate-200 rounded-xl h-12 w-full pl-10 text-[10px] font-bold uppercase text-slate-700 shadow-sm focus:border-teal-400 outline-none transition-colors" placeholder="LOCALIZAR PACIENTE..." />
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-teal-500" />
+
+            <div className="flex flex-col gap-4 max-h-[1200px] overflow-y-auto pr-1 no-scrollbar">
+              {groupedAppointments.length === 0 ? (
+                <div className="py-10 text-center opacity-70">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Nenhum agendamento</p>
+                </div>
+              ) : (
+                groupedAppointments.map(group => (
+                  <div key={group.id} className="bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl p-4 transition-colors group">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="h-8 w-8 rounded-lg bg-teal-50 border border-teal-100 flex items-center justify-center font-bold text-teal-600 text-xs shadow-sm group-hover:bg-teal-500 group-hover:text-white transition-colors">
+                        {group.patient_name.charAt(0)}
+                      </div>
+                      <span className="text-[8px] font-bold bg-cyan-50 text-cyan-600 border border-cyan-100 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                        {group.all_procedures.length > 1 ? `${group.all_procedures.length} EX` : '1 EX'}
+                      </span>
+                    </div>
+                    <div className="space-y-3">
+                      <p className="text-[11px] font-bold text-slate-800 uppercase tracking-tight truncate" title={group.patient_name}>{group.patient_name}</p>
+
+                      <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto pr-1">
+                        {group.all_procedures.map((p: any) => (
+                          <div key={p.id} className="flex flex-col gap-0.5 border-l-2 border-teal-400 pl-2">
+                            <p className="text-[9px] font-bold text-teal-600 uppercase tracking-wider leading-none">{p.procedure_name}</p>
+                            <p className="text-[8px] font-bold text-slate-500 uppercase leading-none">{p.exam_time}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                        <div className="flex items-center gap-1 text-slate-500 font-bold text-[9px]">
+                          <Clock className="h-3 w-3 text-orange-400" /> {group.exam_time}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="icon" variant="ghost"
+                            onClick={() => printAppointment(group)}
+                            className="h-7 w-7 rounded-lg text-slate-400 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                          >
+                            <Printer className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon" variant="ghost"
+                            onClick={() => {
+                              if (group.all_procedures.length > 1) {
+                                if (confirm(`Deseja cancelar TODOS os exames de ${group.patient_name}?`)) {
+                                  group.all_procedures.forEach((p: any) => cancelAppointment(p.id, group.patient_name))
+                                }
+                              } else {
+                                cancelAppointment(group.id, group.patient_name)
+                              }
+                            }}
+                            className="h-7 w-7 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {groupedAppointments.length === 0 ? (
-            <div className="col-span-full py-16 text-center opacity-70">
-              <div className="inline-flex p-6 bg-slate-50 border border-slate-200 rounded-2xl mb-4"><CalendarDays className="h-8 w-8 text-slate-400" /></div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Nenhum agendamento para esta data</p>
-            </div>
-          ) : (
-            groupedAppointments.map(group => (
-              <div key={group.id} className="bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl p-5 transition-colors group">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="h-10 w-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center font-bold text-teal-600 text-sm shadow-sm group-hover:bg-teal-500 group-hover:text-white transition-colors">
-                    {group.patient_name.charAt(0)}
-                  </div>
-                  <span className="text-[8px] font-bold bg-cyan-50 text-cyan-600 border border-cyan-100 px-2.5 py-1 rounded-md uppercase tracking-wider">
-                    {group.all_procedures.length > 1 ? `${group.all_procedures.length} EXAMES` : '1 EXAME'}
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  <p className="text-xs font-bold text-slate-800 uppercase tracking-tight truncate" title={group.patient_name}>{group.patient_name}</p>
-
-                  <div className="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1">
-                    {group.all_procedures.map((p: any) => (
-                      <div key={p.id} className="flex flex-col gap-0.5 border-l-2 border-teal-400 pl-2">
-                        <p className="text-[9px] font-bold text-teal-600 uppercase tracking-wider">{p.procedure_name}</p>
-                        <p className="text-[8px] font-bold text-slate-500 uppercase">{p.exam_type} — {p.exam_time}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                    <div className="flex items-center gap-1.5 text-slate-500 font-bold text-[9px]">
-                      <Clock className="h-3.5 w-3.5 text-orange-400" /> {group.exam_time}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="icon" variant="ghost"
-                        onClick={() => printAppointment(group)}
-                        title="Imprimir comprovante agrupado"
-                        className="h-7 w-7 rounded-lg text-slate-400 hover:bg-teal-50 hover:text-teal-600 transition-colors"
-                      >
-                        <Printer className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        size="icon" variant="ghost"
-                        onClick={() => {
-                          if (group.all_procedures.length > 1) {
-                            if (confirm(`Deseja cancelar TODOS os ${group.all_procedures.length} exames de ${group.patient_name}?`)) {
-                              group.all_procedures.forEach((p: any) => cancelAppointment(p.id, group.patient_name))
-                            }
-                          } else {
-                            cancelAppointment(group.id, group.patient_name)
-                          }
-                        }}
-                        title="Cancelar agendamento(s)"
-                        className="h-7 w-7 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
       </div>
+
+
 
       <style jsx>{`
         @keyframes scan {
