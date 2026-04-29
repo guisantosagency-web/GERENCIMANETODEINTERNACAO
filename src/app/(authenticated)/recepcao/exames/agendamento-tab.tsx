@@ -579,25 +579,25 @@ export default function AgendamentoTab() {
           .receipt-copy { width: 100%; height: 100%; padding: 10mm; position: relative; box-sizing: border-box; display: flex; flex-direction: column; }
 
           /* Header */
-          .header { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 2px solid #14b8a6; padding-bottom: 4mm; margin-bottom: 6mm; }
+          .header { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 2px solid #000000; padding-bottom: 4mm; margin-bottom: 6mm; }
           .logo-box { display: flex; flex-direction: row; gap: 4mm; align-items: center; }
-          .logo-hospital { height: 9mm; }
-          .logo-invisa { height: 7mm; opacity: 0.9; }
-          .logo-gov { height: 7mm; opacity: 0.8; }
-          .logo-sus { height: 8mm; opacity: 0.9; }
+          .logo-hospital { height: 14mm; }
+          .logo-invisa { height: 12mm; opacity: 0.9; }
+          .logo-gov { height: 12mm; opacity: 0.8; }
+          .logo-sus { height: 12mm; opacity: 0.9; }
           .doc-title { text-align: right; }
           .doc-title h1 { margin: 0; font-size: 11pt; color: #000000; text-transform: uppercase; letter-spacing: 0.5px; }
           .doc-title p { margin: 1mm 0 0 0; font-size: 7pt; color: #000000; font-weight: bold; text-transform: uppercase; }
 
           /* Sections */
           .section { margin-bottom: 5mm; }
-          .section-title { font-size: 8.5pt; font-weight: 800; color: #14b8a6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2mm; display: flex; align-items: center; gap: 2mm; border-left: 3px solid #14b8a6; padding-left: 2mm; }
+          .section-title { font-size: 10pt; font-weight: 800; color: #000000; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2mm; display: flex; align-items: center; gap: 2mm; border-left: 4px solid #000000; padding-left: 2mm; }
           
           /* Data Grid */
           .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; background: #f8fafc; padding: 3mm; border-radius: 8px; border: 1px solid #f1f5f9; }
           .data-item { display: flex; flex-direction: column; }
-          .data-label { font-size: 8pt; font-weight: bold; color: #000000; text-transform: uppercase; margin-bottom: 0.5mm; }
-          .data-value { font-size: 11.5pt; font-weight: 700; color: #000000; overflow: hidden; text-overflow: ellipsis; }
+          .data-label { font-size: 9pt; font-weight: bold; color: #000000; text-transform: uppercase; margin-bottom: 0.5mm; }
+          .data-value { font-size: 12pt; font-weight: 700; color: #000000; overflow: hidden; text-overflow: ellipsis; }
           .full-width { grid-column: span 2; }
 
           /* Guidelines Box */
@@ -625,7 +625,7 @@ export default function AgendamentoTab() {
               <div class="doc-title">
                 <h1>Exames</h1>
                 <p>HTO Caxias</p>
-                <p style="font-size: 6pt; margin-top: 2px; color: #14b8a6; font-weight: 800;">VIA PACIENTE</p>
+                <p style="font-size: 7pt; margin-top: 2px; color: #000000; font-weight: 800;">VIA PACIENTE</p>
               </div>
             </div>
 
@@ -651,19 +651,19 @@ export default function AgendamentoTab() {
               <div class="section-title">Informações dos Exames</div>
               <div class="data-grid" style="grid-template-columns: 1fr 1fr; gap: 2mm 4mm; align-content: start;">
                 ${examsToPrint.map((a: any) => `
-                  <div class="data-item" style="border-left: 2px solid #e2e8f0; padding-left: 2mm; margin-bottom: 1mm;">
-                    <span class="data-label" style="line-height: 1;">${a.exam_time || ''} — ${a.procedure_name || ''}</span>
-                    <span class="data-value" style="font-size: 7.5pt; color: #000000;">${a.exam_type || 'PADRÃO'}</span>
+                  <div class="data-item" style="border-left: 3px solid #000000; padding-left: 2mm; margin-bottom: 2mm;">
+                    <span class="data-label" style="font-size: 10pt; line-height: 1.2;">${a.exam_time || ''} — ${a.procedure_name || ''}</span>
+                    <span class="data-value" style="font-size: 12pt; color: #000000;">${a.exam_type || 'PADRÃO'}</span>
                   </div>
                 `).join('')}
-                <div class="data-item full-width" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; margin-top: 2mm; padding-top: 2mm; border-top: 1px dashed #e2e8f0;">
+                <div class="data-item full-width" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; margin-top: 2mm; padding-top: 2mm; border-top: 2px solid #000000;">
                   <div class="data-item">
                     <span class="data-label">Status Geral</span>
-                    <span class="data-value" style="color: #000000; font-size: 8pt;">AGENDADOS</span>
+                    <span class="data-value" style="color: #000000; font-size: 12pt;">AGENDADOS</span>
                   </div>
                   <div class="data-item">
                     <span class="data-label">Data</span>
-                    <span class="data-value" style="font-size: 8pt;">${examDateStr}</span>
+                    <span class="data-value" style="font-size: 12pt;">${examDateStr}</span>
                   </div>
                 </div>
               </div>
