@@ -178,6 +178,7 @@ export default function AgendamentoTab() {
   const [currentVagasMonth, setCurrentVagasMonth] = useState(new Date())
   const [slotsWithBalances, setSlotsWithBalances] = useState<any[]>([])
   const [isLoadingSlots, setIsLoadingSlots] = useState(false)
+  const [activeExamId, setActiveExamId] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     patient_name: "",
@@ -191,9 +192,10 @@ export default function AgendamentoTab() {
   const [exams, setExams] = useState([{
     id: Math.random().toString(36).substr(2, 9),
     exam_date: format(new Date(), 'yyyy-MM-dd'),
-    exam_time: format(new Date(), 'HH:mm'),
+    exam_time: "07:00",
     procedure_name: "",
-    exam_type: ""
+    exam_type: "",
+    isSlotSelected: false
   }])
 
   const supabase = createBrowserClient(
@@ -343,12 +345,13 @@ export default function AgendamentoTab() {
   }
 
   const addExam = () => {
-    setExams(prev => [...prev, {
+    setExams([...exams, {
       id: Math.random().toString(36).substr(2, 9),
       exam_date: format(new Date(), 'yyyy-MM-dd'),
-      exam_time: format(new Date(), 'HH:mm'),
-      procedure_name: dynamicProcedures[0] || "",
-      exam_type: dynamicTypes[dynamicProcedures[0]]?.[0] || ""
+      exam_time: "07:00",
+      procedure_name: "",
+      exam_type: "",
+      isSlotSelected: false
     }])
   }
 
@@ -804,159 +807,158 @@ export default function AgendamentoTab() {
                   <Input value={formData.municipio} onChange={e => setFormData(p => ({ ...p, municipio: e.target.value.toUpperCase() }))} className="h-12 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 uppercase text-center shadow-sm focus:border-teal-400 outline-none transition-colors" placeholder="EX: IMPERATRIZ" />
                 </div>
 
-                {/* Exames List - NEW WORKFLOW */}
-                <div className="md:col-span-6 pt-6 space-y-6">
+                {/* Exames List - NEW INLINE WORKFLOW */}
+                <div className="md:col-span-6 pt-6 space-y-8">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-50">
                     <h3 className="text-xs font-bold uppercase text-slate-500 tracking-wider flex items-center gap-2">
                       <Plus className="h-4 w-4 text-teal-500" /> Detalhes dos Procedimentos
                     </h3>
                   </div>
 
-                  {/* 1. Selecionar Procedimento Base para Vagas */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                    <div className="space-y-1">
-                      <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Escolha o Procedimento para ver Vagas</Label>
-                      <select 
-                        value={selectedProcedureForVagas || ""} 
-                        onChange={e => {
-                          const val = e.target.value
-                          setSelectedProcedureForVagas(val)
-                          if (exams.length === 1 && !exams[0].procedure_name) {
-                            updateExam(exams[0].id, 'procedure_name', val)
-                          }
-                        }}
-                        className="w-full h-12 bg-white border border-slate-200 px-4 rounded-xl text-[10px] font-bold text-slate-700 uppercase outline-none focus:border-teal-400 shadow-sm"
-                      >
-                        <option value="">SELECIONE UM PROCEDIMENTO...</option>
-                        {dynamicProcedures.map(p => <option key={p} value={p}>{p}</option>)}
-                      </select>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-3 pt-4">
-                      <Button type="button" onClick={() => setCurrentVagasMonth(subMonths(currentVagasMonth, 1))} variant="ghost" className="h-10 w-10 p-0 rounded-xl bg-white border border-slate-200 shadow-sm">
-                        <ChevronRight className="h-4 w-4 rotate-180 text-slate-400" />
-                      </Button>
-                      <div className="text-[10px] font-black uppercase text-slate-600 bg-white border border-slate-200 px-6 h-10 flex items-center rounded-xl shadow-sm min-w-[140px] justify-center">
-                        {format(currentVagasMonth, 'MMMM yyyy', { locale: ptBR })}
-                      </div>
-                      <Button type="button" onClick={() => setCurrentVagasMonth(addMonths(currentVagasMonth, 1))} variant="ghost" className="h-10 w-10 p-0 rounded-xl bg-white border border-slate-200 shadow-sm">
-                        <ChevronRight className="h-4 w-4 text-slate-400" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* 2. Tabela de Vagas (Estilo Anexo 2) */}
-                  {selectedProcedureForVagas && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between px-2">
-                        <Label className="text-[10px] font-black uppercase text-teal-600 tracking-widest">Vagas Disponíveis: {selectedProcedureForVagas}</Label>
-                        {isLoadingSlots && <Loader2 className="h-4 w-4 animate-spin text-teal-500" />}
-                      </div>
-                      
-                      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-left border-collapse">
-                            <thead className="bg-teal-600 text-white">
-                              <tr>
-                                <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wider">Data / Hora</th>
-                                <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wider text-right">Saldo de Vagas</th>
-                                <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wider text-center">Ação</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                              {slotsWithBalances.length === 0 ? (
-                                <tr>
-                                  <td colSpan={3} className="px-6 py-10 text-center text-[10px] font-bold text-slate-400 uppercase italic">
-                                    Nenhuma vaga configurada para este mês.
-                                  </td>
-                                </tr>
-                              ) : (
-                                slotsWithBalances.map((s, idx) => (
-                                  <tr key={idx} className={`hover:bg-slate-50 transition-colors ${s.balance <= 0 ? 'opacity-50 grayscale' : ''}`}>
-                                    <td className="px-6 py-4">
-                                      <div className="flex flex-col">
-                                        <span className="text-[11px] font-black text-slate-700 uppercase">{format(s.date, "dd.MM.yyyy — EEE", { locale: ptBR })}</span>
-                                        <span className="text-[9px] font-bold text-slate-400">HORÁRIO PADRÃO</span>
-                                      </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black ${s.balance > 0 ? 'bg-teal-50 text-teal-600 border border-teal-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
-                                        SALDO: {s.balance}
-                                      </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                      <Button 
-                                        type="button" 
-                                        disabled={s.balance <= 0}
-                                        onClick={() => {
-                                          const examId = exams[0].id
-                                          updateExam(examId, 'procedure_name', selectedProcedureForVagas)
-                                          updateExam(examId, 'exam_date', s.dateStr)
-                                          alert(`Data ${format(s.date, 'dd/MM')} selecionada!`)
-                                        }}
-                                        className={`h-8 px-4 text-[9px] font-bold uppercase rounded-lg shadow-sm transition-all ${s.balance > 0 ? 'bg-teal-500 hover:bg-teal-600 text-white' : 'bg-slate-100 text-slate-400'}`}
-                                      >
-                                        Selecionar
-                                      </Button>
-                                    </td>
-                                  </tr>
-                                ))
+                  {exams.map((exam, idx) => (
+                    <div key={exam.id} className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-500">
+                      {/* Row Header: Procedure Selection & Inline Details if Selected */}
+                      <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 shadow-sm">
+                        <div className="flex flex-wrap items-end gap-4">
+                          <div className="flex-1 min-w-[240px] space-y-1">
+                            <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Procedimento {idx + 1}</Label>
+                            <div className="relative group">
+                              <select 
+                                value={exam.procedure_name || ""} 
+                                onChange={e => {
+                                  const val = e.target.value
+                                  updateExam(exam.id, 'procedure_name', val)
+                                  updateExam(exam.id, 'isSlotSelected', false) // Reset selection if procedure changes
+                                  setSelectedProcedureForVagas(val)
+                                  setActiveExamId(exam.id)
+                                }}
+                                className="w-full h-12 bg-white border border-slate-200 px-4 rounded-xl text-[10px] font-bold text-slate-700 uppercase outline-none focus:border-teal-400 shadow-sm transition-all"
+                              >
+                                <option value="">SELECIONE UM PROCEDIMENTO...</option>
+                                {dynamicProcedures.map(p => <option key={p} value={p}>{p}</option>)}
+                              </select>
+                              {exams.length > 1 && (
+                                <button type="button" onClick={() => removeExam(exam.id)} className="absolute -right-2 -top-2 h-6 w-6 bg-white text-rose-400 hover:text-rose-600 rounded-full shadow-sm border border-slate-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
                               )}
-                            </tbody>
-                          </table>
+                            </div>
+                          </div>
+
+                          {exam.isSlotSelected && (
+                            <>
+                              <div className="flex-1 min-w-[180px] space-y-1 animate-in zoom-in-95 duration-300">
+                                <SearchableAdder
+                                  label="Especificação"
+                                  placeholder="Selecione..."
+                                  value={exam.exam_type}
+                                  options={dynamicTypes[exam.procedure_name] || []}
+                                  onSelect={(v: string) => updateExam(exam.id, 'exam_type', v)}
+                                  canAdd={!!exam.procedure_name}
+                                  onAddNew={(v: string) => handleAddNewType(exam.procedure_name, v)}
+                                />
+                              </div>
+                              <div className="w-[130px] space-y-1 animate-in zoom-in-95 duration-300">
+                                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Data</Label>
+                                <Input type="date" value={exam.exam_date} onChange={e => updateExam(exam.id, 'exam_date', e.target.value)} className="h-12 bg-white border-slate-200 rounded-xl text-[10px] font-bold text-slate-700 text-center shadow-sm focus:border-teal-400 outline-none transition-colors" />
+                              </div>
+                              <div className="w-[100px] space-y-1 animate-in zoom-in-95 duration-300">
+                                <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Horário</Label>
+                                <Input type="time" value={exam.exam_time} onChange={e => updateExam(exam.id, 'exam_time', e.target.value)} className="h-12 bg-white border-slate-200 rounded-xl text-[10px] font-bold text-slate-700 text-center shadow-sm focus:border-teal-400 outline-none transition-colors" />
+                              </div>
+                            </>
+                          )}
+
+                          {/* Pagination always visible if procedure selected */}
+                          {exam.procedure_name && (
+                            <div className="flex items-center gap-2 pt-4">
+                              <Button type="button" onClick={() => setCurrentVagasMonth(subMonths(currentVagasMonth, 1))} variant="ghost" className="h-10 w-10 p-0 rounded-xl bg-white border border-slate-200 shadow-sm">
+                                <ChevronRight className="h-4 w-4 rotate-180 text-slate-400" />
+                              </Button>
+                              <div className="text-[9px] font-black uppercase text-slate-600 bg-white border border-slate-200 px-4 h-10 flex items-center rounded-xl shadow-sm min-w-[120px] justify-center">
+                                {format(currentVagasMonth, 'MMM yyyy', { locale: ptBR })}
+                              </div>
+                              <Button type="button" onClick={() => setCurrentVagasMonth(addMonths(currentVagasMonth, 1))} variant="ghost" className="h-10 w-10 p-0 rounded-xl bg-white border border-slate-200 shadow-sm">
+                                <ChevronRight className="h-4 w-4 text-slate-400" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
+
+                      {/* Slot Table - Only if procedure selected but slot NOT confirmed */}
+                      {!exam.isSlotSelected && exam.procedure_name && (
+                        <div className="space-y-3 animate-in fade-in slide-in-from-top-4 duration-500 pl-4 border-l-4 border-teal-500/20">
+                          <div className="flex items-center justify-between px-2">
+                            <Label className="text-[10px] font-black uppercase text-teal-600 tracking-widest flex items-center gap-2">
+                              <CalendarDays className="h-3 w-3" /> Vagas: {exam.procedure_name}
+                            </Label>
+                            {isLoadingSlots && <Loader2 className="h-4 w-4 animate-spin text-teal-500" />}
+                          </div>
+                          
+                          <div className="bg-white border border-slate-200 rounded-2xl shadow-md overflow-hidden ring-4 ring-slate-50">
+                            <div className="max-h-[400px] overflow-y-auto">
+                              <table className="w-full text-left border-collapse">
+                                <thead className="bg-teal-600 text-white sticky top-0 z-10">
+                                  <tr>
+                                    <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wider">Data / Dia</th>
+                                    <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wider text-right">Saldo</th>
+                                    <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wider text-center">Ação</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                  {slotsWithBalances.length === 0 ? (
+                                    <tr>
+                                      <td colSpan={3} className="px-6 py-12 text-center text-[10px] font-bold text-slate-400 uppercase italic">
+                                        Nenhuma vaga configurada para este período.
+                                      </td>
+                                    </tr>
+                                  ) : (
+                                    slotsWithBalances.map((s, idx) => (
+                                      <tr key={idx} className={`hover:bg-teal-50/30 transition-colors ${s.balance <= 0 ? 'opacity-50 grayscale' : ''}`}>
+                                        <td className="px-6 py-4">
+                                          <div className="flex flex-col">
+                                            <span className="text-[10px] font-black text-slate-700 uppercase">{format(s.date, "dd.MM.yyyy — EEE", { locale: ptBR })}</span>
+                                            <span className="text-[8px] font-bold text-slate-400">DISPONÍVEL</span>
+                                          </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[9px] font-black ${s.balance > 0 ? 'bg-teal-50 text-teal-600 border border-teal-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
+                                            {s.balance} VAGAS
+                                          </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                          <Button 
+                                            type="button" 
+                                            disabled={s.balance <= 0}
+                                            onClick={() => {
+                                              updateExam(exam.id, 'exam_date', s.dateStr)
+                                              updateExam(exam.id, 'isSlotSelected', true)
+                                            }}
+                                            className={`h-9 px-6 text-[10px] font-black uppercase rounded-xl shadow-sm transition-all ${s.balance > 0 ? 'bg-teal-500 hover:bg-teal-600 text-white hover:scale-105 active:scale-95' : 'bg-slate-100 text-slate-400'}`}
+                                          >
+                                            Selecionar
+                                          </Button>
+                                        </td>
+                                      </tr>
+                                    ))
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ))}
 
-                  {/* 3. Lista de Exames Sendo Agendados */}
-                  <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Agendamento Atual</Label>
-                    {exams.map((exam, idx) => (
-                      <div key={exam.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-5 relative group/item hover:border-teal-200 transition-colors">
-                        <button type="button" onClick={() => removeExam(exam.id)} className="absolute -top-3 -right-2 h-7 w-7 bg-white text-slate-400 hover:bg-rose-50 hover:text-rose-600 rounded-full flex items-center justify-center transition-all opacity-0 group-hover/item:opacity-100 shadow-sm border border-slate-200 hover:border-rose-200">
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <div className="md:col-span-1">
-                            <SearchableAdder
-                              label="Procedimento"
-                              placeholder="Selecione..."
-                              value={exam.procedure_name}
-                              options={dynamicProcedures}
-                              onSelect={(v: string) => {
-                                updateExam(exam.id, 'procedure_name', v)
-                                setSelectedProcedureForVagas(v)
-                              }}
-                            />
-                          </div>
-                          <div className="md:col-span-1">
-                            <SearchableAdder
-                              label="Especificação"
-                              placeholder="Selecione..."
-                              value={exam.exam_type}
-                              options={dynamicTypes[exam.procedure_name] || []}
-                              onSelect={(v: string) => updateExam(exam.id, 'exam_type', v)}
-                              canAdd={!!exam.procedure_name}
-                              onAddNew={(v: string) => handleAddNewType(exam.procedure_name, v)}
-                            />
-                          </div>
-                          <div className="md:col-span-1 space-y-1">
-                            <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Data</Label>
-                            <Input type="date" value={exam.exam_date} onChange={e => updateExam(exam.id, 'exam_date', e.target.value)} className="h-12 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center shadow-sm focus:border-teal-400 outline-none transition-colors" />
-                          </div>
-                          <div className="md:col-span-1 space-y-1">
-                            <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Hora</Label>
-                            <Input type="time" value={exam.exam_time} onChange={e => updateExam(exam.id, 'exam_time', e.target.value)} className="h-12 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center shadow-sm focus:border-teal-400 outline-none transition-colors" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    <Button type="button" onClick={addExam} className="w-full h-12 border border-dashed border-slate-300 hover:border-teal-400 text-slate-500 hover:text-teal-600 bg-slate-50 hover:bg-teal-50 rounded-xl font-bold uppercase text-[10px] tracking-wider transition-all">
-                      + ADICIONAR OUTRO EXAME
-                    </Button>
-                  </div>
+                  <Button 
+                    type="button" 
+                    onClick={addExam} 
+                    className="w-full h-12 border border-dashed border-slate-300 hover:border-teal-400 text-slate-500 hover:text-teal-600 bg-slate-50 hover:bg-teal-50 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all gap-2"
+                  >
+                    <PlusCircle className="h-4 w-4" /> Adicionar Outro Exame
+                  </Button>
                 </div>
               </div>
 
