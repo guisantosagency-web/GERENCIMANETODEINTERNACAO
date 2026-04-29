@@ -10,7 +10,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { format, parseISO } from "date-fns"
+import { format, parseISO, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday } from "date-fns"
+import { ptBR } from "date-fns/locale"
 import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
 import { ExamManagerModal } from "@/components/exam-manager-modal"
 import { useAuth } from "@/lib/auth-context"
@@ -171,6 +172,12 @@ export default function AgendamentoTab() {
   const [selectedAgendadoDate, setSelectedAgendadoDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [appointmentSearch, setAppointmentSearch] = useState("")
+  
+  // Novos estados para gerenciamento de vagas
+  const [selectedProcedureForVagas, setSelectedProcedureForVagas] = useState<string | null>(null)
+  const [currentVagasMonth, setCurrentVagasMonth] = useState(new Date())
+  const [slotsWithBalances, setSlotsWithBalances] = useState<any[]>([])
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false)
 
   const [formData, setFormData] = useState({
     patient_name: "",
@@ -236,6 +243,70 @@ export default function AgendamentoTab() {
         procedure_name: pName,
         exam_type: typeMap[pName]?.[0] || ""
       }])
+      setSelectedProcedureForVagas(pName)
+    }
+  }
+
+  useEffect(() => {
+    if (selectedProcedureForVagas) {
+      fetchSlotsWithBalances()
+    }
+  }, [selectedProcedureForVagas, currentVagasMonth])
+
+  const fetchSlotsWithBalances = async () => {
+    setIsLoadingSlots(true)
+    try {
+      const start = format(startOfMonth(currentVagasMonth), 'yyyy-MM-dd')
+      const end = format(endOfMonth(currentVagasMonth), 'yyyy-MM-dd')
+
+      // 1. Buscar todas as configurações de vagas para o mês e procedimento
+      const { data: slotConfigs } = await supabase
+        .from("exam_slots")
+        .select("*")
+        .eq("procedure_name", selectedProcedureForVagas)
+        .gte("exam_date", start)
+        .lte("exam_date", end)
+
+      // 2. Buscar contagem de agendamentos para o mês e procedimento
+      const { data: appointments } = await supabase
+        .from("exam_appointments")
+        .select("exam_date")
+        .eq("procedure_name", selectedProcedureForVagas)
+        .neq("status", "cancelado")
+        .gte("exam_date", start)
+        .lte("exam_date", end)
+
+      // Agrupar agendamentos por data
+      const apptCounts: Record<string, number> = {}
+      appointments?.forEach(a => {
+        apptCounts[a.exam_date] = (apptCounts[a.exam_date] || 0) + 1
+      })
+
+      // 3. Mapear dias do mês
+      const days = eachDayOfInterval({
+        start: startOfMonth(currentVagasMonth),
+        end: endOfMonth(currentVagasMonth)
+      })
+
+      const results = days.map(day => {
+        const dateStr = format(day, 'yyyy-MM-dd')
+        const config = slotConfigs?.find(c => c.exam_date === dateStr)
+        const total = config?.total_slots || 0
+        const occupied = apptCounts[dateStr] || 0
+        return {
+          date: day,
+          dateStr,
+          total,
+          occupied,
+          balance: total - occupied
+        }
+      }).filter(d => d.total > 0 || d.occupied > 0) // Mostrar apenas dias que tenham configuração ou agendamentos
+
+      setSlotsWithBalances(results)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsLoadingSlots(false)
     }
   }
 
@@ -317,6 +388,32 @@ export default function AgendamentoTab() {
     e.preventDefault()
     setIsSubmitting(true)
     try {
+      // Validação de vagas (Saldo)
+      for (const exam of exams) {
+        const { data: config } = await supabase
+          .from("exam_slots")
+          .select("total_slots")
+          .eq("procedure_name", exam.procedure_name)
+          .eq("exam_date", exam.exam_date)
+          .single()
+
+        if (config) {
+          const { count } = await supabase
+            .from("exam_appointments")
+            .select("*", { count: 'exact', head: true })
+            .eq("procedure_name", exam.procedure_name)
+            .eq("exam_date", exam.exam_date)
+            .neq("status", "cancelado")
+
+          const occupied = count || 0
+          if (occupied >= config.total_slots) {
+            alert(`SEM VAGAS: O procedimento ${exam.procedure_name} para o dia ${format(parseISO(exam.exam_date), 'dd/MM/yyyy')} já atingiu o limite de ${config.total_slots} vagas.`)
+            setIsSubmitting(false)
+            return
+          }
+        }
+      }
+
       const cleanCPF = formData.cpf.replace(/\D/g, "")
       const inserts = exams.map(exam => ({
         patient_name: formData.patient_name.toUpperCase(),
@@ -346,6 +443,12 @@ export default function AgendamentoTab() {
       })
 
       alert("Agendamento realizado!")
+      
+      // Auto-print the newly created appointments
+      if (data && data.length > 0) {
+        printAppointment({ ...data[0], all_procedures: data })
+      }
+
       setFormData({ patient_name: "", cpf: "", sus: "", chave_sisreg: "", municipio: "", estado: "MA" })
       setExams([{
         id: Math.random().toString(36).substr(2, 9),
@@ -485,24 +588,24 @@ export default function AgendamentoTab() {
 
           /* Sections */
           .section { margin-bottom: 5mm; }
-          .section-title { font-size: 7.5pt; font-weight: 800; color: #14b8a6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2mm; display: flex; align-items: center; gap: 2mm; border-left: 3px solid #14b8a6; padding-left: 2mm; }
+          .section-title { font-size: 8.5pt; font-weight: 800; color: #14b8a6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2mm; display: flex; align-items: center; gap: 2mm; border-left: 3px solid #14b8a6; padding-left: 2mm; }
           
           /* Data Grid */
           .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; background: #f8fafc; padding: 3mm; border-radius: 8px; border: 1px solid #f1f5f9; }
           .data-item { display: flex; flex-direction: column; }
-          .data-label { font-size: 6.5pt; font-weight: bold; color: #000000; text-transform: uppercase; margin-bottom: 0.5mm; }
-          .data-value { font-size: 9pt; font-weight: 700; color: #000000; overflow: hidden; text-overflow: ellipsis; }
+          .data-label { font-size: 8pt; font-weight: bold; color: #000000; text-transform: uppercase; margin-bottom: 0.5mm; }
+          .data-value { font-size: 11.5pt; font-weight: 700; color: #000000; overflow: hidden; text-overflow: ellipsis; }
           .full-width { grid-column: span 2; }
 
           /* Guidelines Box */
           .guidelines { padding: 4mm; background: #f0fdfa; border-radius: 12px; border: 1px solid #ccfbf1; margin-top: auto; }
-          .guidelines h3 { margin: 0 0 2mm 0; font-size: 8pt; text-transform: uppercase; color: #000000; }
-          .guidelines ul { margin: 0; padding-left: 4mm; font-size: 8.5pt; color: #000000; }
+          .guidelines h3 { margin: 0 0 2mm 0; font-size: 9pt; text-transform: uppercase; color: #000000; }
+          .guidelines ul { margin: 0; padding-left: 4mm; font-size: 10pt; color: #000000; }
           .guidelines li { margin-bottom: 1mm; }
 
           /* Footer */
-          .footer { margin-top: 5mm; font-size: 7pt; color: #000000; border-top: 1px solid #f1f5f9; padding-top: 3mm; display: flex; justify-content: space-between; align-items: flex-end; }
-          .signature { border-top: 1px solid #cbd5e1; width: 45mm; text-align: center; padding-top: 1mm; font-size: 6.5pt; color: #000000; font-weight: bold; text-transform: uppercase; }
+          .footer { margin-top: 5mm; font-size: 7.5pt; color: #000000; border-top: 1px solid #f1f5f9; padding-top: 3mm; display: flex; justify-content: space-between; align-items: flex-end; }
+          .signature { border-top: 1px solid #cbd5e1; width: 45mm; text-align: center; padding-top: 1mm; font-size: 7.5pt; color: #000000; font-weight: bold; text-transform: uppercase; }
           
           @media print { body { -webkit-print-color-adjust: exact; } }
         </style>
@@ -701,15 +804,114 @@ export default function AgendamentoTab() {
                   <Input value={formData.municipio} onChange={e => setFormData(p => ({ ...p, municipio: e.target.value.toUpperCase() }))} className="h-12 bg-white border-slate-200 rounded-xl text-xs font-bold text-slate-700 uppercase text-center shadow-sm focus:border-teal-400 outline-none transition-colors" placeholder="EX: IMPERATRIZ" />
                 </div>
 
-                {/* Exames List */}
-                <div className="md:col-span-6 pt-6 space-y-4">
+                {/* Exames List - NEW WORKFLOW */}
+                <div className="md:col-span-6 pt-6 space-y-6">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-50">
                     <h3 className="text-xs font-bold uppercase text-slate-500 tracking-wider flex items-center gap-2">
                       <Plus className="h-4 w-4 text-teal-500" /> Detalhes dos Procedimentos
                     </h3>
                   </div>
 
+                  {/* 1. Selecionar Procedimento Base para Vagas */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                    <div className="space-y-1">
+                      <Label className="uppercase text-[9px] font-bold tracking-wider text-slate-500 ml-2">Escolha o Procedimento para ver Vagas</Label>
+                      <select 
+                        value={selectedProcedureForVagas || ""} 
+                        onChange={e => {
+                          const val = e.target.value
+                          setSelectedProcedureForVagas(val)
+                          if (exams.length === 1 && !exams[0].procedure_name) {
+                            updateExam(exams[0].id, 'procedure_name', val)
+                          }
+                        }}
+                        className="w-full h-12 bg-white border border-slate-200 px-4 rounded-xl text-[10px] font-bold text-slate-700 uppercase outline-none focus:border-teal-400 shadow-sm"
+                      >
+                        <option value="">SELECIONE UM PROCEDIMENTO...</option>
+                        {dynamicProcedures.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3 pt-4">
+                      <Button type="button" onClick={() => setCurrentVagasMonth(subMonths(currentVagasMonth, 1))} variant="ghost" className="h-10 w-10 p-0 rounded-xl bg-white border border-slate-200 shadow-sm">
+                        <ChevronRight className="h-4 w-4 rotate-180 text-slate-400" />
+                      </Button>
+                      <div className="text-[10px] font-black uppercase text-slate-600 bg-white border border-slate-200 px-6 h-10 flex items-center rounded-xl shadow-sm min-w-[140px] justify-center">
+                        {format(currentVagasMonth, 'MMMM yyyy', { locale: ptBR })}
+                      </div>
+                      <Button type="button" onClick={() => setCurrentVagasMonth(addMonths(currentVagasMonth, 1))} variant="ghost" className="h-10 w-10 p-0 rounded-xl bg-white border border-slate-200 shadow-sm">
+                        <ChevronRight className="h-4 w-4 text-slate-400" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* 2. Tabela de Vagas (Estilo Anexo 2) */}
+                  {selectedProcedureForVagas && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between px-2">
+                        <Label className="text-[10px] font-black uppercase text-teal-600 tracking-widest">Vagas Disponíveis: {selectedProcedureForVagas}</Label>
+                        {isLoadingSlots && <Loader2 className="h-4 w-4 animate-spin text-teal-500" />}
+                      </div>
+                      
+                      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse">
+                            <thead className="bg-teal-600 text-white">
+                              <tr>
+                                <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wider">Data / Hora</th>
+                                <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wider text-right">Saldo de Vagas</th>
+                                <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wider text-center">Ação</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {slotsWithBalances.length === 0 ? (
+                                <tr>
+                                  <td colSpan={3} className="px-6 py-10 text-center text-[10px] font-bold text-slate-400 uppercase italic">
+                                    Nenhuma vaga configurada para este mês.
+                                  </td>
+                                </tr>
+                              ) : (
+                                slotsWithBalances.map((s, idx) => (
+                                  <tr key={idx} className={`hover:bg-slate-50 transition-colors ${s.balance <= 0 ? 'opacity-50 grayscale' : ''}`}>
+                                    <td className="px-6 py-4">
+                                      <div className="flex flex-col">
+                                        <span className="text-[11px] font-black text-slate-700 uppercase">{format(s.date, "dd.MM.yyyy — EEE", { locale: ptBR })}</span>
+                                        <span className="text-[9px] font-bold text-slate-400">HORÁRIO PADRÃO</span>
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black ${s.balance > 0 ? 'bg-teal-50 text-teal-600 border border-teal-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
+                                        SALDO: {s.balance}
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                      <Button 
+                                        type="button" 
+                                        disabled={s.balance <= 0}
+                                        onClick={() => {
+                                          const examId = exams[0].id
+                                          updateExam(examId, 'procedure_name', selectedProcedureForVagas)
+                                          updateExam(examId, 'exam_date', s.dateStr)
+                                          alert(`Data ${format(s.date, 'dd/MM')} selecionada!`)
+                                        }}
+                                        className={`h-8 px-4 text-[9px] font-bold uppercase rounded-lg shadow-sm transition-all ${s.balance > 0 ? 'bg-teal-500 hover:bg-teal-600 text-white' : 'bg-slate-100 text-slate-400'}`}
+                                      >
+                                        Selecionar
+                                      </Button>
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. Lista de Exames Sendo Agendados */}
                   <div className="space-y-4">
+                    <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Agendamento Atual</Label>
                     {exams.map((exam, idx) => (
                       <div key={exam.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-5 relative group/item hover:border-teal-200 transition-colors">
                         <button type="button" onClick={() => removeExam(exam.id)} className="absolute -top-3 -right-2 h-7 w-7 bg-white text-slate-400 hover:bg-rose-50 hover:text-rose-600 rounded-full flex items-center justify-center transition-all opacity-0 group-hover/item:opacity-100 shadow-sm border border-slate-200 hover:border-rose-200">
@@ -723,7 +925,10 @@ export default function AgendamentoTab() {
                               placeholder="Selecione..."
                               value={exam.procedure_name}
                               options={dynamicProcedures}
-                              onSelect={(v: string) => updateExam(exam.id, 'procedure_name', v)}
+                              onSelect={(v: string) => {
+                                updateExam(exam.id, 'procedure_name', v)
+                                setSelectedProcedureForVagas(v)
+                              }}
                             />
                           </div>
                           <div className="md:col-span-1">
