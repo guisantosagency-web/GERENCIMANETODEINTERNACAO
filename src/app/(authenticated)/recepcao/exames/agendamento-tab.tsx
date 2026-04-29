@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import {
   CalendarDays, Search, User, Users, CreditCard, ClipboardList,
-  Trash2, Plus, Clock, FileText, Settings2,
+  Trash2, Plus, Clock, FileText, Settings2, PlusCircle,
   CheckCircle2, AlertCircle, Loader2, ChevronRight, Printer, Activity, MapPin
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
