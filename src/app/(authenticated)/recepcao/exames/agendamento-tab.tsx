@@ -398,8 +398,10 @@ export default function AgendamentoTab() {
     e.preventDefault()
     setIsSubmitting(true)
     try {
-      // Validação de vagas (Saldo)
+      // Validação de vagas (Saldo) - Mais rigorosa
       for (const exam of exams) {
+        if (!exam.procedure_name || !exam.exam_date) continue
+
         const { data: config } = await supabase
           .from("exam_slots")
           .select("total_slots")
@@ -407,20 +409,20 @@ export default function AgendamentoTab() {
           .eq("exam_date", exam.exam_date)
           .single()
 
-        if (config) {
-          const { count } = await supabase
-            .from("exam_appointments")
-            .select("*", { count: 'exact', head: true })
-            .eq("procedure_name", exam.procedure_name)
-            .eq("exam_date", exam.exam_date)
-            .neq("status", "cancelado")
+        const { count } = await supabase
+          .from("exam_appointments")
+          .select("*", { count: 'exact', head: true })
+          .eq("procedure_name", exam.procedure_name)
+          .eq("exam_date", exam.exam_date)
+          .neq("status", "cancelado")
 
-          const occupied = count || 0
-          if (occupied >= config.total_slots) {
-            alert(`SEM VAGAS: O procedimento ${exam.procedure_name} para o dia ${format(parseISO(exam.exam_date), 'dd/MM/yyyy')} já atingiu o limite de ${config.total_slots} vagas.`)
-            setIsSubmitting(false)
-            return
-          }
+        const total = config?.total_slots || 0
+        const occupied = count || 0
+
+        if (occupied >= total) {
+          alert(`⚠️ VAGAS ESGOTADAS!\n\nO procedimento "${exam.procedure_name}" para o dia ${format(parseISO(exam.exam_date), 'dd/MM/yyyy')} atingiu o limite de ${total} vagas.\n\nPor favor, escolha outra data ou procedimento.`)
+          setIsSubmitting(false)
+          return
         }
       }
 
@@ -922,16 +924,20 @@ export default function AgendamentoTab() {
                                     </tr>
                                   ) : (
                                     slotsWithBalances.map((s, idx) => (
-                                      <tr key={idx} className={`hover:bg-teal-50/30 transition-colors ${s.balance <= 0 ? 'opacity-50 grayscale' : ''}`}>
+                                      <tr key={idx} className={`hover:bg-teal-50/30 transition-colors ${s.balance <= 0 ? 'bg-rose-50' : ''}`}>
                                         <td className="px-6 py-4">
                                           <div className="flex flex-col">
-                                            <span className="text-[10px] font-black text-slate-700 uppercase">{format(s.date, "dd.MM.yyyy — EEE", { locale: ptBR })}</span>
-                                            <span className="text-[8px] font-bold text-slate-400">DISPONÍVEL</span>
+                                            <span className={`text-[10px] font-black uppercase ${s.balance <= 0 ? 'text-rose-600' : 'text-slate-700'}`}>
+                                              {format(s.date, "dd.MM.yyyy — EEE", { locale: ptBR })}
+                                            </span>
+                                            <span className={`text-[8px] font-bold ${s.balance <= 0 ? 'text-rose-400 animate-pulse' : 'text-slate-400'}`}>
+                                              {s.balance <= 0 ? 'INDISPONÍVEL' : 'DISPONÍVEL'}
+                                            </span>
                                           </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[9px] font-black ${s.balance > 0 ? 'bg-teal-50 text-teal-600 border border-teal-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
-                                            {s.balance} VAGAS
+                                          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[9px] font-black ${s.balance > 0 ? 'bg-teal-50 text-teal-600 border border-teal-100' : 'bg-rose-600 text-white shadow-sm'}`}>
+                                            {s.balance <= 0 ? 'ESGOTADO' : `${s.balance} VAGAS`}
                                           </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
