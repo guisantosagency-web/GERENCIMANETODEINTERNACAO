@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import {
   Users, Search, Edit3, Trash2, RefreshCw, Loader2,
@@ -17,35 +17,59 @@ import { Sheet, SheetContent } from "@/components/ui/sheet"
 export default function PacientesTab() {
   const [patients, setPatients] = useState<any[]>([])
   const [examAppointments, setExamAppointments] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [isEditing, setIsEditing] = useState(false)
-  const [selectedPatient, setSelectedPatient] = useState<any>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  const { user } = useAuth()
-  const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
-
-  const loadData = async () => {
+  const loadData = async (search?: string) => {
     setIsLoading(true)
     try {
-      // 1. Carregar todos os pacientes do cadastro mestre
-      const { data: mPatients, error: pError } = await supabase
+      // 1. Contagem total (opcional para feedback visual)
+      const { count } = await supabase
         .from("master_patients")
-        .select("*")
-        .order("full_name")
+        .select("*", { count: 'exact', head: true })
+      
+      if (count !== null) setTotalCount(count)
+
+      // 2. Carregar apenas 20 pacientes com filtro opcional
+      let query = supabase.from("master_patients").select("*").order("full_name").limit(20)
+
+      if (search && search.trim().length > 0) {
+        const s = search.trim()
+        query = query.or(`full_name.ilike.%${s}%,cpf.ilike.%${s}%,sus.ilike.%${s}%`)
+      }
+
+      const { data: mPatients, error: pError } = await query
 
       if (pError) throw pError
 
-      // 2. Carregar agendamentos de exames para identificar quem é SISREG
-      const { data: appointments, error: aError } = await supabase
-        .from("exam_appointments")
-        .select("sus, cpf, chave_sisreg")
+      // 3. Carregar agendamentos apenas dos pacientes exibidos para identificar SISREG
+      // Isso é muito mais eficiente do que carregar a tabela inteira
+      if (mPatients && mPatients.length > 0) {
+        const patientSus = mPatients.map(p => p.sus).filter(Boolean)
+        const patientCpfs = mPatients.map(p => p.cpf).filter(Boolean)
 
-      if (aError) throw aError
+        let apptQuery = supabase
+          .from("exam_appointments")
+          .select("sus, cpf, chave_sisreg")
+          .not("chave_sisreg", "is", null)
+        
+        // Só faz o filtro se houver CPFs ou SUS
+        if (patientSus.length > 0 || patientCpfs.length > 0) {
+          const filterParts = []
+          if (patientSus.length > 0) filterParts.push(`sus.in.(${patientSus.map(s => `"${s}"`).join(',')})`)
+          if (patientCpfs.length > 0) filterParts.push(`cpf.in.(${patientCpfs.map(c => `"${c}"`).join(',')})`)
+          apptQuery = apptQuery.or(filterParts.join(','))
+          
+          const { data: appointments } = await apptQuery
+          setExamAppointments(appointments || [])
+        } else {
+          setExamAppointments([])
+        }
+      } else {
+        setExamAppointments([])
+      }
 
       setPatients(mPatients || [])
-      setExamAppointments(appointments || [])
     } catch (e) {
       console.error(e)
     } finally {
@@ -53,7 +77,18 @@ export default function PacientesTab() {
     }
   }
 
-  useEffect(() => { loadData() }, [])
+  // Efeito para busca debounced
+  useEffect(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      loadData(searchTerm)
+    }, 400)
+
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    }
+  }, [searchTerm])
 
   const sisregMap = useMemo(() => {
     const map: Record<string, boolean> = {}
@@ -66,15 +101,7 @@ export default function PacientesTab() {
     return map
   }, [examAppointments])
 
-  const filteredPatients = useMemo(() => {
-    if (!searchTerm) return patients
-    const s = searchTerm.toUpperCase()
-    return patients.filter(p =>
-      p.full_name?.toUpperCase().includes(s) ||
-      p.cpf?.includes(s) ||
-      p.sus?.includes(s)
-    )
-  }, [patients, searchTerm])
+  const filteredPatients = patients // Agora o filtro é feito no servidor
 
   const handleEdit = (patient: any) => {
     setSelectedPatient({ ...patient })
@@ -160,7 +187,9 @@ export default function PacientesTab() {
               <h1 className="text-xl font-bold font-space uppercase tracking-tight text-slate-800 leading-tight">Base de Pacientes</h1>
               <div className="flex items-center gap-2 mt-1">
                 <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Sincronização Ativa • {patients.length} Registros</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  {searchTerm ? `Resultados da busca • ${patients.length} encontrados` : `Base Sincronizada • ${totalCount} Registros (Mostrando 20)`}
+                </p>
               </div>
             </div>
           </div>
