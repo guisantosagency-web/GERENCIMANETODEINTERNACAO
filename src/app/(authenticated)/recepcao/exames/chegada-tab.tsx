@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { 
   Users, Clock, Loader2, 
@@ -47,6 +47,7 @@ export default function ChegadaTab() {
   const [encaixeExams, setEncaixeExams] = useState<ExamItem[]>([{ id: "1", procedure_name: "", exam_type: "" }])
   const [slotWarnings, setSlotWarnings] = useState<Record<string, string>>({})
   const [isSubmittingEncaixe, setIsSubmittingEncaixe] = useState(false)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Arrival protocol state
   const [formData, setFormData] = useState<any>({
@@ -210,11 +211,17 @@ export default function ChegadaTab() {
   const handleEncaixeSearch = async (val: string) => {
     setEncaixeSearch(val)
     setEncaixeForm(prev => ({ ...prev, patient_name: val }))
+    
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+
     if (val.length < 3) { setEncaixeResults([]); return }
-    try {
-      const results = await searchMasterPatients(val)
-      setEncaixeResults(results)
-    } catch { }
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const results = await searchMasterPatients(val)
+        setEncaixeResults(results)
+      } catch { }
+    }, 400)
   }
 
   const handleEncaixeSelectPatient = (p: any) => {

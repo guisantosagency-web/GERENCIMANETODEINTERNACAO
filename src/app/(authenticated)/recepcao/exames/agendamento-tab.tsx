@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef, memo } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import {
   CalendarDays, Search, User, Users, CreditCard, ClipboardList,
@@ -24,7 +24,7 @@ const FALLBACK_TYPES: Record<string, string[]> = {
   "ULTRASSONOGRAFIA": ["ABDOMEN TOTAL", "ARTICULAÇÃO", "MAMAS", "TIREOIDE"],
 }
 
-function SearchableAdder({ label, placeholder, value, onSelect, onAddNew, options, canAdd, icon: Icon }: any) {
+const SearchableAdder = memo(function SearchableAdder({ label, placeholder, value, onSelect, onAddNew, options, canAdd, icon: Icon }: any) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
   const containerRef = useRef<HTMLDivElement>(null)
@@ -87,9 +87,9 @@ function SearchableAdder({ label, placeholder, value, onSelect, onAddNew, option
       )}
     </div>
   )
-}
+})
 
-function HumanModel({ procedure }: { procedure: string }) {
+const HumanModel = memo(function HumanModel({ procedure }: { procedure: string }) {
   const p = procedure.toUpperCase()
   const isHead = p.includes("CRÂNIO") || p.includes("FACE")
   const isTorax = p.includes("TÓRAX") || p.includes("CORAÇÃO")
@@ -153,7 +153,7 @@ function HumanModel({ procedure }: { procedure: string }) {
       </div>
     </div>
   )
-}
+})
 
 export default function AgendamentoTab() {
   const { logos } = useAuth()
@@ -178,6 +178,7 @@ export default function AgendamentoTab() {
   const [currentVagasMonth, setCurrentVagasMonth] = useState(new Date())
   const [slotsWithBalances, setSlotsWithBalances] = useState<any[]>([])
   const [isLoadingSlots, setIsLoadingSlots] = useState(false)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [activeExamId, setActiveExamId] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
@@ -320,16 +321,22 @@ export default function AgendamentoTab() {
 
   const handleNameInput = async (val: string) => {
     setFormData(prev => ({ ...prev, patient_name: val }))
+    
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+
     if (val.length < 3) {
       setSearchResults([])
       setShowDropdown(false)
       return
     }
-    setShowDropdown(true)
-    try {
-      const results = await searchMasterPatients(val)
-      setSearchResults(results)
-    } catch (e) { }
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      setShowDropdown(true)
+      try {
+        const results = await searchMasterPatients(val)
+        setSearchResults(results)
+      } catch (e) { }
+    }, 400)
   }
 
   const handleSelectPatient = (patient: any) => {

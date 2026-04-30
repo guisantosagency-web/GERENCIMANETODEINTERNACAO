@@ -69,10 +69,28 @@ export default function ExamesDashboardTab() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [selectedProcDetails, setSelectedProcDetails] = useState<{name: string, count: number, subDetails: {detailName: string, count: number}[]} | null>(null)
 
-  const loadData = async () => {
+  const loadData = async (year?: string | null, month?: string | null) => {
     setIsLoading(true)
     try {
-      const { data: appts, error: err1 } = await supabase.from("exam_appointments").select("*").neq("status", "cancelado")
+      let query = supabase.from("exam_appointments").select("*").neq("status", "cancelado")
+      
+      if (year && !month) {
+        const start = `${year}-01-01`
+        const end = `${year}-12-31`
+        query = query.gte("exam_date", start).lte("exam_date", end)
+      } else if (year && month) {
+        // Obter primeiro e último dia do mês selecionado
+        const date = new Date(parseInt(year), parseInt(month) - 1, 1)
+        const start = format(date, 'yyyy-MM-dd')
+        const end = format(new Date(parseInt(year), parseInt(month), 0), 'yyyy-MM-dd')
+        query = query.gte("exam_date", start).lte("exam_date", end)
+      } else {
+        // Default: ano atual
+        const currentYear = new Date().getFullYear().toString()
+        query = query.gte("exam_date", `${currentYear}-01-01`).lte("exam_date", `${currentYear}-12-31`)
+      }
+
+      const { data: appts, error: err1 } = await query
       if (!err1 && appts) setAppointments(appts)
     } catch (e) {
       console.error(e)
@@ -81,11 +99,21 @@ export default function ExamesDashboardTab() {
     }
   }
 
-  useEffect(() => { setMounted(true); loadData() }, [])
+  useEffect(() => { 
+    setMounted(true)
+    loadData(selectedYear, selectedMonth)
+  }, [selectedYear, selectedMonth])
 
   const availableYears = useMemo(() => {
-    const years = Array.from(new Set([new Date().getFullYear().toString(), ...appointments.map(a => a.exam_date.substring(0, 4))])).sort().reverse()
-    return years
+    const currentYear = new Date().getFullYear()
+    const years = new Set([currentYear.toString()])
+    appointments.forEach(a => {
+      if (a.exam_date) years.add(a.exam_date.substring(0, 4))
+    })
+    // Adiciona os últimos 3 anos por garantia
+    years.add((currentYear - 1).toString())
+    years.add((currentYear - 2).toString())
+    return Array.from(years).sort().reverse()
   }, [appointments])
 
   const daysInMonth = useMemo(() => {
@@ -95,16 +123,15 @@ export default function ExamesDashboardTab() {
   }, [selectedMonth, selectedYear])
 
   const filteredRecords = useMemo(() => {
+    // Como agora já buscamos filtrado por ano/mês no banco,
+    // aqui só precisamos filtrar por dia se estiver selecionado
+    if (!selectedDay) return appointments
+    
     return appointments.filter(r => {
-      const year = r.exam_date?.substring(0, 4)
-      const month = r.exam_date ? parseInt(r.exam_date.substring(5, 7)).toString() : ""
       const day = r.exam_date?.substring(8, 10)
-      if (selectedYear && year !== selectedYear) return false
-      if (selectedMonth && month !== selectedMonth) return false
-      if (selectedDay && day !== selectedDay.padStart(2, '0')) return false
-      return true
+      return day === selectedDay.padStart(2, '0')
     })
-  }, [appointments, selectedDay, selectedMonth, selectedYear])
+  }, [appointments, selectedDay])
 
   const stats = useMemo(() => {
     const total = filteredRecords.length
@@ -116,7 +143,7 @@ export default function ExamesDashboardTab() {
     const concludedCount = presencas + faltas
     const absRate = concludedCount > 0 ? ((faltas / concludedCount) * 100).toFixed(1) : "0.0"
 
-    // Today specific
+    // Today specific - Filtrar dos dados já carregados para evitar nova busca
     const todayStr = format(new Date(), 'yyyy-MM-dd')
     const todayRecs = appointments.filter(a => a.exam_date === todayStr)
     const inQueue = todayRecs.filter(a => a.status === 'presente').length
@@ -168,6 +195,7 @@ export default function ExamesDashboardTab() {
       procedures
     }
   }, [filteredRecords, appointments])
+
 
   if (!mounted) return null
   if (isLoading) return <div className="h-96 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-teal-500" /></div>
