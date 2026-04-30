@@ -371,9 +371,28 @@ export default function AgendamentoTab() {
     setExams(prev => prev.map(e => {
       if (e.id === id) {
         const updated: any = { ...e, [field]: value }
+        
+        // Se mudou o procedimento, atualiza o tipo padrão
         if (field === 'procedure_name' && dynamicTypes[value]) {
           updated.exam_type = dynamicTypes[value][0] || ""
         }
+
+        // Lógica de horário padrão para Ultrassom conforme o dia da semana
+        const isUSG = (updated.procedure_name || "").toUpperCase().includes("ULTRASSONOGRAFIA") || 
+                      (updated.procedure_name || "").toUpperCase().includes("ULTRASSOM") || 
+                      (updated.procedure_name || "").toUpperCase().includes("USG")
+
+        if (isUSG && (field === 'exam_date' || field === 'procedure_name')) {
+          const dateStr = updated.exam_date
+          if (dateStr) {
+            const date = new Date(dateStr + 'T00:00:00')
+            const day = date.getDay()
+            if (day === 2) updated.exam_time = "09:00" // Terça
+            else if (day === 4) updated.exam_time = "07:00" // Quinta
+            else if (day === 5) updated.exam_time = "14:00" // Sexta
+          }
+        }
+
         return updated
       }
       return e
