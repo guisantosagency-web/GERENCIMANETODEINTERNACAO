@@ -18,7 +18,15 @@ export default function PacientesTab() {
   const [patients, setPatients] = useState<any[]>([])
   const [examAppointments, setExamAppointments] = useState<any[]>([])
   const [totalCount, setTotalCount] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [isEditing, setIsEditing] = useState(false)
+  const [selectedPatient, setSelectedPatient] = useState<any>(null)
+  const [isSaving, setIsSaving] = useState(false)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const { user } = useAuth()
+  const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), [])
 
   const loadData = async (search?: string) => {
     setIsLoading(true)
