@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { format, parseISO, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday } from "date-fns"
+import { format, parseISO, addMonths, subMonths, subDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { searchMasterPatients, upsertMasterPatient } from "@/lib/patient-search"
 import { ExamManagerModal } from "@/components/exam-manager-modal"
@@ -415,12 +415,66 @@ export default function AgendamentoTab() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validação básica inicial antes de abrir a janela
+    if (!formData.patient_name) return
+    
+    // Abrir a janela IMEDIATAMENTE no clique para evitar bloqueio de pop-up
+    const printWindow = window.open('', '_blank')
+    if (printWindow) {
+      printWindow.document.write('<html><head><title>Processando...</title></head><body style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#64748b;"><div><p style="font-weight:bold;text-align:center;">Processando agendamento...</p><p style="font-size:12px;text-align:center;">Por favor, não feche esta janela.</p></div></body></html>')
+    }
+
     setIsSubmitting(true)
     try {
-      // Validação de vagas (Saldo) - Mais rigorosa
+      const cleanCPF = formData.cpf.replace(/\D/g, "")
+      const sus = formData.sus?.trim()
+
+      // 1. Validações internas e de 30 dias
       for (const exam of exams) {
         if (!exam.procedure_name || !exam.exam_date) continue
 
+        // Verificação interna: duplicidade no mesmo pedido
+        const sameProceduresInOrder = exams.filter(e => e.procedure_name === exam.procedure_name)
+        if (sameProceduresInOrder.length > 1) {
+          alert(`⚠️ PROCEDIMENTOS DUPLICADOS!\n\nVocê está tentando agendar o procedimento "${exam.procedure_name}" mais de uma vez para este paciente neste atendimento.`)
+          printWindow?.close()
+          setIsSubmitting(false)
+          return
+        }
+
+        // Verificação de 30 dias (Janela móvel)
+        const requestedDate = new Date(exam.exam_date + 'T00:00:00')
+        const thirtyDaysAgo = format(subDays(requestedDate, 30), 'yyyy-MM-dd')
+        const thirtyDaysLater = format(addDays(requestedDate, 30), 'yyyy-MM-dd')
+
+        let duplicateQuery = supabase
+          .from("exam_appointments")
+          .select("exam_date, procedure_name")
+          .eq("procedure_name", exam.procedure_name)
+          .neq("status", "cancelado")
+          .gte("exam_date", thirtyDaysAgo)
+          .lte("exam_date", thirtyDaysLater)
+
+        if (cleanCPF) {
+          duplicateQuery = duplicateQuery.eq("cpf", cleanCPF)
+        } else if (sus) {
+          duplicateQuery = duplicateQuery.eq("sus", sus)
+        } else {
+          duplicateQuery = duplicateQuery.eq("patient_name", formData.patient_name.toUpperCase())
+        }
+
+        const { data: existingAppts } = await duplicateQuery.limit(1)
+
+        if (existingAppts && existingAppts.length > 0) {
+          const foundDate = format(parseISO(existingAppts[0].exam_date), 'dd/MM/yyyy')
+          alert(`⚠️ RESTRIÇÃO DE 30 DIAS!\n\nO paciente já possui agendamento para "${exam.procedure_name}" em ${foundDate}.\n\nNão é permitido realizar o mesmo procedimento em um intervalo inferior a 30 dias.`)
+          printWindow?.close()
+          setIsSubmitting(false)
+          return
+        }
+
+        // 2. Validação de vagas (Saldo)
         const { data: config } = await supabase
           .from("exam_slots")
           .select("total_slots")
@@ -439,13 +493,14 @@ export default function AgendamentoTab() {
         const occupied = count || 0
 
         if (occupied >= total) {
-          alert(`⚠️ VAGAS ESGOTADAS!\n\nO procedimento "${exam.procedure_name}" para o dia ${format(parseISO(exam.exam_date), 'dd/MM/yyyy')} atingiu o limite de ${total} vagas.\n\nPor favor, escolha outra data ou procedimento.`)
+          alert(`⚠️ VAGAS ESGOTADAS!\n\nO procedimento "${exam.procedure_name}" para o dia ${format(parseISO(exam.exam_date), 'dd/MM/yyyy')} atingiu o limite de ${total} vagas.`)
+          printWindow?.close()
           setIsSubmitting(false)
           return
         }
       }
 
-      const cleanCPF = formData.cpf.replace(/\D/g, "")
+      // 3. Efetuar Agendamento
       const inserts = exams.map(exam => ({
         patient_name: formData.patient_name.toUpperCase(),
         cpf: cleanCPF,
@@ -473,11 +528,13 @@ export default function AgendamentoTab() {
         origem_cadastro: 'exames',
       })
 
-      alert("Agendamento realizado!")
+      alert("Agendamento realizado com sucesso!")
       
-      // Auto-print the newly created appointments
+      // Preencher a janela que já está aberta
       if (data && data.length > 0) {
-        printAppointment({ ...data[0], all_procedures: data })
+        printAppointment({ ...data[0], all_procedures: data }, printWindow)
+      } else {
+        printWindow?.close()
       }
 
       setFormData({ patient_name: "", cpf: "", sus: "", chave_sisreg: "", municipio: "", estado: "MA" })
@@ -490,7 +547,8 @@ export default function AgendamentoTab() {
       }])
     } catch (err) {
       console.error(err)
-      alert("Erro ao agendar")
+      alert("Erro ao realizar agendamento.")
+      printWindow?.close()
     } finally {
       setIsSubmitting(false)
     }
@@ -542,21 +600,24 @@ export default function AgendamentoTab() {
     }
   }
 
-  const printAppointment = (appt: any) => {
+  const printAppointment = (appt: any, existingWindow?: Window | null) => {
     // Garantir que temos acesso ao nome e data para o filtro de agrupamento
     const patientName = appt.patient_name || (appt.all_procedures?.[0]?.patient_name)
     const examDate = appt.exam_date || (appt.all_procedures?.[0]?.exam_date)
 
     if (!patientName) {
       console.error("Dados do paciente ausentes para impressão")
+      existingWindow?.close()
       return
     }
 
-    const printWindow = window.open('', '_blank')
+    const printWindow = existingWindow || window.open('', '_blank')
     if (!printWindow) return
 
-    // Escreve um estado inicial para evitar página branca
-    printWindow.document.write('<html><head><title>Carregando...</title></head><body><div style="padding:20px; font-family:sans-serif;">Gerando comprovante, aguarde...</div></body></html>')
+    // Se não for uma janela existente, escreve um estado inicial
+    if (!existingWindow) {
+      printWindow.document.write('<html><head><title>Carregando...</title></head><body><div style="padding:20px; font-family:sans-serif;">Gerando comprovante, aguarde...</div></body></html>')
+    }
 
     // Busca todos os exames do mesmo paciente na mesma data para agrupar no comprovante
     const patientAppts = dateAppointments.filter(a =>
