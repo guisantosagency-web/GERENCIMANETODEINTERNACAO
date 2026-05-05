@@ -430,7 +430,7 @@ export default function AgendamentoTab() {
       const cleanCPF = formData.cpf.replace(/\D/g, "")
       const sus = formData.sus?.trim()
 
-      // 1. Validações internas e de 30 dias
+      // 1. Validações internas e de 30 dias (Re-trigger deploy)
       for (const exam of exams) {
         if (!exam.procedure_name || !exam.exam_date) continue
 
