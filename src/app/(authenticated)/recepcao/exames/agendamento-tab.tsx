@@ -434,10 +434,14 @@ export default function AgendamentoTab() {
       for (const exam of exams) {
         if (!exam.procedure_name || !exam.exam_date) continue
 
-        // Verificação interna: duplicidade no mesmo pedido
-        const sameProceduresInOrder = exams.filter(e => e.procedure_name === exam.procedure_name)
-        if (sameProceduresInOrder.length > 1) {
-          alert(`⚠️ PROCEDIMENTOS DUPLICADOS!\n\nVocê está tentando agendar o procedimento "${exam.procedure_name}" mais de uma vez para este paciente neste atendimento.`)
+        // Verificação interna: duplicidade no mesmo pedido (Mesmo Procedimento + Mesma Especificação + Mesma Data)
+        const sameExamsInOrder = exams.filter(e => 
+          e.procedure_name === exam.procedure_name && 
+          e.exam_type === exam.exam_type && 
+          e.exam_date === exam.exam_date
+        )
+        if (sameExamsInOrder.length > 1) {
+          alert(`⚠️ PROCEDIMENTOS DUPLICADOS!\n\nVocê está tentando agendar o procedimento "${exam.procedure_name} (${exam.exam_type})" mais de uma vez para este paciente na mesma data.`)
           printWindow?.close()
           setIsSubmitting(false)
           return
@@ -450,8 +454,10 @@ export default function AgendamentoTab() {
 
         let duplicateQuery = supabase
           .from("exam_appointments")
-          .select("exam_date, procedure_name")
+          .select("exam_date, procedure_name, exam_type")
           .eq("procedure_name", exam.procedure_name)
+          .eq("exam_type", exam.exam_type) // Agora filtra pela especificação
+          .neq("exam_date", exam.exam_date) // Ignora a mesma data (permite duplicatas no mesmo dia)
           .neq("status", "cancelado")
           .gte("exam_date", thirtyDaysAgo)
           .lte("exam_date", thirtyDaysLater)
@@ -468,7 +474,7 @@ export default function AgendamentoTab() {
 
         if (existingAppts && existingAppts.length > 0) {
           const foundDate = format(parseISO(existingAppts[0].exam_date), 'dd/MM/yyyy')
-          alert(`⚠️ RESTRIÇÃO DE 30 DIAS!\n\nO paciente já possui agendamento para "${exam.procedure_name}" em ${foundDate}.\n\nNão é permitido realizar o mesmo procedimento em um intervalo inferior a 30 dias.`)
+          alert(`⚠️ RESTRIÇÃO DE 30 DIAS!\n\nO paciente já possui agendamento para "${exam.procedure_name} (${exam.exam_type})" em ${foundDate}.\n\nNão é permitido realizar o mesmo procedimento com a mesma especificação em um intervalo inferior a 30 dias (exceto no mesmo dia).`)
           printWindow?.close()
           setIsSubmitting(false)
           return
@@ -776,8 +782,13 @@ export default function AgendamentoTab() {
                 Impresso em ${new Date().toLocaleString('pt-BR')}<br/>
                 <span style="font-size: 5.5pt; color: #000000; margin-top: 1mm; display: block;">Desenvolvido por Guilherme Santos — Avero Agency</span>
               </div>
-              <div class="signature">
-                Carimbo e Visto
+              <div style="text-align: right;">
+                <div style="margin-bottom: 4mm; font-size: 9pt; font-weight: bold; text-transform: uppercase; color: #000000;">
+                  Data de Recebimento do Exame: ______/___________________/___________
+                </div>
+                <div class="signature">
+                  Carimbo e Visto
+                </div>
               </div>
             </div>
           </div>
