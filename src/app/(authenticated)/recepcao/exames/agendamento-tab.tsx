@@ -291,6 +291,7 @@ export default function AgendamentoTab() {
         end: endOfMonth(currentVagasMonth)
       })
 
+      const todayStr = format(new Date(), 'yyyy-MM-dd')
       const results = days.map(day => {
         const dateStr = format(day, 'yyyy-MM-dd')
         const config = slotConfigs?.find(c => c.exam_date === dateStr)
@@ -303,7 +304,7 @@ export default function AgendamentoTab() {
           occupied,
           balance: total - occupied
         }
-      }).filter(d => d.total > 0 || d.occupied > 0) // Mostrar apenas dias que tenham configuração ou agendamentos
+      }).filter(d => (d.total > 0 || d.occupied > 0) && d.dateStr >= todayStr) // Mostrar apenas dias futuros ou iguais a hoje que tenham configuração ou agendamentos
 
       setSlotsWithBalances(results)
     } catch (err) {
